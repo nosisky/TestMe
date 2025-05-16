@@ -129,6 +129,7 @@ export async function POST(request: Request) {
     const quiz = new Quiz({
       title: quizTitle,
       description: quizDescription,
+      sourceType: 'youtube',
       source: {
         type: 'youtube',
         videoId,
