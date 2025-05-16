@@ -1,0 +1,247 @@
+:root {
+  --primary: #7e57ff;
+  --primary-hover: #6544e0;
+  --text: #1a1a2e;
+  --text-light: #4a4a6a;
+  --background: #f8faff;
+  --bg-gradient: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
+  --card-bg: #ffffff;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  --border-radius: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: #9e77ff;
+    --primary-hover: #8a5aff;
+    --text: #f8faff;
+    --text-light: #c5cae9;
+    --background: #13141f;
+    --bg-gradient: linear-gradient(135deg, #13141f 0%, #1a1b2e 100%);
+    --card-bg: #1d1e2d;
+    --shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.landing {
+  min-height: 100vh;
+  background: var(--bg-gradient);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-geist-sans, 'Geist', 'Inter', sans-serif);
+}
+
+/* Hero styles */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 5rem 6vw 3rem;
+  max-width: 1100px;
+  margin: 0 auto;
+
+  h1 {
+    font-size: 3.2rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+    
+    @media (max-width: 768px) {
+      font-size: 2.4rem;
+    }
+  }
+  
+  .emoji {
+    display: inline-block;
+    transform: rotate(-10deg);
+  }
+  
+  .subtitle {
+    font-size: 1.25rem;
+    color: var(--text-light);
+    margin-bottom: 2.5rem;
+    line-height: 1.6;
+    max-width: 40rem;
+    
+    @media (max-width: 768px) {
+      font-size: 1.1rem;
+      br {
+        display: none;
+      }
+    }
+  }
+}
+
+.ctaButton {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.9rem 2rem;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  box-shadow: 0 4px 12px rgba(126, 87, 255, 0.2);
+  margin-bottom: 4rem;
+  text-decoration: none;
+  text-align: center;
+  
+  &:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.featuredOn {
+  margin-top: 2rem;
+  
+  span {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+    opacity: 0.7;
+  }
+  
+  .logos {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    
+    .logo {
+      color: var(--text-light);
+      opacity: 0.6;
+    }
+  }
+}
+
+/* Features section */
+.features {
+  padding: 5rem 6vw;
+  background: var(--card-bg);
+  
+  h2 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 3rem;
+    text-align: center;
+  }
+}
+
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.featureCard {
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  background: var(--background);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  
+  .icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  
+  .desc {
+    font-size: 0.95rem;
+    color: var(--text-light);
+    line-height: 1.5;
+  }
+}
+
+/* How it works section */
+.how {
+  padding: 5rem 6vw;
+  
+  h2 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 3rem;
+    text-align: center;
+  }
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.step {
+  flex: 1;
+  min-width: 200px;
+  max-width: 250px;
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  text-align: center;
+  
+  .icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  
+  .title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  
+  .desc {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    line-height: 1.5;
+  }
+}
+
+/* Footer */
+.footer {
+  margin-top: auto;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 2rem;
+  }
+  
+  .steps, .featureGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .step {
+    max-width: 100%;
+  }
+} 

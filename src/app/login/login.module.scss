@@ -1,0 +1,162 @@
+.loginPage {
+  min-height: 100vh;
+  background: var(--bg-gradient);
+  color: var(--text);
+  font-family: var(--font-geist-sans, 'Geist', 'Inter', sans-serif);
+  display: flex;
+  flex-direction: column;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  padding: 2rem 6vw 4rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 3rem;
+  
+  @media (max-width: 940px) {
+    flex-direction: column;
+    padding-top: 1rem;
+  }
+}
+
+.content {
+  flex: 1;
+  max-width: 600px;
+  
+  h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    margin-bottom: 1.2rem;
+    line-height: 1.2;
+    
+    @media (max-width: 768px) {
+      font-size: 2.2rem;
+    }
+  }
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  color: var(--text-light);
+  margin-bottom: 3rem;
+  line-height: 1.6;
+  
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+  }
+}
+
+.benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.benefit {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  
+  .icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+  }
+  
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 0.4rem;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-light);
+    line-height: 1.5;
+  }
+}
+
+.loginSection {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.8rem;
+  }
+  
+  p {
+    margin: 0 0 1.5rem;
+    color: var(--text-light);
+  }
+}
+
+.loginButtonWrapper {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+  
+  button {
+    background: var(--primary);
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.8rem 2rem;
+    border-radius: var(--border-radius);
+    border: none;
+    box-shadow: 0 4px 12px rgba(126, 87, 255, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+    
+    &:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+  }
+}
+
+.terms {
+  font-size: 0.85rem;
+  text-align: center;
+  margin-top: 1.5rem;
+  opacity: 0.7;
+  
+  a {
+    color: var(--primary);
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.imageSection {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  @media (max-width: 940px) {
+    display: none;
+  }
+}
+
+.imageWrapper {
+  max-width: 500px;
+  
+  .illustration {
+    width: 100%;
+    height: auto;
+  }
+} 

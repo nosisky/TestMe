@@ -1,0 +1,227 @@
+.reviewContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.reviewMain {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.reviewHeader {
+  margin-bottom: 2rem;
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0.5rem 0;
+  }
+}
+
+.subheading {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-decoration: none;
+  margin-bottom: 1rem;
+  transition: color 0.2s;
+
+  &:hover {
+    color: var(--primary);
+  }
+}
+
+.questionsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.questionCard {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.questionNumber {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.question {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  line-height: 1.4;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.optionItem {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background-color: var(--option-bg, rgba(0, 0, 0, 0.03));
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.correctOption {
+  background-color: var(--correct-bg, rgba(16, 185, 129, 0.1));
+  border: 1px solid var(--correct-border, rgba(16, 185, 129, 0.3));
+}
+
+.optionLetter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--option-letter-bg, rgba(0, 0, 0, 0.05));
+  font-weight: 500;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.correctOption .optionLetter {
+  background-color: var(--correct-color, #10b981);
+  color: white;
+}
+
+.optionText {
+  flex-grow: 1;
+}
+
+.correctBadge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background-color: var(--correct-color, #10b981);
+  color: white;
+  margin-left: 0.75rem;
+}
+
+.explanation {
+  background-color: var(--explanation-bg, rgba(0, 0, 0, 0.02));
+  border-radius: 8px;
+  padding: 1rem;
+  border-left: 3px solid var(--primary);
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+  }
+}
+
+.actionButtons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.primaryButton, .secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.primaryButton {
+  background-color: var(--primary);
+  color: white;
+  
+  &:hover {
+    background-color: var(--primary-dark);
+  }
+}
+
+.secondaryButton {
+  background-color: var(--secondary-btn-bg, rgba(0, 0, 0, 0.05));
+  color: var(--text);
+  
+  &:hover {
+    background-color: var(--secondary-btn-hover, rgba(0, 0, 0, 0.1));
+  }
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 1rem;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.errorMessage {
+  text-align: center;
+  padding: 2rem;
+  
+  h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+  }
+} 

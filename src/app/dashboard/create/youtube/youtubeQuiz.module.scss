@@ -1,0 +1,579 @@
+.youtubeQuizContainer {
+  min-height: 100vh;
+  background: var(--bg-gradient);
+  color: var(--text);
+  font-family: var(--font-geist-sans, 'Geist', 'Inter', sans-serif);
+  display: flex;
+  flex-direction: column;
+}
+
+.loadingContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  background: var(--bg-gradient);
+  color: var(--text);
+  font-family: var(--font-geist-sans, 'Geist', 'Inter', sans-serif);
+}
+
+.loadingSpinner, .buttonSpinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-left-color: var(--primary);
+  animation: spin 1s linear infinite;
+  
+  @media (prefers-color-scheme: dark) {
+    border-color: rgba(255, 255, 255, 0.1);
+    border-left-color: var(--primary);
+  }
+}
+
+.buttonSpinner {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.createQuizMain {
+  flex: 1;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.pageDescription {
+  color: var(--text-light);
+  margin-bottom: 2rem;
+}
+
+.quizForm {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  
+  label {
+    font-weight: 500;
+    font-size: 1rem;
+  }
+}
+
+.urlInput, .selectInput {
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  background: var(--card-bg);
+  color: var(--text);
+  
+  @media (prefers-color-scheme: dark) {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(126, 87, 255, 0.1);
+  }
+}
+
+.errorText {
+  color: #e53935;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.videoPreview {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  
+  @media (max-width: 600px) {
+    flex-direction: column;
+  }
+}
+
+.thumbnailContainer {
+  flex-shrink: 0;
+  width: 160px;
+  
+  @media (max-width: 600px) {
+    width: 100%;
+  }
+}
+
+.thumbnail {
+  width: 100%;
+  height: auto;
+  border-radius: calc(var(--border-radius) / 2);
+}
+
+.videoDetails {
+  flex: 1;
+  
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+  }
+  
+  p {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    margin: 0;
+  }
+}
+
+.quizOptions {
+  padding: 1.5rem;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  
+  h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem;
+  }
+}
+
+.rangeContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.rangeInput {
+  flex: 1;
+  height: 6px;
+  appearance: none;
+  background: #e0e0e0;
+  border-radius: 3px;
+  outline: none;
+  
+  @media (prefers-color-scheme: dark) {
+    background: #444;
+  }
+  
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+  
+  &::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+  
+  &::-ms-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+  
+  &::-webkit-slider-runnable-track {
+    height: 6px;
+    cursor: pointer;
+    background: #e0e0e0;
+    border-radius: 3px;
+    
+    @media (prefers-color-scheme: dark) {
+      background: #444;
+    }
+  }
+  
+  &::-moz-range-track {
+    height: 6px;
+    cursor: pointer;
+    background: #e0e0e0;
+    border-radius: 3px;
+    
+    @media (prefers-color-scheme: dark) {
+      background: #444;
+    }
+  }
+  
+  &::-ms-track {
+    height: 6px;
+    cursor: pointer;
+    background: transparent;
+    border-color: transparent;
+    color: transparent;
+  }
+}
+
+.rangeValue {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary);
+  min-width: 30px;
+  text-align: center;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-weight: normal !important;
+  margin-top: 16px;
+}
+
+.checkboxInput {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.formActions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.generateButton {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  box-shadow: 0 4px 12px rgba(126, 87, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  
+  &:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+  }
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.successIconCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7e57ff 60%, #6a4cdb 100%);
+  margin: 0 auto 1.2rem auto;
+  box-shadow: 0 2px 8px rgba(126, 87, 255, 0.15);
+}
+
+.promptHeading {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--text-light);
+  margin: 1.5rem 0 1rem 0;
+  width: 100%;
+}
+
+.shareLabel {
+  font-size: 1rem;
+  color: var(--text-light);
+  margin-bottom: 0.3rem;
+}
+
+.promptPageMain {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.promptContainer {
+  background: var(--card-bg, #fff);
+  padding: 2.5rem 2rem;
+  border-radius: var(--border-radius, 12px);
+  box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.08));
+  width: 100%;
+  max-width: 600px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+  
+  @media (prefers-color-scheme: dark) {
+    background: var(--card-bg, #1a1a1a);
+    box-shadow: var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.15));
+  }
+  
+  h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-color-primary, #333);
+    margin-bottom: 0;
+    
+    @media (prefers-color-scheme: dark) {
+      color: var(--text-color-primary, #fff);
+    }
+  }
+}
+
+.promptSubtitle {
+  font-size: 1.2rem;
+  color: var(--text-color-secondary, #555);
+  margin: -0.5rem 0 0.5rem;
+  
+  @media (prefers-color-scheme: dark) {
+    color: var(--text-color-secondary, #aaa);
+  }
+}
+
+.successIcon {
+  color: var(--primary, #7e57ff);
+  width: 64px;
+  height: 64px;
+  margin-bottom: 0.5rem;
+}
+
+.promptActions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 350px;
+  margin: 0.5rem auto;
+  
+  @media (max-width: 600px) {
+    flex-direction: column;
+    width: 100%;
+  }
+}
+
+.shareLinkContainer {
+  margin-top: 1rem;
+  width: 100%;
+  
+  p {
+    font-size: 1rem;
+    color: var(--text-color-secondary, #666);
+    margin-bottom: 0.5rem;
+    
+    @media (prefers-color-scheme: dark) {
+      color: var(--text-color-secondary, #aaa);
+    }
+  }
+}
+
+.shareLinkBox {
+  background: var(--background-color-light, #f4f7fa);
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #ddd);
+  word-break: break-all;
+  font-size: 0.95rem;
+  margin: 0 auto;
+  text-align: left;
+  width: 100%;
+  
+  @media (prefers-color-scheme: dark) {
+    background: var(--background-color-light, #222);
+    border-color: var(--border-color, #444);
+  }
+  
+  a {
+    color: var(--primary, #7e57ff);
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.copyStatus {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  transition: opacity 0.3s ease;
+}
+
+.successText {
+  color: var(--success-color, #28a745);
+  
+  @media (prefers-color-scheme: dark) {
+    color: var(--success-color-dark, #5cb85c);
+  }
+}
+
+.errorText {
+  color: var(--error-color, #dc3545);
+  
+  @media (prefers-color-scheme: dark) {
+    color: var(--error-color-dark, #ef5350);
+  }
+}
+
+.createAnotherButton {
+  margin-top: 1.2rem;
+  font-size: 1rem;
+}
+
+// Button improvements for prompt
+.button {
+  padding: 0.9rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(126, 87, 255, 0.12);
+  min-width: 200px;
+  
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(126, 87, 255, 0.2);
+  }
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.primaryButtonLarge {
+  background: var(--primary, #7e57ff);
+  color: white;
+  box-shadow: 0 4px 8px rgba(126, 87, 255, 0.3);
+  
+  &:hover:not(:disabled) {
+    background: var(--primary-hover, #6a4cdb);
+  }
+  
+  @media (prefers-color-scheme: light) {
+    background: var(--primary, #7e57ff);
+    color: white;
+  }
+}
+
+.secondaryButtonLarge {
+  background: rgba(126, 87, 255, 0.15);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  
+  &:hover:not(:disabled) {
+    background: var(--primary);
+    color: white;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    background: rgba(126, 87, 255, 0.25);
+    color: white;
+    border: 1px solid var(--primary);
+  }
+}
+
+.tertiaryButtonLarge {
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--text-light);
+  
+  &:hover:not(:disabled) {
+    background: var(--text-light);
+    color: white;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    border-color: var(--text-light);
+  }
+}
+
+@media (max-width: 600px) {
+  .optionsGrid {
+    grid-template-columns: 1fr; // Stack options on small screens
+  }
+  .promptActions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .button {
+    width: 100%;
+  }
+  .shareLinkBox {
+    width: 100%;
+  }
+} 

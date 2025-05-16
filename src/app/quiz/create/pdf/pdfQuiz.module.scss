@@ -1,0 +1,52 @@
+.quizPageContainer {
+  min-height: 100vh;
+  background: var(--bg-gradient);
+  color: var(--text);
+  font-family: var(--font-geist-sans, 'Geist', 'Inter', sans-serif);
+}
+
+.contentContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.breadcrumbSeparator {
+  margin-left: 1rem;
+  color: var(--text-light);
+}
+
+.pageTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+.pageDescription {
+  margin-bottom: 2rem;
+  color: var(--text-light);
+  font-size: 1rem;
+  line-height: 1.5;
+} 

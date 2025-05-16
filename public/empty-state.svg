@@ -1,0 +1,22 @@
+<svg width="150" height="150" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="75" cy="75" r="70" fill="#F0F4FF" />
+  <rect x="35" y="35" width="80" height="80" rx="10" fill="white" stroke="#7E57FF" stroke-width="2" />
+  
+  <!-- Quiz card headers -->
+  <rect x="45" y="45" width="60" height="8" rx="2" fill="#7E57FF" opacity="0.2" />
+  <rect x="45" y="58" width="50" height="6" rx="2" fill="#7E57FF" opacity="0.1" />
+  <rect x="45" y="68" width="40" height="6" rx="2" fill="#7E57FF" opacity="0.1" />
+  
+  <!-- Quiz options -->
+  <rect x="45" y="85" width="15" height="15" rx="3" stroke="#7E57FF" stroke-width="1.5" />
+  <rect x="45" y="105" width="15" height="15" rx="3" stroke="#7E57FF" stroke-width="1.5" />
+  <rect x="65" y="87" width="40" height="6" rx="2" fill="#7E57FF" opacity="0.1" />
+  <rect x="65" y="107" width="40" height="6" rx="2" fill="#7E57FF" opacity="0.1" />
+  
+  <!-- Question mark decorations -->
+  <text x="92" y="50" font-size="24" font-family="Arial" fill="#7E57FF" opacity="0.4">?</text>
+  <text x="102" y="114" font-size="20" font-family="Arial" fill="#7E57FF" opacity="0.3">?</text>
+  
+  <!-- Dotted line -->
+  <line x1="30" y1="130" x2="120" y2="130" stroke="#7E57FF" stroke-width="2" stroke-dasharray="4 4" />
+</svg> 

@@ -1,0 +1,277 @@
+.historyContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.historyMain {
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.historyHeader {
+  margin-bottom: 2rem;
+  position: relative;
+  
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.2s;
+  
+  &:hover {
+    color: var(--primary);
+  }
+}
+
+.errorMessage {
+  padding: 1rem;
+  background-color: var(--error-bg, rgba(239, 68, 68, 0.1));
+  border: 1px solid var(--error-border, rgba(239, 68, 68, 0.2));
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  p {
+    color: var(--error-color, #ef4444);
+  }
+}
+
+.retryButton {
+  background: transparent;
+  border: 1px solid var(--error-color, #ef4444);
+  color: var(--error-color, #ef4444);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: var(--error-color, #ef4444);
+    color: white;
+  }
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1rem;
+  
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+  }
+  
+  p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    max-width: 450px;
+  }
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  background-color: var(--primary);
+  color: white;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  
+  &:hover {
+    background-color: var(--primary-dark);
+  }
+}
+
+.resultsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.resultCard {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.resultHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.quizType {
+  display: flex;
+  align-items: center;
+}
+
+.sourceIcon {
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
+}
+
+.sourceType {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.quizScore {
+  text-align: right;
+}
+
+.scoreValue {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.percentage {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  margin-top: 0.25rem;
+  display: inline-block;
+}
+
+.excellent {
+  background-color: var(--success-bg, rgba(16, 185, 129, 0.1));
+  color: var(--success-color, #10b981);
+}
+
+.good {
+  background-color: var(--warning-bg, rgba(245, 158, 11, 0.1));
+  color: var(--warning-color, #f59e0b);
+}
+
+.needsImprovement {
+  background-color: var(--error-bg, rgba(239, 68, 68, 0.1));
+  color: var(--error-color, #ef4444);
+}
+
+.quizTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+  min-height: 3rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.resultMeta {
+  margin-bottom: 1.25rem;
+}
+
+.metaItem {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.metaLabel {
+  color: var(--text-secondary);
+}
+
+.metaValue {
+  font-weight: 500;
+}
+
+.resultActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  text-align: center;
+  background-color: var(--secondary-btn-bg, rgba(0, 0, 0, 0.05));
+  color: var(--text);
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background-color: var(--secondary-btn-hover, rgba(0, 0, 0, 0.1));
+  }
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 1rem;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary);
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .resultsGrid {
+    grid-template-columns: 1fr;
+  }
+} 

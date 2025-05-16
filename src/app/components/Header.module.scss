@@ -1,0 +1,173 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 6vw;
+  position: sticky;
+  top: 0;
+  background: rgba(248, 250, 255, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 100;
+  
+  @media (prefers-color-scheme: dark) {
+    background: rgba(19, 20, 31, 0.8);
+  }
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.desktopNav {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  
+  a {
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s;
+    font-size: 1rem;
+    
+    &:hover {
+      color: var(--primary);
+    }
+  }
+  
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.mobileOnly {
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: block;
+  }
+}
+
+.mobileNav {
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 70%;
+    max-width: 300px;
+    background: var(--card-bg);
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 5rem;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    box-shadow: var(--shadow);
+    z-index: 90;
+    gap: 2rem;
+    
+    a {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.15s;
+      font-size: 1rem;
+      
+      &:hover {
+        color: var(--primary);
+      }
+    }
+    
+    &.navOpen {
+      transform: translateX(0);
+    }
+  }
+}
+
+.loginWrapper {
+  @media (max-width: 768px) {
+    margin-top: 1rem;
+  }
+}
+
+.mobileOnlyUserMenu {
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: block;
+    margin-top: 1.5rem;
+    width: 100%;
+    
+    > div {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+    
+    > div > button {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 0.75rem;
+      background-color: var(--primary);
+      border-radius: 6px;
+      
+      &:hover {
+        transform: none;
+      }
+    }
+    
+    .dropdown {
+      position: static;
+      width: 100%;
+      margin-top: 0.5rem;
+      box-shadow: none;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      
+      @media (prefers-color-scheme: dark) {
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+    }
+  }
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 80;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+} 

@@ -1,0 +1,46 @@
+.toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 2rem;
+  height: 2rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 20; // Ensure it's above other header elements if needed
+
+  &:focus {
+    outline: none;
+  }
+
+  span {
+    width: 2rem;
+    height: 0.25rem;
+    background: var(--text-light); // Use text-light for visibility on hero
+    border-radius: 10px;
+    transition: all 0.3s linear;
+    position: relative;
+    transform-origin: 1px;
+  }
+
+  &.open span:nth-child(1) {
+    transform: rotate(45deg);
+  }
+
+  &.open span:nth-child(2) {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  &.open span:nth-child(3) {
+    transform: rotate(-45deg);
+  }
+}
+
+// Show toggle only on mobile
+@media (max-width: 768px) {
+  .toggle {
+    display: flex;
+  }
+} 

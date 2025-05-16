@@ -1,0 +1,34 @@
+.loginBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: none;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  cursor: pointer;
+  
+  &:hover:not(:disabled) {
+    background: rgba(126, 87, 255, 0.05);
+    border-color: var(--primary);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    border-color: rgba(255, 255, 255, 0.1);
+    
+    &:hover:not(:disabled) {
+      background: rgba(158, 119, 255, 0.1);
+    }
+  }
+} 
