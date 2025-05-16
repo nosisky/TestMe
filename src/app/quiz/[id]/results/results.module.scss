@@ -179,9 +179,7 @@
     color: var(--error-color-dark);
     text-decoration: line-through;
   }
-  .correctUserOption { // User chose the correct one
-     // Already styled by .correctAnswerOption generally, but can add specifics
-  }
+
   .badgeCorrect, .badgeUserChoice, .badgeUserChoiceCorrect {
     font-size: 0.8em;
     font-weight: bold;

@@ -12,11 +12,11 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
-  
+
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  
+
   try {
     await dbConnect();
     
@@ -85,6 +85,10 @@ export async function POST(
     
     // Create flashcards from quiz questions
     const flashcardPromises = quiz.questions.map((question: IQuizQuestion) => {
+      const optionsText = question.options.map((opt: string, index: number) => 
+        `${String.fromCharCode(65 + index)}. ${opt}`
+      ).join('\n');
+      
       // Get correct answer text (using correctAnswer as index)
       const correctAnswerText = question.options[question.correctAnswer];
       
@@ -92,8 +96,8 @@ export async function POST(
       const flashcard = new Flashcard({
         quizId: quiz._id,
         createdBy: session.user.email,
-        front: question.question,
-        back: `Correct Answer: ${correctAnswerText}\n\n${question.explanation || ''}`,
+        front: `${question.question}\n\n${optionsText}`,
+        back: `${correctAnswerText}\n\n${question.explanation || ''}`,
         hints: [question.options[question.correctAnswer]],
         tags: quiz.tags
       });
@@ -111,45 +115,6 @@ export async function POST(
     console.error('Error creating flashcards:', error);
     return NextResponse.json(
       { error: 'Failed to create flashcards' },
-      { status: 500 }
-    );
-  }
-}
-
-// DELETE: Remove all flashcards for a quiz
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  const session = await getServerSession(authOptions);
-  
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-  
-  try {
-    await dbConnect();
-    
-    const quizId = params.id;
-    
-    // Validate MongoDB ObjectId
-    if (!mongoose.Types.ObjectId.isValid(quizId)) {
-      return NextResponse.json({ error: 'Invalid quiz ID' }, { status: 400 });
-    }
-    
-    // Delete all flashcards for this quiz
-    const result = await Flashcard.deleteMany({ 
-      quizId,
-      createdBy: session.user.email 
-    });
-    
-    return NextResponse.json({ 
-      message: `${result.deletedCount} flashcards deleted successfully` 
-    });
-  } catch (error) {
-    console.error('Error deleting flashcards:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete flashcards' },
       { status: 500 }
     );
   }
