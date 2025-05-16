@@ -139,6 +139,8 @@ export async function POST(request: Request) {
       difficulty,
     });
 
+    console.log(quiz, '<=----===>');
+
     await quiz.save();
 
     // 8. Return the quiz data
