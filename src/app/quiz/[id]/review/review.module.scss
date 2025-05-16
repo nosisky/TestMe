@@ -150,23 +150,99 @@
   }
 }
 
+.scoreCard {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 1.5rem 0;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  
+  @media (prefers-color-scheme: dark) {
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.scoreValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.scoreLabel {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.correctQuestion {
+  border-left: 4px solid var(--success, #10B981);
+}
+
+.incorrectQuestion {
+  border-left: 4px solid var(--danger, #EF4444);
+}
+
+.questionStatus {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.correctBadge {
+  background-color: var(--success-bg, rgba(16, 185, 129, 0.1));
+  color: var(--success, #10B981);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.incorrectBadge {
+  background-color: var(--danger-bg, rgba(239, 68, 68, 0.1));
+  color: var(--danger, #EF4444);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.correctOption {
+  background-color: var(--success-bg, rgba(16, 185, 129, 0.1));
+  border: 1px solid var(--success-border, rgba(16, 185, 129, 0.3));
+}
+
+.incorrectOption {
+  background-color: var(--danger-bg, rgba(239, 68, 68, 0.1));
+  border: 1px solid var(--danger-border, rgba(239, 68, 68, 0.3));
+}
+
+.userSelectedOption {
+  font-weight: 500;
+}
+
 .actionButtons {
   display: flex;
   gap: 1rem;
-  margin-top: 1rem;
+  margin-top: 2rem;
 }
 
 .primaryButton, .secondaryButton {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 1rem;
-  cursor: pointer;
   transition: all 0.2s;
-  text-decoration: none;
 }
 
 .primaryButton {
@@ -174,16 +250,21 @@
   color: white;
   
   &:hover {
-    background-color: var(--primary-dark);
+    background-color: var(--primary-hover);
   }
 }
 
 .secondaryButton {
-  background-color: var(--secondary-btn-bg, rgba(0, 0, 0, 0.05));
+  background-color: transparent;
   color: var(--text);
+  border: 1px solid var(--border-color);
   
   &:hover {
-    background-color: var(--secondary-btn-hover, rgba(0, 0, 0, 0.1));
+    background-color: rgba(0, 0, 0, 0.05);
+    
+    @media (prefers-color-scheme: dark) {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
   }
 }
 

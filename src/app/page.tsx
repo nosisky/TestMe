@@ -77,7 +77,7 @@ export default function Home() {
         </h1>
         <p className={styles.subtitle}>
           Generate quizzes from YouTube videos, PDFs, images, or your own text.
-          <br />Test yourself smarter with AI-powered questions.
+          <br />{' '}Test yourself smarter with AI-powered questions.
         </p>
         
         <Link href="/login" className={styles.ctaButton}>

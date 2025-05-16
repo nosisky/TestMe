@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../../components/Header';
 import styles from './review.module.scss';
-import { handleApiResponse, handleFetchError } from "@/lib/api-utils";
+import { handleFetchError } from "@/lib/api-utils";
 
 interface QuizQuestion {
   question: string;
@@ -15,12 +15,16 @@ interface QuizQuestion {
 }
 
 interface Quiz {
-  id: string;
+  _id?: string;
+  id?: string;
   title: string;
   sourceType: string;
   questions: QuizQuestion[];
   createdAt: string;
 }
+
+// Type for user answers stored in localStorage
+type UserAnswers = Record<number, number | null>;
 
 export default function QuizReviewPage() {
   const params = useParams();
@@ -29,8 +33,11 @@ export default function QuizReviewPage() {
   const { status } = useSession();
   
   const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [hasAnswers, setHasAnswers] = useState(false);
   
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -38,18 +45,66 @@ export default function QuizReviewPage() {
     }
   }, [status, router]);
   
+  // Load user answers from localStorage
+  useEffect(() => {
+    if (quizId) {
+      try {
+        const savedAnswers = localStorage.getItem(`quizAnswers_${quizId}`);
+        if (savedAnswers) {
+          setUserAnswers(JSON.parse(savedAnswers));
+          setHasAnswers(true);
+        }
+      } catch (err) {
+        console.error('Error loading saved answers:', err);
+      }
+    }
+  }, [quizId]);
+  
   useEffect(() => {
     if (status !== "loading") {
       fetchQuiz();
     }
   }, [quizId, status]);
   
+  // Calculate score when quiz and user answers are loaded
+  useEffect(() => {
+    if (quiz && Object.keys(userAnswers).length > 0) {
+      let correctCount = 0;
+      
+      quiz.questions.forEach((question, index) => {
+        if (userAnswers[index] === question.correctAnswer) {
+          correctCount++;
+        }
+      });
+      
+      setScore({
+        correct: correctCount,
+        total: quiz.questions.length
+      });
+    }
+  }, [quiz, userAnswers]);
+  
   const fetchQuiz = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/quiz/${quizId}`);
-      const data = await handleApiResponse<{quiz: Quiz}>(response);
-      setQuiz(data.quiz);
+      // Use the quiz/take endpoint which returns the full quiz data with questions
+      const response = await fetch(`/api/quiz/take/${quizId}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to load quiz');
+      }
+      const data = await response.json();
+      
+      // Transform the data to match expected Quiz interface
+      const quizData: Quiz = {
+        id: data.quiz._id?.toString() || data.quiz.id,
+        title: data.quiz.title || 'Untitled Quiz',
+        sourceType: data.quiz.sourceType || 'unknown',
+        questions: data.quiz.questions || [],
+        createdAt: data.quiz.createdAt || new Date().toISOString()
+      };
+      
+      setQuiz(quizData);
     } catch (err) {
       setError('Failed to load quiz. Please try again.');
       handleFetchError(err);
@@ -119,52 +174,106 @@ export default function QuizReviewPage() {
     );
   }
   
+  if (!hasAnswers) {
+    return (
+      <div className={styles.reviewContainer}>
+        <Header />
+        <main className={styles.reviewMain}>
+          <div className={styles.errorMessage}>
+            <h2>No Answers Found</h2>
+            <p>We couldn&apos;t find your answers for this quiz. You may need to complete the quiz first.</p>
+            <div className={styles.actionButtons}>
+              <Link href="/dashboard" className={styles.primaryButton}>
+                Back to Dashboard
+              </Link>
+              <Link href={`/quiz/${quizId}`} className={styles.secondaryButton}>
+                Take Quiz
+              </Link>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+  
   return (
     <div className={styles.reviewContainer}>
       <Header />
       
       <main className={styles.reviewMain}>
         <div className={styles.reviewHeader}>
-          <Link href={`/quiz/${quizId}`} className={styles.backButton}>
-            ← Back to Quiz
+          <Link href={`/dashboard`} className={styles.backButton}>
+            ← Back
           </Link>
           <h1>Quiz Review: {quiz.title}</h1>
+          
+          <div className={styles.scoreCard}>
+            <div className={styles.scoreValue}>
+              {score.correct}/{score.total}
+            </div>
+            <div className={styles.scoreLabel}>
+              {Math.round((score.correct / score.total) * 100)}% Correct
+            </div>
+          </div>
+          
           <p className={styles.subheading}>
             Review all {quiz.questions?.length ?? 0} questions and answers below.
           </p>
         </div>
         
         <div className={styles.questionsContainer}>
-          {(quiz.questions ?? []).map((question, index) => (
-            <div key={index} className={styles.questionCard}>
-              <h3 className={styles.questionNumber}>Question {index + 1}</h3>
-              <h2 className={styles.question}>{question.question}</h2>
-              
-              <div className={styles.options}>
-                {(question.options ?? []).map((option, optIndex) => (
-                  <div
-                    key={optIndex}
-                    className={`${styles.optionItem} ${
-                      optIndex === question.correctAnswer ? styles.correctOption : ''
-                    }`}
-                  >
-                    <span className={styles.optionLetter}>
-                      {String.fromCharCode(65 + optIndex)}
-                    </span>
-                    <span className={styles.optionText}>{option}</span>
-                    {optIndex === question.correctAnswer && (
-                      <span className={styles.correctBadge}>Correct Answer</span>
-                    )}
-                  </div>
-                ))}
+          {(quiz.questions ?? []).map((question, index) => {
+            const userAnswer = userAnswers[index];
+            const isCorrect = userAnswer === question.correctAnswer;
+            
+            return (
+              <div 
+                key={index} 
+                className={`${styles.questionCard} ${
+                  isCorrect ? styles.correctQuestion : styles.incorrectQuestion
+                }`}
+              >
+                <div className={styles.questionStatus}>
+                  {isCorrect ? (
+                    <span className={styles.correctBadge}>✓ Correct</span>
+                  ) : (
+                    <span className={styles.incorrectBadge}>✗ Incorrect</span>
+                  )}
+                </div>
+                
+                <h3 className={styles.questionNumber}>Question {index + 1}</h3>
+                <h2 className={styles.question}>{question.question}</h2>
+                
+                <div className={styles.options}>
+                  {(question.options ?? []).map((option, optIndex) => (
+                    <div
+                      key={optIndex}
+                      className={`${styles.optionItem} 
+                        ${optIndex === question.correctAnswer ? styles.correctOption : ''} 
+                        ${userAnswer === optIndex && userAnswer !== question.correctAnswer ? styles.incorrectOption : ''}
+                        ${userAnswer === optIndex ? styles.userSelectedOption : ''}`}
+                    >
+                      <span className={styles.optionLetter}>
+                        {String.fromCharCode(65 + optIndex)}
+                      </span>
+                      <span className={styles.optionText}>{option}</span>
+                      {optIndex === question.correctAnswer && (
+                        <span className={styles.correctBadge}>Correct Answer</span>
+                      )}
+                      {userAnswer === optIndex && userAnswer !== question.correctAnswer && (
+                        <span className={styles.incorrectBadge}>Your Answer</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                <div className={styles.explanation}>
+                  <h3>Explanation:</h3>
+                  <p>{question.explanation}</p>
+                </div>
               </div>
-              
-              <div className={styles.explanation}>
-                <h3>Explanation:</h3>
-                <p>{question.explanation}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         
         <div className={styles.actionButtons}>

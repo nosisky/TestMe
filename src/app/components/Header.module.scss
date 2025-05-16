@@ -205,4 +205,9 @@
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+.activeLink {
+  color: var(--primary) !important;
+  font-weight: 600;
 } 

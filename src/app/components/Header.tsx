@@ -9,7 +9,11 @@ import UserMenu from "./UserMenu";
 import styles from "./Header.module.scss";
 import { useSession, signOut } from "next-auth/react";
 
-export default function Header() {
+interface HeaderProps {
+  currentPage?: string;
+}
+
+export default function Header({ currentPage }: HeaderProps = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLDivElement>(null);
@@ -100,14 +104,14 @@ export default function Header() {
           {isAuthenticated ? (
             // Navigation for authenticated users
             <>
-              <Link href="/dashboard">Dashboard</Link>
-              <Link href="/dashboard">Create Quiz</Link>
+              <Link href="/dashboard" className={currentPage === 'dashboard' ? styles.activeLink : ''}>Dashboard</Link>
+              <Link href="/dashboard" className={currentPage === 'create' ? styles.activeLink : ''}>Create Quiz</Link>
             </>
           ) : (
             // Navigation for unauthenticated users (landing page)
             <>
-              <Link href="/#features">Features</Link>
-              <Link href="/#how">How it works</Link>
+              <Link href="/#features" className={currentPage === 'features' ? styles.activeLink : ''}>Features</Link>
+              <Link href="/#how" className={currentPage === 'how' ? styles.activeLink : ''}>How it works</Link>
             </>
           )}
         </nav>
