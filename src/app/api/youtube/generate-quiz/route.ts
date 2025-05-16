@@ -118,6 +118,8 @@ export async function POST(request: Request) {
       difficulty,
     });
 
+    console.log(questions, '<=----===>');
+
     if (!questions || questions.length === 0) {
       return NextResponse.json(
         { error: 'Failed to generate quiz questions' },
