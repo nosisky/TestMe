@@ -1,43 +1,4 @@
-/* Define variables on a local class */
-.variables {
-  --primary: #7e57ff;
-  --primary-hover: #6a4cdb;
-  --text-color-primary: #1a1a1a;
-  --text-color-secondary: #666666;
-  --border-color: #e0e0e0;
-  --card-bg: #ffffff;
-  --background-color: #f4f7f9;
-  --background-color-light: #f5f7fa;
-  --background-color-hover: #f9fafb;
-  --success-color: #10b981;
-  --warning-color: #f59e0b;
-  --error-color: #ef4444;
-  --border-radius-lg: 12px;
-  --border-radius-md: 8px;
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-}
 
-/* Apply variables to :root using :global */
-:global(:root) {
-  composes: variables;
-}
-
-@media (prefers-color-scheme: dark) {
-  .variables {
-    --text-color-primary: #ffffff;
-    --text-color-secondary: #a0a0a0;
-    --border-color: #2d2d2d;
-    --card-bg: #1a1a1a;
-    --background-color: #111111;
-    --background-color-light: #222222;
-    --background-color-hover: #2a2a2a;
-    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.2), 0 2px 4px -1px rgba(0,0,0,0.1);
-  }
-  
-  :global(:root) {
-    composes: variables;
-  }
-}
 
 .pageContainer {
   display: flex;
