@@ -144,6 +144,23 @@
   resize: vertical;
 }
 
+.characterCount {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.characterCountValid {
+  color: #28a745; // Success green color
+  font-weight: 500;
+}
+
+.characterCountInvalid {
+  color: #dc3545; // Danger red color
+  font-weight: 500;
+}
+
 .optionsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));

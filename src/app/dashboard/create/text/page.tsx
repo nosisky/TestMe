@@ -20,6 +20,11 @@ export default function TextQuizCreatorPage() {
   const [showPostGenerationPrompt, setShowPostGenerationPrompt] = useState(false);
   const [shareableLink, setShareableLink] = useState('');
   const [copyStatusMessage, setCopyStatusMessage] = useState('');
+  
+  // Calculate characters remaining to meet minimum
+  const minCharacters = 50;
+  const charactersRemaining = Math.max(0, minCharacters - textContent.trim().length);
+  const hasMinimumText = textContent.trim().length >= minCharacters;
 
   if (status === 'loading') {
     return <div className={styles.loadingContainer}><div className={styles.spinner}></div><p>Loading...</p></div>;
@@ -170,12 +175,32 @@ export default function TextQuizCreatorPage() {
                 rows={10}
                 required
               />
+              {!hasMinimumText && (
+                <div className={styles.characterCount}>
+                  {charactersRemaining === 0 ? (
+                    <span className={styles.characterCountValid}>Minimum length reached! ✓</span>
+                  ) : (
+                    <span className={styles.characterCountInvalid}>
+                      {charactersRemaining} more character{charactersRemaining !== 1 ? 's' : ''} needed to reach minimum
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             
             {error && <p className={styles.errorTextBig}>{error}</p>}
 
-            <button type="submit" disabled={isLoading || textContent.trim().length < 50} className={`${styles.button} ${styles.primaryButtonLarge} ${styles.generateButtonFullWidth}`}>
-              {isLoading ? <><div className={styles.buttonSpinner}></div> Generating...</> : 'Generate Quiz from Text'}
+            <button 
+              type="submit" 
+              disabled={isLoading || !hasMinimumText} 
+              className={`${styles.button} ${styles.primaryButtonLarge} ${styles.generateButtonFullWidth}`}
+              title={!hasMinimumText ? `Please enter at least ${minCharacters} characters` : ''}
+            >
+              {isLoading ? (
+                <><div className={styles.buttonSpinner}></div> Generating...</>
+              ) : (
+                'Generate Quiz from Text'
+              )}
             </button>
           </form>
         </div>

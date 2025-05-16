@@ -5,6 +5,7 @@ import Quiz, { IQuizQuestion } from '@/models/Quiz';
 import { generateQuizQuestions } from '@/lib/ai-service';
 import { validatePdfContent } from '@/lib/pdf-service';
 import mongoose from 'mongoose';
+import pdfParse from 'pdf-parse';
 
 export async function POST(request: Request) {
   try {
@@ -17,11 +18,59 @@ export async function POST(request: Request) {
       );
     }
     
-    const { pdfText, title, numQuestions, difficulty, isPublic, tags } = await request.json();
-
-    if (!pdfText || !title) {
+    // Get parameters from URL query string
+    const url = new URL(request.url);
+    const numQuestions = parseInt(url.searchParams.get('numQuestions') || '5');
+    const difficulty = url.searchParams.get('difficulty') || 'medium';
+    const isPublic = url.searchParams.get('isPublic') !== 'false'; // Default to true
+    const tagsParam = url.searchParams.get('tags');
+    const tags = tagsParam ? tagsParam.split(',').map(tag => tag.trim()) : [];
+    
+    // Get the uploaded PDF file
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    
+    if (!file) {
       return NextResponse.json(
-        { error: 'PDF text and title are required' },
+        { error: 'PDF file is required' },
+        { status: 400 }
+      );
+    }
+    
+    // Get file data as arrayBuffer
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    
+    // Parse the PDF using pdf-parse
+    let pdfData;
+    try {
+      pdfData = await pdfParse(buffer);
+    } catch (error) {
+      console.error('Error parsing PDF:', error);
+      return NextResponse.json(
+        { error: 'Failed to parse PDF file' },
+        { status: 400 }
+      );
+    }
+    
+    // Extract text from the PDF
+    const pdfText = pdfData.text;
+    const pageCount = pdfData.numpages;
+    
+    // Use file name as title or fallback
+    const title = file.name.replace('.pdf', '') || 'PDF Quiz';
+    
+    if (!pdfText) {
+      return NextResponse.json(
+        { error: 'PDF content could not be extracted' },
+        { status: 400 }
+      );
+    }
+    
+    // Check if PDF exceeds page limit
+    if (pageCount > 50) {
+      return NextResponse.json(
+        { error: 'PDF exceeds maximum page limit (15 pages)' },
         { status: 400 }
       );
     }
@@ -40,8 +89,8 @@ export async function POST(request: Request) {
     try {
       const questionsData = await generateQuizQuestions({
         content: pdfText,
-        numQuestions: numQuestions || 5,
-        difficulty: difficulty || 'medium'
+        numQuestions,
+        difficulty
       });
 
       if (!questionsData.questions || !questionsData.questions.length) {
@@ -66,13 +115,16 @@ export async function POST(request: Request) {
           source: {
             type: 'pdf',
             pdf: {
+              fileName: file.name,
+              fileSize: file.size,
+              pageCount: pageCount,
               contentPreview: pdfText.substring(0, 500) + '...'
             }
           },
-          difficulty: difficulty || 'medium',
+          difficulty,
           createdBy: session.user.email || 'unknown',
-          isPublic: isPublic !== false, // Default to true if not specified
-          tags: tags || [],
+          isPublic,
+          tags,
           questions
         });
         

@@ -138,11 +138,12 @@ export default function Dashboard() {
                 <p>Enter or paste your own text for quiz generation</p>
               </Link>
               
-              <Link href="/dashboard/create/image" className={styles.quizOption}>
+              <div className={`${styles.quizOption} ${styles.disabledOption}`}>
+                <div className={styles.comingSoonBadge}>Coming Soon</div>
                 <div className={styles.quizOptionIcon}>🖼️</div>
                 <h3>Image</h3>
                 <p>Extract text from an image to generate questions</p>
-              </Link>
+              </div>
               
              
             </div>
