@@ -1,23 +1,4 @@
-:global(:root) {
-  --primary: #7e57ff;
-  --primary-hover: #6a4cdb;
-  --text: #1a1a1a;
-  --text-light: #666666;
-  --card-bg: #ffffff;
-  --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-  --border-radius: 12px;
-  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :global(:root) {
-    --text: #ffffff;
-    --text-light: #a0a0a0;
-    --card-bg: #1a1a1a;
-    --bg-gradient: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-  }
-}
+/* Variables are now defined in src/app/styles/variables.css */
 
 .profileContainer {
   min-height: 100vh;

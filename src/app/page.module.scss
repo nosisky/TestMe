@@ -1,27 +1,4 @@
-:global(:root) {
-  --primary: #7e57ff;
-  --primary-hover: #6544e0;
-  --text: #1a1a2e;
-  --text-light: #4a4a6a;
-  --background: #f8faff;
-  --bg-gradient: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
-  --card-bg: #ffffff;
-  --shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
-  --border-radius: 8px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :global(:root) {
-    --primary: #9e77ff;
-    --primary-hover: #8a5aff;
-    --text: #f8faff;
-    --text-light: #c5cae9;
-    --background: #13141f;
-    --bg-gradient: linear-gradient(135deg, #13141f 0%, #1a1b2e 100%);
-    --card-bg: #1d1e2d;
-    --shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-  }
-}
+/* Variables are now defined in src/app/styles/variables.css */
 
 .landing {
   min-height: 100vh;

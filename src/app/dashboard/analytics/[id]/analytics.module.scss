@@ -1,4 +1,5 @@
-:global(:root) {
+/* Define variables on a local class */
+.variables {
   --primary: #7e57ff;
   --primary-hover: #6a4cdb;
   --text-color-primary: #1a1a1a;
@@ -16,8 +17,13 @@
   --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
 }
 
+/* Apply variables to :root using :global */
+:global(:root) {
+  composes: variables;
+}
+
 @media (prefers-color-scheme: dark) {
-  :global(:root) {
+  .variables {
     --text-color-primary: #ffffff;
     --text-color-secondary: #a0a0a0;
     --border-color: #2d2d2d;
@@ -26,6 +32,10 @@
     --background-color-light: #222222;
     --background-color-hover: #2a2a2a;
     --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.2), 0 2px 4px -1px rgba(0,0,0,0.1);
+  }
+  
+  :global(:root) {
+    composes: variables;
   }
 }
 

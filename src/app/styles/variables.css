@@ -1,0 +1,81 @@
+/* Global CSS Variables */
+:root {
+  --primary: #7e57ff;
+  --primary-hover: #6a4cdb;
+  --text: #1a1a1a;
+  --text-light: #666666;
+  --text-light-dark: #a0a0a0;
+  --error: #f44336;
+  --success-color: #28a745;
+  --success-color-dark: #5cb85c;
+  --error-color: #dc3545;
+  --error-color-dark: #ef5350;
+  --card-bg: #ffffff;
+  --card-bg-dark: #1a1a1a;
+  --background: #f8faff;
+  --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+  --border-radius: 12px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-sm: 4px;
+  --border-radius-pill: 10px;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --primary-color: #007bff;
+  --primary-color-dark: #0056b3;
+  --primary-color-light: #e6f2ff;
+  --secondary-color: #6c757d;
+  --secondary-color-dark: #545b62;
+  --success-color-light: #c3e6cb;
+  --success-bg-light: #eaf7ec;
+  --success-bg-lighter: #d4edda;
+  --error-color-light: #f5c6cb;
+  --error-bg-light: #fbe9e7;
+  --error-bg-lighter: #f8d7da;
+  --info-color: #17a2b8;
+  --text-color-primary: #333;
+  --text-color-secondary: #555;
+  --text-color-tertiary: #777;
+  --text-color-error: #d9534f;
+  --background-color: #f4f7f9;
+  --background-color-light: #f5f7fa;
+  --background-color-hover: #f9fafb;
+  --card-bg-alt: #f8f9fa;
+  --border-color: #ccc;
+  --warning-color: #f59e0b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --primary: #9e77ff;
+    --primary-hover: #8a5aff;
+    --text: #ffffff;
+    --text-light: #a0a0a0;
+    --card-bg: #1a1a1a;
+    --background: #13141f;
+    --bg-gradient: linear-gradient(135deg, #13141f 0%, #1a1b2e 100%);
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
+    --primary-color-dark: #2b7ad2;
+    --primary-color-light: #1e3256;
+    --success-color-dark: #c3e6cb;
+    --success-color-light: #155724;
+    --success-bg-light: #0d2213;
+    --success-bg-lighter: #173b22;
+    --error-color-dark: #f5c6cb;
+    --error-color-light: #721c24;
+    --error-bg-light: #2c0b0e;
+    --error-bg-lighter: #3e1011;
+    --text-color-primary: #fff;
+    --text-color-secondary: #aaa;
+    --text-color-tertiary: #888;
+    --text-color-error: #f77;
+    --background-color: #111111;
+    --background-color-light: #222222;
+    --background-color-hover: #2a2a2a;
+    --card-bg-alt: #222222;
+    --border-color: #444;
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.2), 0 2px 4px -1px rgba(0,0,0,0.1);
+  }
+} 
