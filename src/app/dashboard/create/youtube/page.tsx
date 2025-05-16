@@ -107,13 +107,13 @@ export default function YoutubeQuizCreator() {
         }),
       });
       
-      const data = await handleApiResponse<{quiz: {id: string}}>(
+      const data = await handleApiResponse<{_id: string}>(
         response, 
         "Quiz generated successfully!"
       );
       
-      setGeneratedQuizId(data.quiz.id);
-      setShareableLink(`${window.location.origin}/quiz/${data.quiz.id}/instructions`);
+      setGeneratedQuizId(data._id);
+      setShareableLink(`${window.location.origin}/quiz/${data._id}/instructions`);
       setShowPostGenerationPrompt(true);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to generate quiz");
