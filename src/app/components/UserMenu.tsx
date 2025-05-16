@@ -3,12 +3,14 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import styles from './UserMenu.module.scss';
 
 export default function UserMenu() {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   
   // Close the dropdown when clicking outside
   useEffect(() => {
@@ -40,6 +42,23 @@ export default function UserMenu() {
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
+  };
+  
+  const handleLogout = async () => {
+    try {
+      // Close menu first for better UX
+      setIsOpen(false);
+      
+      // Perform the actual logout
+      await signOut({ 
+        redirect: false,
+      });
+      
+      // Then manually redirect to homepage
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   if (!session?.user) {
@@ -91,7 +110,7 @@ export default function UserMenu() {
             <li>
               <button 
                 className={styles.menuItem} 
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={handleLogout}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>

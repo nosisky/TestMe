@@ -2,11 +2,12 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import MobileNavToggle from "./MobileNavToggle";
 import LoginButton from "./LoginButton";
 import UserMenu from "./UserMenu";
 import styles from "./Header.module.scss";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,6 +15,7 @@ export default function Header() {
   const toggleRef = useRef<HTMLDivElement>(null);
   const { data: session } = useSession();
   const isAuthenticated = !!session;
+  const router = useRouter();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -21,6 +23,23 @@ export default function Header() {
 
   const closeMenu = () => {
     setIsMenuOpen(false);
+  };
+  
+  const handleLogout = async () => {
+    try {
+      // Close menu first for better UX
+      closeMenu();
+      
+      // Perform the actual logout
+      await signOut({ 
+        redirect: false,
+      });
+      
+      // Then manually redirect to homepage
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   // Handle clicks outside the menu to close it
@@ -118,9 +137,22 @@ export default function Header() {
           // Navigation for authenticated users
           <>
             <Link href="/dashboard" onClick={closeMenu}>Dashboard</Link>
-            <Link href="/dashboard/create/youtube" onClick={closeMenu}>Create Quiz</Link>
+            <Link href="/dashboard" onClick={closeMenu}>Create a Quiz</Link>
+            <Link href="/dashboard/my-quizzes" onClick={closeMenu}>My Quizzes</Link>
+            <Link href="/dashboard/profile" onClick={closeMenu}>Profile</Link>
+            <div className={styles.divider}></div>
             <div className={styles.mobileOnlyUserMenu}>
-              <UserMenu />
+              <button 
+                className={styles.logoutButton}
+                onClick={handleLogout}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                Logout
+              </button>
             </div>
           </>
         ) : (

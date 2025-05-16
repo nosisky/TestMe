@@ -60,6 +60,11 @@ export const authOptions: NextAuthOptions = {
       const parsedUrl = new URL(url);
       const callbackUrl = parsedUrl.searchParams.get('callbackUrl');
 
+      // Special case for signOut
+      if (url.includes('/api/auth/signout')) {
+        return `${baseUrl}/`;
+      }
+
       // If a callbackUrl is present in the query parameters, prioritize it
       if (callbackUrl) {
         // Ensure the callbackUrl is relative to the baseUrl to prevent open redirect vulnerabilities

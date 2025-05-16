@@ -1,10 +1,33 @@
 "use client";
+import { useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import styles from "./login.module.scss";
 import Link from "next/link";
 import LoginButton from "../components/LoginButton";
 import Header from "../components/Header";
 
 export default function LoginPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/dashboard");
+    }
+  }, [status, router]);
+
+  // Show loading state while checking authentication
+  if (status === "loading") {
+    return (
+      <div className={styles.loadingContainer}>
+        <div className={styles.loadingSpinner}></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.loginPage}>
       <Header currentPage="login" />
