@@ -1,4 +1,4 @@
-:root {
+:global(:root) {
   --primary: #7e57ff;
   --primary-hover: #6a4cdb;
   --text: #1a1a1a;
@@ -20,7 +20,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :global(:root) {
     --text: #ffffff;
     --text-light: #a0a0a0;
     --card-bg: #1a1a1a;
