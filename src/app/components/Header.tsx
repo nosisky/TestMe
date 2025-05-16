@@ -82,7 +82,7 @@ export default function Header() {
             // Navigation for authenticated users
             <>
               <Link href="/dashboard">Dashboard</Link>
-              <Link href="/dashboard/create">Create Quiz</Link>
+              <Link href="/dashboard">Create Quiz</Link>
             </>
           ) : (
             // Navigation for unauthenticated users (landing page)
