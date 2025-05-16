@@ -112,11 +112,14 @@ export async function POST(request: Request) {
     const quizTitle = videoDetails.title || `Quiz on YouTube video ${videoId}`;
     const quizDescription = `Quiz generated from YouTube video: ${videoDetails.title}`;
     
-    const questions = await generateQuizQuestions({
+    const questionsResponse = await generateQuizQuestions({
       content,
       numQuestions: questionCount,
       difficulty,
     });
+    
+    // Extract questions array from the response
+    const questions = questionsResponse.questions || [];
 
     console.log(questions, '<=----===>');
 
@@ -134,8 +137,11 @@ export async function POST(request: Request) {
       sourceType: 'youtube',
       source: {
         type: 'youtube',
-        videoId,
-        url: `https://www.youtube.com/watch?v=${videoId}`,
+        youtube: {
+          videoId,
+          title: videoDetails.title,
+          thumbnail: videoDetails.thumbnails?.high?.url || videoDetails.thumbnails?.default?.url,
+        }
       },
       questions,
       createdBy: userId,
