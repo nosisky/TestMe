@@ -100,12 +100,12 @@ export default function Dashboard() {
           >
             My Quizzes
           </button>
-          <Link 
+          {/* <Link 
             href="/dashboard/flashcards"
             className={styles.tabButton}
           >
             Flashcards
-          </Link>
+          </Link> */}
           <Link 
             href="/dashboard/history"
             className={styles.tabButton}
