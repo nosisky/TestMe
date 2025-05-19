@@ -9,22 +9,22 @@ import pdfParse from 'pdf-parse';
 
 export async function POST(request: Request) {
   try {
-    // Check authentication
+    // Check authentication but don't require it
     const session = await getServerSession();
-    if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
     
     // Get parameters from URL query string
     const url = new URL(request.url);
-    const numQuestions = parseInt(url.searchParams.get('numQuestions') || '5');
+    const numQuestionsStr = url.searchParams.get('numQuestions') || '5';
+    const numQuestions = parseInt(numQuestionsStr);
     const difficulty = url.searchParams.get('difficulty') || 'medium';
-    const isPublic = url.searchParams.get('isPublic') !== 'false'; // Default to true
     const tagsParam = url.searchParams.get('tags');
     const tags = tagsParam ? tagsParam.split(',').map(tag => tag.trim()) : [];
+    
+    console.log(`PDF Quiz Generation - Raw params: numQuestions=${numQuestionsStr}, parsed=${numQuestions}, difficulty=${difficulty}`);
+    
+    // Use createdBy from query string if provided, otherwise from session
+    const createdByParam = url.searchParams.get('createdBy');
+    const userId = createdByParam || session?.user?.email || 'anonymous';
     
     // Get the uploaded PDF file
     const formData = await request.formData();
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     // Check if PDF exceeds page limit
     if (pageCount > 50) {
       return NextResponse.json(
-        { error: 'PDF exceeds maximum page limit (15 pages)' },
+        { error: 'PDF exceeds maximum page limit (50 pages)' },
         { status: 400 }
       );
     }
@@ -87,6 +87,8 @@ export async function POST(request: Request) {
 
     // Generate quiz questions using our AI service
     try {
+      console.log(`Requesting ${numQuestions} questions at ${difficulty} difficulty from AI service`);
+      
       const questionsData = await generateQuizQuestions({
         content: pdfText,
         numQuestions,
@@ -122,8 +124,8 @@ export async function POST(request: Request) {
             }
           },
           difficulty,
-          createdBy: session.user.email || 'unknown',
-          isPublic,
+          createdBy: userId,
+          isPublic: true,
           tags,
           questions
         });

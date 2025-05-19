@@ -58,6 +58,13 @@ const pdfQuestionTemplates = [
 
 // Generate mock quiz questions based on content
 export async function generateMockQuizQuestions(params: GenerateQuestionsParams): Promise<QuizQuestionsResponse> {
+  // Ensure numQuestions is a number
+  const numQuestions = typeof params.numQuestions === 'string' 
+    ? parseInt(params.numQuestions) 
+    : params.numQuestions;
+    
+  console.log(`Mock AI Service - Generating ${numQuestions} questions at ${params.difficulty} difficulty`);
+  
   // Extract topics to make questions more relevant to the content
   const topics = extractTopics(params.content);
   
@@ -69,7 +76,7 @@ export async function generateMockQuizQuestions(params: GenerateQuestionsParams)
   // Generate the requested number of questions
   const questions: IQuizQuestion[] = [];
   
-  for (let i = 0; i < params.numQuestions; i++) {
+  for (let i = 0; i < numQuestions; i++) {
     // Select a random template and topic
     const templateIndex = Math.floor(Math.random() * templates.length);
     const template = templates[templateIndex];

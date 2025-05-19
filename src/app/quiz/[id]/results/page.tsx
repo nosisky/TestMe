@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Header from '@/app/components/Header';
@@ -32,7 +32,6 @@ interface Score {
 }
 
 export default function QuizResultsPage() {
-  const router = useRouter();
   const params = useParams();
   const quizId = params.id as string;
   const { status } = useSession();
@@ -41,15 +40,14 @@ export default function QuizResultsPage() {
   const [userAnswers, setUserAnswers] = useState<UserAnswers | null>(null);
   const [score, setScore] = useState<Score | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+    const [error, setError] = useState<string | null>(null);
+  
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push(`/login?callbackUrl=/quiz/${quizId}/results`);
-    } else if (status === 'authenticated' && quizId) {
+    // Allow any user to view results, regardless of authentication status
+    if (quizId) {
       loadResults();
     }
-  }, [status, quizId, router]);
+  }, [quizId]);
 
   const loadResults = async () => {
     setLoading(true);
@@ -163,6 +161,27 @@ export default function QuizResultsPage() {
   // Check if this is a quiz creator viewing analytics (no localStorage data)
   const isCreatorView = !localStorage.getItem(`quizAnswers_${quizId}`);
 
+  // Add this new component for unauthenticated users
+  
+  const CreateAccountPrompt = () => {
+    if (status === 'authenticated') return null;
+    
+    return (
+      <div className={styles.createAccountPrompt}>
+        <h3>Track Your Progress Over Time</h3>
+        <p>
+          Create a free account to save your quiz history, track your improvement, 
+          and access detailed analytics on your learning journey.
+        </p>
+        <div className={styles.createAccountActions}>
+          <Link href={`/login?callbackUrl=/dashboard`} className={styles.createAccountButton}>
+            Create Free Account
+          </Link>
+        </div>
+      </div>
+    );
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className={styles.pageContainer}>
@@ -196,7 +215,9 @@ export default function QuizResultsPage() {
             <h2>Error Loading Results</h2>
             <p>{error}</p>
             <Link href={`/quiz/${quizId}/instructions`} className={styles.button}>Try Quiz Again</Link>
-            <Link href="/dashboard" className={styles.buttonSecondary}>Back to Dashboard</Link>
+            <Link href={status === 'authenticated' ? "/dashboard" : "/"} className={styles.buttonSecondary}>
+              {status === 'authenticated' ? "Back to Dashboard" : "Back to Home"}
+            </Link>
           </div>
         </main>
       </div>
@@ -217,7 +238,9 @@ export default function QuizResultsPage() {
             <h2>Results Incomplete</h2>
             <p>Could not display your quiz results. Data might be missing.</p>
             <Link href={`/quiz/${quizId}/instructions`} className={styles.button}>Try Quiz Again</Link>
-            <Link href="/dashboard" className={styles.buttonSecondary}>Back to Dashboard</Link>
+            <Link href={status === 'authenticated' ? "/dashboard" : "/"} className={styles.buttonSecondary}>
+              {status === 'authenticated' ? "Back to Dashboard" : "Back to Home"}
+            </Link>
           </div>
         </main>
       </div>
@@ -254,8 +277,8 @@ export default function QuizResultsPage() {
                 Retry Quiz
               </Link>
             )}
-            <Link href="/dashboard" className={`${styles.button} ${styles.buttonSecondary}`}>
-              Back to Dashboard
+            <Link href="/" className={`${styles.button} ${styles.buttonSecondary}`}>
+              Back to Home
             </Link>
           </div>
 
@@ -266,6 +289,9 @@ export default function QuizResultsPage() {
             hashtags={['quiz', 'testme']}
           />
         </div>
+
+        {/* Show account creation prompt for unauthenticated users */}
+        <CreateAccountPrompt />
 
         <div className={styles.detailedReviewSection}>
           <h2>Detailed Review</h2>

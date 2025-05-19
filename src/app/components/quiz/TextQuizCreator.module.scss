@@ -1,0 +1,178 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  
+  label {
+    font-weight: 500;
+    color: var(--text);
+  }
+}
+
+.textarea {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--background);
+  color: var(--text);
+  font-size: 1rem;
+  min-height: 200px;
+  resize: vertical;
+  transition: all 0.2s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
+  }
+}
+
+.charCount {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  text-align: right;
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.button {
+  padding: 1rem 2rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+  }
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.error {
+  color: var(--error-color);
+  background: var(--error-bg);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  margin-bottom: 1rem;
+}
+
+/* Success Prompt Styles */
+.successPrompt {
+  text-align: center;
+  padding: 2rem;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  
+  .successIcon {
+    color: var(--success-color);
+    margin-bottom: 1.5rem;
+  }
+  
+  h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text);
+  }
+  
+  .promptSubtitle {
+    color: var(--text-light);
+    margin-bottom: 2rem;
+  }
+}
+
+.promptActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+  
+  button {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    transition: all 0.2s ease;
+    
+    &.primaryButton {
+      background: var(--primary);
+      color: white;
+      border: none;
+      
+      &:hover {
+        background: var(--primary-hover);
+      }
+    }
+    
+    &.secondaryButton {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border-color);
+      
+      &:hover {
+        background: var(--card-hover-bg);
+        border-color: var(--border-hover-color);
+      }
+    }
+  }
+}
+
+.loginPrompt {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: var(--card-hover-bg);
+  border-radius: var(--border-radius);
+  
+  p {
+    color: var(--text-light);
+    margin-bottom: 1rem;
+  }
+  
+  .loginButton {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: var(--primary-hover);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .promptActions {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+} 

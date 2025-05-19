@@ -1,3 +1,8 @@
+/**
+ * @author: Nas Abdulrasaq(nosisky@gmail.com)
+ * Email: nosisky@gmail.com
+ * Github: https://github.com/nosisky
+ */
 "use client";
 import styles from "./MobileNavToggle.module.scss";
 

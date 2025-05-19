@@ -1,0 +1,122 @@
+"use client";
+import styles from "./page.module.scss";
+import Link from "next/link";
+import Header from "./components/Header";
+import QuizCreatorLanding from "./components/QuizCreatorLanding";
+
+const features = [
+  {
+    icon: "🎥",
+    title: "YouTube Quiz",
+    desc: "Turn any YouTube video into an interactive quiz. Perfect for lectures, tutorials, and educational content."
+  },
+  {
+    icon: "📄",
+    title: "PDF Quiz",
+    desc: "Upload your study materials and get instant questions. Great for textbooks, research papers, and notes."
+  },
+  {
+    icon: "🖼️",
+    title: "Image Quiz",
+    desc: "Extract text from images and create quizzes. Ideal for screenshots, diagrams, and visual content."
+  },
+  {
+    icon: "✍️",
+    title: "Custom Text Quiz",
+    desc: "Paste any text and let AI generate smart questions. Perfect for articles, essays, and study notes."
+  },
+  {
+    icon: "🔗",
+    title: "Share & Collaborate",
+    desc: "Share your quizzes with friends, classmates, or study groups. Everyone can learn together!"
+  },
+  {
+    icon: "⚡",
+    title: "Smart Learning",
+    desc: "Get instant feedback, detailed explanations, and track your progress over time."
+  }
+];
+
+const steps = [
+  {
+    icon: "🎯",
+    title: "Choose Your Content",
+    desc: "Pick from YouTube, PDF, image, or text - whatever works best for you."
+  },
+  {
+    icon: "⚙️",
+    title: "Customize Your Quiz",
+    desc: "Set the number of questions, difficulty level, and more."
+  },
+  {
+    icon: "🚀",
+    title: "Start Learning",
+    desc: "Take your quiz and get immediate feedback on your answers."
+  },
+  {
+    icon: "📊",
+    title: "Track Progress",
+    desc: "Create an account to save your quizzes and track your improvement."
+  }
+];
+
+export default function Home() {
+  return (
+    <div className={styles.landing}>
+      <Header currentPage="home" />
+
+      <div className={styles.hero}>
+        <h1>
+          Turn Any Content Into
+          <br />
+          <span className={styles.emoji}>🎯</span> Smart Quizzes
+        </h1>
+        <p className={styles.subtitle}>
+          Transform YouTube videos, PDFs, images, or text into interactive quizzes.
+          <br />
+          No account needed to get started - just pick your content and begin learning!
+        </p>
+      </div>
+
+      <section className={styles.createQuizSection}>
+        <QuizCreatorLanding />
+      </section>
+
+      <section id="features" className={styles.features}>
+        <h2>Why Choose TestMe?</h2>
+        <div className={styles.featureGrid}>
+          {features.map((f, i) => (
+            <div className={styles.featureCard} key={i}>
+              <span className={styles.icon}>{f.icon}</span>
+              <span className={styles.title}>{f.title}</span>
+              <span className={styles.desc}>{f.desc}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="how" className={styles.how}>
+        <h2>How It Works</h2>
+        <div className={styles.steps}>
+          {steps.map((s, i) => (
+            <div className={styles.step} key={i}>
+              <span className={styles.icon}>{s.icon}</span>
+              <span className={styles.title}>{s.title}</span>
+              <span className={styles.desc}>{s.desc}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <footer className={styles.footer}>
+        <div className={styles.footerContent}>
+          <span>© {new Date().getFullYear()} TestMe. All rights reserved.</span>
+          <div className={styles.authorInfo}>
+            <span>Created by <a href="https://github.com/nosisky" target="_blank" rel="noopener noreferrer">Nas Abdulrasaq</a></span>
+            <span>Contact: <a href="mailto:nosisky@gmail.com">nosisky@gmail.com</a></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}

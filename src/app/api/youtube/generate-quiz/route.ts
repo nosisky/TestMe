@@ -71,6 +71,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { videoId, questionCount = 5, difficulty = 'medium' } = body;
 
+    console.log(`YouTube Quiz Generation - Params: questionCount=${questionCount}, difficulty=${difficulty}`);
+
     if (!videoId) {
       return NextResponse.json(
         { error: 'Video ID is required' },
@@ -112,6 +114,8 @@ export async function POST(request: Request) {
     const quizTitle = videoDetails.title || `Quiz on YouTube video ${videoId}`;
     const quizDescription = `Quiz generated from YouTube video: ${videoDetails.title}`;
     
+    console.log(`Requesting ${questionCount} questions at ${difficulty} difficulty from AI service for YouTube`);
+    
     const questionsResponse = await generateQuizQuestions({
       content,
       numQuestions: questionCount,
@@ -146,6 +150,7 @@ export async function POST(request: Request) {
       questions,
       createdBy: userId,
       difficulty,
+      isPublic: true,
     });
 
     console.log(quiz, '<=----===>');

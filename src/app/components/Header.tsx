@@ -1,3 +1,8 @@
+/**
+ * @author: Nas Abdulrasaq(nosisky@gmail.com)
+ * Email: nosisky@gmail.com
+ * Github: https://github.com/nosisky
+ */
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
@@ -118,7 +123,7 @@ export default function Header({ currentPage }: HeaderProps = {}) {
 
         <div className={styles.rightSection}>
           {!isAuthenticated && (
-            <div className={styles.loginWrapper}>
+            <div className={`${styles.loginWrapper} ${styles.desktopLoginOnly}`}>
               <LoginButton />
             </div>
           )}

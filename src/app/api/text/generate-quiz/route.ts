@@ -16,10 +16,8 @@ function generateTitleFromText(text: string, maxLength = 50): string {
 
 export async function POST(request: Request) {
   try {
+    // Get user session if available, but don't require it
     const session = await getServerSession();
-    if (!session || !session.user || !session.user.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const body = await request.json();
     const {
@@ -27,9 +25,14 @@ export async function POST(request: Request) {
       title: userProvidedTitle,
       numQuestions = 5,
       difficulty = 'medium',
-      isPublic = true,
-      tags = []
+      tags = [],
+      createdBy: createdByParam,
     } = body;
+
+    console.log(`Text Quiz Generation - Params: numQuestions=${numQuestions}, difficulty=${difficulty}`);
+
+    // Use createdBy from request if provided, otherwise from session
+    const userId = createdByParam || session?.user?.email || 'anonymous';
 
     if (!textContent || typeof textContent !== 'string' || textContent.trim().length < 50) {
       return NextResponse.json({ error: 'Text content must be at least 50 characters long.' }, { status: 400 });
@@ -41,6 +44,8 @@ export async function POST(request: Request) {
     const quizTitle = userProvidedTitle?.trim() || generateTitleFromText(textContent);
 
     // Generate quiz questions using AI service
+    console.log(`Requesting ${numQuestions} questions at ${difficulty} difficulty from AI service for text`);
+    
     const questionsData = await generateQuizQuestions({
       content: textContent,
       numQuestions: Number(numQuestions),
@@ -69,8 +74,8 @@ export async function POST(request: Request) {
         },
       },
       difficulty: difficulty,
-      createdBy: session.user.email,
-      isPublic: isPublic,
+      createdBy: userId,
+      isPublic: true,
       tags: Array.isArray(tags) ? tags.filter(tag => typeof tag === 'string' && tag.trim() !== '') : [],
       questions: questions,
     });

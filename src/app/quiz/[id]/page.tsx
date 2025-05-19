@@ -44,23 +44,17 @@ export default function QuizPage() {
   // const [quizCompleted, setQuizCompleted] = useState(false);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push(`/login?callbackUrl=/quiz/${quizId}`);
-    }
-  }, [status, router, quizId]);
-  
-  useEffect(() => {
-    if (status === 'authenticated' && quizId) {
+    if (quizId) {
       fetchQuiz();
     }
-  }, [quizId, status]); // fetchQuiz will be defined below
+  }, [quizId]);
   
   useEffect(() => {
-    if (status === 'authenticated' && quizId && quiz && quiz.questions.length > 0) {
+    if (quizId && quiz && quiz.questions.length > 0) {
       // Save start time for calculating time taken
       localStorage.setItem(`quizStartTime_${quizId}`, Date.now().toString());
     }
-  }, [status, quizId, quiz]);
+  }, [quizId, quiz]);
   
   const fetchQuiz = async () => {
     setLoading(true);
@@ -229,7 +223,7 @@ export default function QuizPage() {
               onClick={handleNextQuestion}
               disabled={selectedOptionForCurrentQuestion === null}
             >
-              {currentQuestionIndex < quiz.questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
+              {currentQuestionIndex < quiz.questions.length - 1 ? 'Next' : 'Finish Quiz'}
             </button>
           </div>
         </div>

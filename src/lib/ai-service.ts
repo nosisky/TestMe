@@ -67,17 +67,27 @@ interface GenerateQuestionsParams {
 
 // Generate quiz questions using selected AI provider
 export async function generateQuizQuestions(params: GenerateQuestionsParams) {
+  // Ensure numQuestions is a number
+  const numQuestions = typeof params.numQuestions === 'string' 
+    ? parseInt(params.numQuestions) 
+    : params.numQuestions;
+  
+  console.log(`AI Service - Generating ${numQuestions} questions at ${params.difficulty} difficulty`);
+  
   // Use mock service when in development or missing API keys
   if (USE_MOCK_SERVICE) {
     console.log('Using mock AI service for quiz generation');
-    return await generateMockQuizQuestions(params);
+    return await generateMockQuizQuestions({
+      ...params,
+      numQuestions
+    });
   }
   
   const activeProvider = await getActiveAIProvider();
   
   const prompt = `
     You are an expert quiz creator. Based on the following content,
-    create ${params.numQuestions} multiple-choice questions at ${params.difficulty} difficulty level.
+    create ${numQuestions} multiple-choice questions at ${params.difficulty} difficulty level.
     
     Content:
     ${params.content.substring(0, 4000)} // Limit content to first 4000 chars to fit in context window

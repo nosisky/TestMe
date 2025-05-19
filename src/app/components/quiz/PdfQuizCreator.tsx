@@ -1,7 +1,13 @@
+/**
+ * @author: Nas Abdulrasaq(nosisky@gmail.com)
+ * Email: nosisky@gmail.com
+ * Github: https://github.com/nosisky
+ */
 'use client';
 
 import { useState, useRef, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import SocialShareButtons from '@/app/components/SocialShareButtons';
 import RangeSlider from '@/app/components/RangeSlider';
 import styles from './PdfQuizCreator.module.scss';
@@ -15,6 +21,7 @@ interface QuizOptions {
 
 export default function PdfQuizCreator() {
   const router = useRouter();
+  const { status } = useSession();
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,8 +113,6 @@ export default function PdfQuizCreator() {
         throw new Error(data.error || 'Failed to generate quiz');
       }
       
-      // Redirect to the quiz page -- NO, update state instead
-      // router.push(`/quiz/${data.quiz.id}`);
       setGeneratedQuizId(data.quiz.id);
       setShareableLink(`${window.location.origin}/quiz/${data.quiz.id}/instructions`);
       setShowPostGenerationPrompt(true);
@@ -127,67 +132,62 @@ export default function PdfQuizCreator() {
   const handleCopyShareableLink = () => {
     if (!shareableLink) return;
     navigator.clipboard.writeText(shareableLink).then(() => {
-      setCopyStatusMessage('Link copied!');
+      setCopyStatusMessage('Link copied to clipboard!');
       setTimeout(() => setCopyStatusMessage(''), 3000);
-    }).catch(() => {
-      setCopyStatusMessage('Failed to copy.');
+    }).catch(err => {
+      console.error('Failed to copy link: ', err);
+      setCopyStatusMessage('Failed to copy link. Please try again.');
       setTimeout(() => setCopyStatusMessage(''), 3000);
     });
   };
 
   if (showPostGenerationPrompt && generatedQuizId) {
     return (
-      <div className={styles.pdfQuizCreatorContainer}> {/* Main container for the prompt view */}
-        <main className={`${styles.promptPageMain}`}> {/* Centering class */}
-          <div className={styles.promptContainer}>
-            <svg className={styles.successIcon} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="64px" height="64px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 16.17l7.59-7.59L19 10l-9 9z"/></svg>
-            <h2>Quiz Generated Successfully!</h2>
-            <p className={styles.promptSubtitle}>Your new quiz from the PDF is ready. What next?</p>
-            
-            <div className={styles.promptActions}>
-              <button onClick={handleTakeQuizNow} className={`${styles.button} ${styles.primaryButtonLarge}`}>
-                Take Quiz Now
-              </button>
-              <button onClick={handleCopyShareableLink} className={`${styles.button} ${styles.secondaryButtonLarge}`}>
-                Copy Shareable Link
-              </button>
-            </div>
-
-            {copyStatusMessage && (
-              <p className={`${styles.copyStatus} ${copyStatusMessage.includes('Failed') ? styles.errorText : styles.successText}`}>
-                {copyStatusMessage}
-              </p>
-            )}
-
-            {shareableLink && (
-              <div className={styles.shareLinkContainer}>
-                <p>Or share this link directly:</p>
-                <div className={styles.shareLinkBox}>
-                  <a href={shareableLink} target="_blank" rel="noopener noreferrer" className={styles.shareableLinkAnchor}>
-                    {shareableLink}
-                  </a>
-                </div>
-              </div>
-            )}
-            
-            <SocialShareButtons 
-              url={shareableLink}
-              title={`Check out this quiz: ${file?.name?.replace('.pdf', '') || 'PDF Quiz'}`}
-              description="I've just created a new quiz from a PDF! Take it now and test your knowledge."
-              hashtags={['quiz', 'testme', 'pdf', 'learning']}
-            />
-            
-            <button onClick={() => router.push('/dashboard')} className={`${styles.button} ${styles.tertiaryButtonLarge} ${styles.createAnotherButton}`}>
-              ← Back to Dashboard
+      <div className={styles.container}>
+        <div className={styles.successPrompt}>
+          <svg className={styles.successIcon} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="64px" height="64px">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 16.17l7.59-7.59L19 10l-9 9z"/>
+          </svg>
+          <h2>Quiz Generated Successfully!</h2>
+          <p className={styles.promptSubtitle}>Your new quiz is ready. What would you like to do next?</p>
+          
+          <div className={styles.promptActions}>
+            <button onClick={handleTakeQuizNow} className={styles.primaryButton}>
+              Take Quiz Now
+            </button>
+            <button onClick={handleCopyShareableLink} className={styles.secondaryButton}>
+              Copy Shareable Link
             </button>
           </div>
-        </main>
+
+          {copyStatusMessage && (
+            <p className={`${styles.copyStatus} ${copyStatusMessage.includes('Failed') ? styles.errorText : styles.successText}`}>
+              {copyStatusMessage}
+            </p>
+          )}
+
+          {status === 'unauthenticated' && (
+            <div className={styles.loginPrompt}>
+              <p>Want to save your progress and access more features?</p>
+              <button onClick={() => router.push('/login')} className={styles.loginButton}>
+                Login to Save Progress
+              </button>
+            </div>
+          )}
+          
+          <SocialShareButtons 
+            url={shareableLink}
+            title="Check out this quiz I just created!"
+            description="I've just created a new quiz! Take it now and test your knowledge."
+            hashtags={['quiz', 'testme', 'learning']}
+          />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.container}> {/* Original form container */}
+    <div className={styles.container}>
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.fileUpload}>
           <label htmlFor="pdf-upload" className={styles.fileLabel}>
