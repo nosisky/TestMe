@@ -199,7 +199,7 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
        - Every step should be properly formatted with $$...$$ when on separate lines
     6. Provide 4 possible answers with only 1 correct option
     7. Mark which answer is correct (0-3 index)
-    8. Include a detailed explanation where EVERY step uses proper LaTeX formatting
+    8. Include a detailed breakdown of explanation where EVERY step uses proper LaTeX formatting
     
     Format your response as a JSON object with this structure:
     {

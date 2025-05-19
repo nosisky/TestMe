@@ -140,8 +140,8 @@ const ConversationalQuizCreator = () => {
       setError("Please upload a PDF file");
       return false;
     }
-    if (quizType === "text" && (!textContent || textContent.length < 100)) {
-      setError("Please enter at least 100 characters");
+    if (quizType === "text" && (!textContent || textContent.length < 50)) {
+      setError("Please enter at least 50 characters");
       return false;
     }
     if (quizType === "image") {
@@ -575,15 +575,15 @@ const ConversationalQuizCreator = () => {
                       Paste any text – notes, articles, or book excerpts – and we&apos;ll create questions from it.
                     </p>
                     <textarea
-                      placeholder="Paste or type your content here (minimum 100 characters)..."
+                      placeholder="Paste or type your content here (minimum 50 characters)..."
                       value={textContent}
                       onChange={(e) => setTextContent(e.target.value)}
                       className={styles.textareaInput}
                       rows={8}
                     ></textarea>
                     <div className={styles.charCount}>
-                      {textContent.length}/100 characters minimum
-                      {textContent.length >= 100 && " ✓"}
+                      {textContent.length}/50 characters minimum
+                      {textContent.length >= 50 && " ✓"}
                     </div>
                   </div>
                 )}
@@ -828,15 +828,15 @@ const ConversationalQuizCreator = () => {
                   Paste any text – notes, articles, or book excerpts – and we&apos;ll create questions from it.
                 </p>
                 <textarea
-                  placeholder="Paste or type your content here (minimum 100 characters)..."
+                  placeholder="Paste or type your content here (minimum 50 characters)..."
                   value={textContent}
                   onChange={(e) => setTextContent(e.target.value)}
                   className={styles.textareaInput}
                   rows={8}
                 ></textarea>
                 <div className={styles.charCount}>
-                  {textContent.length}/100 characters minimum
-                  {textContent.length >= 100 && " ✓"}
+                  {textContent.length}/50 characters minimum
+                  {textContent.length >= 50 && " ✓"}
                 </div>
               </div>
             )}
