@@ -4,6 +4,11 @@ interface GenerateQuestionsParams {
   content: string;
   numQuestions: number;
   difficulty: string;
+  includeTypes?: {
+    multipleChoice?: boolean;
+    trueFalse?: boolean;
+    math?: boolean;
+  };
 }
 
 interface QuizQuestionsResponse {
@@ -29,7 +34,7 @@ function extractTopics(content: string): string[] {
     .map(entry => entry[0]);
 }
 
-// Template questions by content type
+// Template questions by content type and question type
 const youtubeQuestionTemplates = [
   "What is the main topic discussed in this video?",
   "According to the video, what is the primary reason for {topic}?",
@@ -56,6 +61,32 @@ const pdfQuestionTemplates = [
   "What future development is predicted for {topic}?"
 ];
 
+const trueFalseTemplates = [
+  "{topic} is the primary focus of this content.",
+  "The content suggests that {topic} is more effective than {topic2}.",
+  "According to the content, {topic} was developed before {topic2}.",
+  "The content identifies {topic} as a critical component of {topic2}.",
+  "The author recommends using {topic} in all situations.",
+  "The content states that {topic} is universally accepted in the field.",
+  "Research supports the effectiveness of {topic} according to this content.",
+  "The content mentions that {topic} has significant limitations.",
+  "The content suggests that {topic} will become more important in the future.",
+  "The author has directly worked with {topic} based on the content."
+];
+
+const mathQuestionTemplates = [
+  "If {topic} increases by x%, what happens to {topic2}?",
+  "What is the probability of {topic} occurring in a system with n components?",
+  "If there are x instances of {topic} and y instances of {topic2}, what is their ratio?",
+  "How many {topic} elements would be needed to achieve optimal {topic2}?",
+  "If {topic} grows exponentially at rate r, when will it double?",
+  "What is the average number of {topic} instances in a typical {topic2} scenario?",
+  "If {topic} has a success rate of p, what is the expected number of attempts needed?",
+  "What is the standard deviation of {topic} measurements in the given context?",
+  "If {topic} follows a normal distribution, what is the probability it exceeds value k?",
+  "What is the optimal balance between {topic} and {topic2} according to the formula?"
+];
+
 // Generate mock quiz questions based on content
 export async function generateMockQuizQuestions(params: GenerateQuestionsParams): Promise<QuizQuestionsResponse> {
   // Ensure numQuestions is a number
@@ -68,36 +99,81 @@ export async function generateMockQuizQuestions(params: GenerateQuestionsParams)
   // Extract topics to make questions more relevant to the content
   const topics = extractTopics(params.content);
   
-  // Determine if it's likely YouTube or PDF content
-  const templates = params.content.includes('video') || params.content.includes('watch') || params.content.includes('YouTube')
-    ? youtubeQuestionTemplates
-    : pdfQuestionTemplates;
+  // Determine which question types to include
+  const includeTypes = params.includeTypes || {
+    multipleChoice: true,
+    trueFalse: true,
+    math: false
+  };
   
-  // Generate the requested number of questions
+  // If no question types are selected, default to multiple choice
+  if (!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math) {
+    includeTypes.multipleChoice = true;
+  }
+  
+  // Calculate question distribution
+  let multipleChoiceCount = 0;
+  let trueFalseCount = 0;
+  let mathCount = 0;
+  
+  // Count enabled types
+  const enabledTypesCount = (includeTypes.multipleChoice ? 1 : 0) + 
+                           (includeTypes.trueFalse ? 1 : 0) + 
+                           (includeTypes.math ? 1 : 0);
+  
+  // Distribute questions based on enabled types
+  if (enabledTypesCount === 1) {
+    // If only one type is selected, use all questions for that type
+    if (includeTypes.multipleChoice) multipleChoiceCount = numQuestions;
+    else if (includeTypes.trueFalse) trueFalseCount = numQuestions;
+    else if (includeTypes.math) mathCount = numQuestions;
+  } else if (enabledTypesCount === 2) {
+    // If two types are selected, distribute evenly with a bias toward multiple choice
+    if (includeTypes.multipleChoice && includeTypes.trueFalse) {
+      multipleChoiceCount = Math.ceil(numQuestions * 0.6);
+      trueFalseCount = numQuestions - multipleChoiceCount;
+    } else if (includeTypes.multipleChoice && includeTypes.math) {
+      multipleChoiceCount = Math.ceil(numQuestions * 0.7);
+      mathCount = numQuestions - multipleChoiceCount;
+    } else if (includeTypes.trueFalse && includeTypes.math) {
+      trueFalseCount = Math.ceil(numQuestions * 0.6);
+      mathCount = numQuestions - trueFalseCount;
+    }
+  } else {
+    // If all three types are selected, distribute with priority to multiple choice
+    multipleChoiceCount = Math.ceil(numQuestions * 0.5);
+    trueFalseCount = Math.ceil(numQuestions * 0.3);
+    mathCount = numQuestions - multipleChoiceCount - trueFalseCount;
+  }
+  
+  console.log(`Mock AI Service - Question distribution: MC=${multipleChoiceCount}, TF=${trueFalseCount}, Math=${mathCount}`);
+  
+  // Determine if it's likely YouTube or PDF content for multiple choice questions
+  const isYouTubeContent = params.content.includes('video') || 
+                         params.content.includes('watch') || 
+                         params.content.includes('YouTube');
+  
+  const multipleChoiceTemplates = isYouTubeContent ? youtubeQuestionTemplates : pdfQuestionTemplates;
+  
+  // Generate the questions
   const questions: IQuizQuestion[] = [];
   
-  for (let i = 0; i < numQuestions; i++) {
-    // Select a random template and topic
-    const templateIndex = Math.floor(Math.random() * templates.length);
-    const template = templates[templateIndex];
+  // Generate Multiple Choice questions
+  for (let i = 0; i < multipleChoiceCount; i++) {
+    const template = multipleChoiceTemplates[Math.floor(Math.random() * multipleChoiceTemplates.length)];
     const topic = topics[Math.floor(Math.random() * topics.length)];
     const topic2 = topics[Math.floor(Math.random() * topics.length)];
     
-    // Create the question
     const question = template
       .replace('{topic}', topic)
       .replace('{topic2}', topic2);
     
-    // Generate options based on difficulty
     const options = generateOptions(topic, params.difficulty);
-    
-    // Randomize which option is correct
     const correctAnswer = Math.floor(Math.random() * 4);
-    
-    // Add explanation
-    const explanation = `This is the correct answer because it accurately describes ${topic} as presented in the ${params.content.includes('video') ? 'video' : 'document'}.`;
+    const explanation = `This is the correct answer because it accurately describes ${topic} as presented in the ${isYouTubeContent ? 'video' : 'document'}.`;
     
     questions.push({
+      type: 'multiple_choice',
       question,
       options,
       correctAnswer,
@@ -105,10 +181,83 @@ export async function generateMockQuizQuestions(params: GenerateQuestionsParams)
     });
   }
   
-  return { questions };
+  // Generate True/False questions
+  for (let i = 0; i < trueFalseCount; i++) {
+    const template = trueFalseTemplates[Math.floor(Math.random() * trueFalseTemplates.length)];
+    const topic = topics[Math.floor(Math.random() * topics.length)];
+    const topic2 = topics[Math.floor(Math.random() * topics.length)];
+    
+    const question = template
+      .replace('{topic}', topic)
+      .replace('{topic2}', topic2);
+    
+    const isTrue = Math.random() > 0.5;
+    const correctAnswer = isTrue ? 0 : 1; // 0 for True, 1 for False
+    const options = ["True", "False"];
+    const explanation = `This statement is ${isTrue ? 'true' : 'false'} because ${isTrue ? 'it accurately reflects' : 'it contradicts'} the information about ${topic} in the content.`;
+    
+    questions.push({
+      type: 'true_false',
+      question,
+      options,
+      correctAnswer,
+      explanation,
+      isTrue
+    });
+  }
+  
+  // Generate Math questions
+  for (let i = 0; i < mathCount; i++) {
+    const template = mathQuestionTemplates[Math.floor(Math.random() * mathQuestionTemplates.length)];
+    const topic = topics[Math.floor(Math.random() * topics.length)];
+    const topic2 = topics[Math.floor(Math.random() * topics.length)];
+    
+    const question = template
+      .replace('{topic}', topic)
+      .replace('{topic2}', topic2);
+    
+    // Generate a simple formula for demonstration
+    const formulas = [
+      "\\frac{x}{y} = z",
+      "\\sqrt{x^2 + y^2} = z",
+      "\\sum_{i=1}^{n} x_i = y",
+      "P(x) = \\frac{1}{\\sqrt{2\\pi\\sigma^2}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}",
+      "\\int_{a}^{b} f(x) dx = F(b) - F(a)",
+      "E = mc^2",
+      "F = G\\frac{m_1 m_2}{r^2}",
+      "PV = nRT"
+    ];
+    
+    const formula = formulas[Math.floor(Math.random() * formulas.length)];
+    const options = generateMathOptions(topic, params.difficulty);
+    const correctAnswer = Math.floor(Math.random() * 4);
+    const explanation = `This is the correct mathematical solution for ${topic} based on the principles described in the content.`;
+    
+    questions.push({
+      type: 'math',
+      question,
+      options,
+      correctAnswer,
+      explanation,
+      formula
+    });
+  }
+  
+  // Shuffle the questions for variety
+  return { questions: shuffleArray(questions) };
 }
 
-// Generate plausible options based on topic and difficulty
+// Shuffle an array (Fisher-Yates algorithm)
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
+// Generate plausible options based on topic and difficulty for multiple choice
 function generateOptions(topic: string, difficulty: string): string[] {
   // Create base options
   const baseOptions = [
@@ -137,4 +286,38 @@ function generateOptions(topic: string, difficulty: string): string[] {
   
   // Medium difficulty (default)
   return baseOptions;
+}
+
+// Generate math-specific options
+function generateMathOptions(topic: string, difficulty: string): string[] {
+  const variables = ['x', 'y', 'z', 'n', 'p', 'r'];
+  const variable = variables[Math.floor(Math.random() * variables.length)];
+  
+  // Functions to generate random values
+  const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const randomFloat = (min: number, max: number) => parseFloat((Math.random() * (max - min) + min).toFixed(2));
+  
+  if (difficulty === 'easy') {
+    return [
+      `${randomInt(1, 10)}`,
+      `${randomInt(11, 20)}`,
+      `${randomInt(21, 30)}`,
+      `${randomInt(31, 40)}`
+    ];
+  } else if (difficulty === 'hard') {
+    return [
+      `${variable} = ${randomFloat(0.01, 0.99)}`,
+      `${variable} = ${randomFloat(1, 9.99)}`,
+      `${variable} = \\sqrt{${randomInt(2, 10)}}`,
+      `${variable} = \\frac{${randomInt(1, 10)}}{${randomInt(2, 10)}}`
+    ];
+  }
+  
+  // Medium difficulty (default)
+  return [
+    `${randomInt(1, 100)}%`,
+    `${randomFloat(0.1, 9.9)}`,
+    `\\frac{1}{${randomInt(2, 10)}}`,
+    `${randomInt(1, 20)} \\times ${randomInt(1, 10)}`
+  ];
 } 

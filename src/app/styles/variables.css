@@ -13,6 +13,7 @@
   --card-bg: #ffffff;
   --card-bg-dark: #1a1a1a;
   --background: #f8faff;
+  --foreground: #171717;
   --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
   --border-radius: 12px;
   --border-radius-md: 8px;
@@ -44,6 +45,18 @@
   --card-bg-alt: #f8f9fa;
   --border-color: #ccc;
   --warning-color: #f59e0b;
+  
+  /* Range slider variables */
+  --range-bg: #e0e0e0;
+  --disabled-color: #ccc;
+  
+  /* Button hover states */
+  --button-primary-hover: #6544e0;
+  --button-secondary-hover: #f5f5f5;
+  
+  /* Layout variables */
+  --gray-alpha-100: #f5f5f5;
+  --gray-alpha-200: #eeeeee;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -54,6 +67,7 @@
     --text-light: #a0a0a0;
     --card-bg: #1a1a1a;
     --background: #13141f;
+    --foreground: #ededed;
     --bg-gradient: linear-gradient(135deg, #13141f 0%, #1a1b2e 100%);
     --shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
@@ -77,5 +91,17 @@
     --card-bg-alt: #222222;
     --border-color: #444;
     --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.2), 0 2px 4px -1px rgba(0,0,0,0.1);
+    
+    /* Range slider variables */
+    --range-bg-dark: #444;
+    --disabled-color-dark: #555;
+    
+    /* Button hover states */
+    --button-primary-hover: #8a5aff;
+    --button-secondary-hover: #2a2a2a;
+    
+    /* Layout variables */
+    --gray-alpha-100: #333;
+    --gray-alpha-200: #444;
   }
 } 

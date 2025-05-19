@@ -135,8 +135,50 @@ const ConversationalQuizCreator = () => {
     return true;
   };
 
+  const detectContentType = () => {
+    // Default to enabling just multiple-choice and true/false for text and YouTube
+    const defaultSettings = {
+      multipleChoice: true,
+      trueFalse: true,
+      math: false
+    };
+    
+    // For technical subjects, we might want to enable math questions
+    if (quizType === "text") {
+      // Check if text content appears to be technical/mathematical
+      const mathTerms = [
+        "equation", "formula", "calculus", "theorem", 
+        "math", "physics", "chemistry", "engineering",
+        "=", "+", "-", "*", "/", "^", "√", "∫", "≠", "≤", "≥",
+        "geometry", "algebra", "trigonometry", "algorithm"
+      ];
+      
+      const hasMathContent = mathTerms.some(term => 
+        textContent.toLowerCase().includes(term)
+      );
+      
+      setIncludeTypes({
+        ...defaultSettings,
+        math: hasMathContent
+      });
+    }
+    else if (quizType === "youtube") {
+      // For YouTube, default to non-technical (user can change if needed)
+      setIncludeTypes(defaultSettings);
+    }
+    else if (quizType === "pdf") {
+      // For PDFs, enable all question types since they often contain diverse content
+      setIncludeTypes({
+        multipleChoice: true,
+        trueFalse: true,
+        math: true
+      });
+    }
+  };
+
   const handleProceed = () => {
     if (validateInput()) {
+      detectContentType(); // Auto-detect and set appropriate question types
       setStep("config");
       setError("");
     }

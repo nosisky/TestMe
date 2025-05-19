@@ -64,7 +64,7 @@ const defaultConfigs = [
   },
   {
     provider: 'deepseek',
-    defaultModel: 'deepseek-chat',
+    defaultModel: 'deepseek-chat-v1',
     temperature: 0.7,
     maxTokens: 2048,
     isActive: false
@@ -76,12 +76,34 @@ const AIConfig = mongoose.models.AIConfig || mongoose.model<IAIConfig>('AIConfig
 
 // Ensure default configurations exist
 export const initializeAIConfigs = async () => {
-  for (const config of defaultConfigs) {
-    await AIConfig.findOneAndUpdate(
-      { provider: config.provider },
-      { $setOnInsert: config },
-      { upsert: true, new: true }
-    );
+  // First, determine which provider should be active based on env variable
+  const defaultProvider = process.env.DEFAULT_AI_PROVIDER as AIProvider || 'openai';
+  console.log('Initializing AI configs with default provider:', defaultProvider);
+  
+  // Create modified configs with the correct active status
+  const configsWithCorrectActiveStatus = defaultConfigs.map(config => ({
+    ...config,
+    isActive: config.provider === defaultProvider
+  }));
+  
+  // Upsert all configs
+  for (const config of configsWithCorrectActiveStatus) {
+    const existing = await AIConfig.findOne({ provider: config.provider });
+    
+    if (existing) {
+      // If config exists but active status doesn't match environment variable, update it
+      if (existing.isActive !== config.isActive) {
+        console.log(`Updating active status for ${config.provider} to ${config.isActive}`);
+        await AIConfig.findOneAndUpdate(
+          { provider: config.provider },
+          { isActive: config.isActive }
+        );
+      }
+    } else {
+      // Create new config
+      console.log(`Creating new config for ${config.provider} with active status ${config.isActive}`);
+      await AIConfig.create(config);
+    }
   }
 };
 

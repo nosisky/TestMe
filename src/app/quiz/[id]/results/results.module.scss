@@ -7,6 +7,175 @@
   background-color: var(--background-color);
 }
 
+// Main container for results page
+.resultsContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--background-color);
+}
+
+.resultsMain {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+  gap: 2rem;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.resultsHeader {
+  width: 100%;
+  max-width: 800px;
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-color-primary);
+    margin-bottom: 0.5rem;
+  }
+  
+  h2 {
+    font-size: 1.3rem;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+    margin-bottom: 1.5rem;
+  }
+}
+
+.scoreSection {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 2rem 0;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.scoreBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 2rem;
+  
+  .scoreValue {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+  }
+  
+  .scoreLabel {
+    font-size: 1rem;
+    color: var(--text-color-secondary);
+    margin-top: 0.5rem;
+  }
+}
+
+.scoreDivider {
+  width: 1px;
+  height: 50px;
+  background-color: var(--border-color);
+  margin: 0 1rem;
+  
+  @media (max-width: 600px) {
+    display: none;
+  }
+}
+
+.timeTaken {
+  margin: 1rem 0;
+  font-size: 1rem;
+  color: var(--text-color-secondary);
+  background-color: var(--background-color-light);
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius-sm);
+  display: inline-block;
+}
+
+.actionButtons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.reviewButton,
+.dashboardButton,
+.shareButton {
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  text-decoration: none;
+  text-align: center;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  cursor: pointer;
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.reviewButton {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  
+  &:hover {
+    background-color: var(--primary-color-dark);
+  }
+}
+
+.dashboardButton {
+  background-color: var(--secondary-color);
+  color: white;
+  border: none;
+  
+  &:hover {
+    background-color: var(--secondary-color-dark);
+  }
+}
+
+.shareButton {
+  background-color: var(--info-color);
+  color: white;
+  border: none;
+  
+  &:hover {
+    background-color: #0f8599; /* Darker version of info-color */
+    opacity: 0.9;
+  }
+}
+
+.reviewSection {
+  width: 100%;
+  max-width: 800px;
+  
+  h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--text-color-primary);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--primary-color-light);
+  }
+}
+
+.questionsContainer {
+  width: 100%;
+}
+
 .mainContent {
   flex-grow: 1;
   display: flex;
@@ -111,20 +280,6 @@
   @media (min-width: 600px) {
     flex-direction: row;
     justify-content: center;
-  }
-}
-
-.detailedReviewSection {
-  width: 100%;
-  max-width: 800px;
-  h2 {
-    font-size: 1.8rem;
-    font-weight: 600;
-    color: var(--text-color-primary);
-    margin-bottom: 1.5rem;
-    text-align: center;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid var(--primary-color-light);
   }
 }
 

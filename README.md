@@ -81,7 +81,17 @@ TestMe is a web application that generates quizzes from YouTube videos, PDFs, im
    - Create a new API key
    - Add the API key to your `.env.local` file
 
-4. **NextAuth Secret**:
+4. **Claude API Key** (Optional):
+   - Visit [Anthropic Console](https://console.anthropic.com/)
+   - Create a new API key
+   - Add the API key to your `.env.local` file as `CLAUDE_API_KEY`
+
+5. **DeepSeek API Key** (Optional):
+   - Visit [DeepSeek API](https://platform.deepseek.com/)
+   - Sign up and create a new API key
+   - Add the API key to your `.env.local` file as `DEEPSEEK_API_KEY`
+
+6. **NextAuth Secret**:
    - Generate a random string or use a tool like `openssl rand -base64 32` in your terminal
    - Add this as your NEXTAUTH_SECRET in the `.env.local` file
 

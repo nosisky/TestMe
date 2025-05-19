@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Header from '@/app/components/Header';
-import SocialShareButtons from '@/app/components/SocialShareButtons';
 import MetaTags from '@/app/components/MetaTags';
 import styles from './results.module.scss'; // To be created
 import { MathJax, MathJaxContext } from 'better-react-mathjax';
@@ -46,6 +45,14 @@ export default function QuizResultsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showReview, setShowReview] = useState(false);
+  const [timeTaken, setTimeTaken] = useState<number | undefined>(undefined);
+  
+  // Utility function to format time in minutes and seconds
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+  };
   
   useEffect(() => {
     // Allow any user to view results, regardless of authentication status
@@ -126,9 +133,31 @@ export default function QuizResultsPage() {
 
   const saveQuizResultToDb = async (quizIdToSave: string, currentScore: Score, totalQuestions: number) => {
     try {
-      // Calculate time taken in seconds (if stored in localStorage)
+      // Get the start time from localStorage
       const startTime = localStorage.getItem(`quizStartTime_${quizIdToSave}`);
-      const timeTaken = startTime ? Math.floor((Date.now() - parseInt(startTime)) / 1000) : undefined;
+      
+      // Check if we already have a stored end time for this quiz
+      let quizTimeTaken;
+      const storedEndTime = localStorage.getItem(`quizEndTime_${quizIdToSave}`);
+      
+      if (storedEndTime) {
+        // If we have an end time, use the pre-calculated time
+        quizTimeTaken = parseInt(localStorage.getItem(`quizTimeTaken_${quizIdToSave}`) || '0');
+      } else if (startTime) {
+        // If no end time but we have start time, this is the first load of results
+        // Calculate and store the time taken and end time
+        const endTime = Date.now();
+        quizTimeTaken = Math.floor((endTime - parseInt(startTime)) / 1000);
+        
+        // Store the end time and time taken to prevent recalculation on page refresh
+        localStorage.setItem(`quizEndTime_${quizIdToSave}`, endTime.toString());
+        localStorage.setItem(`quizTimeTaken_${quizIdToSave}`, quizTimeTaken.toString());
+      } else {
+        quizTimeTaken = undefined;
+      }
+      
+      // Set the timeTaken state for display
+      setTimeTaken(quizTimeTaken);
       
       // Prepare detailed answers data from localStorage
       const storedAnswers = localStorage.getItem(`quizAnswers_${quizIdToSave}`);
@@ -152,7 +181,7 @@ export default function QuizResultsPage() {
           quizId: quizIdToSave,
           score: currentScore.correct,
           totalQuestions: totalQuestions,
-          timeTaken: timeTaken,
+          timeTaken: quizTimeTaken,
           answers: detailedAnswers
         }),
       });
@@ -165,27 +194,6 @@ export default function QuizResultsPage() {
 
   // Check if this is a quiz creator viewing analytics (no localStorage data)
   const isCreatorView = !localStorage.getItem(`quizAnswers_${quizId}`);
-
-  // Add this new component for unauthenticated users
-  
-  const CreateAccountPrompt = () => {
-    if (status === 'authenticated') return null;
-    
-    return (
-      <div className={styles.createAccountPrompt}>
-        <h3>Track Your Progress Over Time</h3>
-        <p>
-          Create a free account to save your quiz history, track your improvement, 
-          and access detailed analytics on your learning journey.
-        </p>
-        <div className={styles.createAccountActions}>
-          <Link href={`/login?callbackUrl=/dashboard`} className={styles.createAccountButton}>
-            Create Free Account
-          </Link>
-        </div>
-      </div>
-    );
-  };
 
   // Configure MathJax
   const mathJaxConfig = {
@@ -374,9 +382,38 @@ export default function QuizResultsPage() {
               <button className={styles.reviewButton} onClick={() => setShowReview(!showReview)}>
                 {showReview ? 'Hide Review' : 'Show Review'}
               </button>
-              <Link className={styles.dashboardButton} href="/dashboard">
-                Back to Dashboard
-              </Link>
+              {status === 'authenticated' ? (
+                <Link className={styles.dashboardButton} href="/dashboard">
+                  Back to Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link className={styles.dashboardButton} href="/">
+                    Back to Home
+                  </Link>
+                  <button 
+                    className={styles.shareButton} 
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: `Quiz Results: ${quiz.title}`,
+                          text: `I scored ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz!`,
+                          url: window.location.href,
+                        }).catch(err => console.log('Error sharing:', err));
+                      } else {
+                        // Fallback - copy to clipboard
+                        const url = window.location.href;
+                        navigator.clipboard.writeText(
+                          `I scored ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz! Try it yourself at ${url}`
+                        );
+                        alert('Quiz results link copied to clipboard!');
+                      }
+                    }}
+                  >
+                    Share Results
+                  </button>
+                </>
+              )}
             </div>
           </div>
           
