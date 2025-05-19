@@ -1,4 +1,3 @@
-
 "use client";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -139,12 +138,11 @@ export default function Dashboard() {
                 <p>Enter or paste your own text for quiz generation</p>
               </Link>
               
-              <div className={`${styles.quizOption} ${styles.disabledOption}`}>
-                <div className={styles.comingSoonBadge}>Coming Soon</div>
+              <Link href="/dashboard/create/image" className={styles.quizOption}>
                 <div className={styles.quizOptionIcon}>🖼️</div>
                 <h3>Image</h3>
                 <p>Extract text from an image to generate questions</p>
-              </div>
+              </Link>
               
              
             </div>
