@@ -14,6 +14,17 @@ interface QuestionTypesConfig {
   trueFalse: boolean;
 }
 
+// YouTube URL validation function
+function validateYoutubeUrl(url: string): boolean {
+  if (url) {
+    const regExp = /^(?:https?:\/\/)?(?:m\.|www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$/;
+    if (url.match(regExp)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 const ConversationalQuizCreator = () => {
   const router = useRouter();
   const { data: session } = useSession();
