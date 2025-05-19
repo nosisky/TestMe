@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Header from '@/app/components/Header';
 import MetaTags from '@/app/components/MetaTags';
 import styles from './results.module.scss'; // To be created
-import { MathJax, MathJaxContext } from 'better-react-mathjax';
+import { MathJax } from 'better-react-mathjax';
 
 interface QuizQuestion {
   _id?: string;
@@ -195,17 +195,6 @@ export default function QuizResultsPage() {
   // Check if this is a quiz creator viewing analytics (no localStorage data)
   const isCreatorView = !localStorage.getItem(`quizAnswers_${quizId}`);
 
-  // Configure MathJax
-  const mathJaxConfig = {
-    tex: {
-      inlineMath: [['$', '$'], ['\\(', '\\)']],
-      displayMath: [['$$', '$$'], ['\\[', '\\]']],
-    },
-    startup: {
-      typeset: false
-    }
-  };
-
   // Render different question types in the results view
   const renderQuestionResult = (q: QuizQuestion, index: number, userAnswerIndex: number | null) => {
     const isCorrect = userAnswerIndex === q.correctAnswer;
@@ -269,7 +258,7 @@ export default function QuizResultsPage() {
         
         {q.explanation && (
           <div className={styles.explanation}>
-            <strong>Explanation:</strong> {q.explanation}
+            <strong>Explanation:</strong> <MathJax>{q.explanation}</MathJax>
           </div>
         )}
       </div>
@@ -342,95 +331,93 @@ export default function QuizResultsPage() {
   }
 
   return (
-    <MathJaxContext config={mathJaxConfig}>
-      <div className={styles.resultsContainer}>
-        <MetaTags 
-          title={`${isCreatorView ? 'Quiz Review' : 'Quiz Completed!'} | ${quiz.title}`}
-          description={`${isCreatorView ? 'Review' : 'You scored'} ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz. ${isCreatorView ? 'View detailed answers.' : 'Check out your results!'}`}
-          url={typeof window !== 'undefined' ? window.location.href : `${process.env.NEXT_PUBLIC_SITE_URL || ''}/quiz/${quizId}/results`}
-        />
-        <Header />
-        <main className={styles.resultsMain}>
-          <div className={styles.resultsHeader}>
-            <h1>Quiz Results</h1>
-            <h2>{quiz.title}</h2>
-            
-            <div className={styles.scoreSection}>
-              <div className={styles.scoreBox}>
-                <div className={styles.scoreValue}>{score.correct}</div>
-                <div className={styles.scoreLabel}>Correct</div>
-              </div>
-              <div className={styles.scoreDivider}></div>
-              <div className={styles.scoreBox}>
-                <div className={styles.scoreValue}>{score.total}</div>
-                <div className={styles.scoreLabel}>Total</div>
-              </div>
-              <div className={styles.scoreDivider}></div>
-              <div className={styles.scoreBox}>
-                <div className={styles.scoreValue}>{Math.round((score.correct / score.total) * 100)}%</div>
-                <div className={styles.scoreLabel}>Score</div>
-              </div>
+    <div className={styles.resultsContainer}>
+      <MetaTags 
+        title={`${isCreatorView ? 'Quiz Review' : 'Quiz Completed!'} | ${quiz.title}`}
+        description={`${isCreatorView ? 'Review' : 'You scored'} ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz. ${isCreatorView ? 'View detailed answers.' : 'Check out your results!'}`}
+        url={typeof window !== 'undefined' ? window.location.href : `${process.env.NEXT_PUBLIC_SITE_URL || ''}/quiz/${quizId}/results`}
+      />
+      <Header />
+      <main className={styles.resultsMain}>
+        <div className={styles.resultsHeader}>
+          <h1>Quiz Results</h1>
+          <h2>{quiz.title}</h2>
+          
+          <div className={styles.scoreSection}>
+            <div className={styles.scoreBox}>
+              <div className={styles.scoreValue}>{score.correct}</div>
+              <div className={styles.scoreLabel}>Correct</div>
             </div>
-            
-            {timeTaken && (
-              <div className={styles.timeTaken}>
-                <span>Time Taken: {formatTime(timeTaken)}</span>
-              </div>
-            )}
-            
-            <div className={styles.actionButtons}>
-              <button className={styles.reviewButton} onClick={() => setShowReview(!showReview)}>
-                {showReview ? 'Hide Review' : 'Show Review'}
-              </button>
-              {status === 'authenticated' ? (
-                <Link className={styles.dashboardButton} href="/dashboard">
-                  Back to Dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link className={styles.dashboardButton} href="/">
-                    Back to Home
-                  </Link>
-                  <button 
-                    className={styles.shareButton} 
-                    onClick={() => {
-                      if (navigator.share) {
-                        navigator.share({
-                          title: `Quiz Results: ${quiz.title}`,
-                          text: `I scored ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz!`,
-                          url: window.location.href,
-                        }).catch(err => console.log('Error sharing:', err));
-                      } else {
-                        // Fallback - copy to clipboard
-                        const url = window.location.href;
-                        navigator.clipboard.writeText(
-                          `I scored ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz! Try it yourself at ${url}`
-                        );
-                        alert('Quiz results link copied to clipboard!');
-                      }
-                    }}
-                  >
-                    Share Results
-                  </button>
-                </>
-              )}
+            <div className={styles.scoreDivider}></div>
+            <div className={styles.scoreBox}>
+              <div className={styles.scoreValue}>{score.total}</div>
+              <div className={styles.scoreLabel}>Total</div>
+            </div>
+            <div className={styles.scoreDivider}></div>
+            <div className={styles.scoreBox}>
+              <div className={styles.scoreValue}>{Math.round((score.correct / score.total) * 100)}%</div>
+              <div className={styles.scoreLabel}>Score</div>
             </div>
           </div>
           
-          {showReview && (
-            <div className={styles.reviewSection}>
-              <h2>Review Your Answers</h2>
-              
-              <div className={styles.questionsContainer}>
-                {quiz.questions.map((q, index) => {
-                  const userAnswerIndex = userAnswers[index];
-                  return renderQuestionResult(q, index, userAnswerIndex);
-                })}
-              </div>
+          {timeTaken && (
+            <div className={styles.timeTaken}>
+              <span>Time Taken: {formatTime(timeTaken)}</span>
             </div>
           )}
-        </main>
-      </div>
-    </MathJaxContext>
+          
+          <div className={styles.actionButtons}>
+            <button className={styles.reviewButton} onClick={() => setShowReview(!showReview)}>
+              {showReview ? 'Hide Review' : 'Show Review'}
+            </button>
+            {status === 'authenticated' ? (
+              <Link className={styles.dashboardButton} href="/dashboard">
+                Back to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link className={styles.dashboardButton} href="/">
+                  Back to Home
+                </Link>
+                <button 
+                  className={styles.shareButton} 
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: `Quiz Results: ${quiz.title}`,
+                        text: `I scored ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz!`,
+                        url: window.location.href,
+                      }).catch(err => console.log('Error sharing:', err));
+                    } else {
+                      // Fallback - copy to clipboard
+                      const url = window.location.href;
+                      navigator.clipboard.writeText(
+                        `I scored ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz! Try it yourself at ${url}`
+                      );
+                      alert('Quiz results link copied to clipboard!');
+                    }
+                  }}
+                >
+                  Share Results
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        
+        {showReview && (
+          <div className={styles.reviewSection}>
+            <h2>Review Your Answers</h2>
+            
+            <div className={styles.questionsContainer}>
+              {quiz.questions.map((q, index) => {
+                const userAnswerIndex = userAnswers[index];
+                return renderQuestionResult(q, index, userAnswerIndex);
+              })}
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
   );
 } 

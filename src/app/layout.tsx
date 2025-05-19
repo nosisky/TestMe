@@ -6,6 +6,7 @@ import SessionProviderWrapper from "./SessionProviderWrapper";
 import ToastProvider from "./components/ToastProvider";
 import Footer from "./components/Footer";
 import { getServerSession } from "next-auth/next";
+import MathJaxWrapper from "@/app/components/MathJaxWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,9 +34,11 @@ export default async function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <SessionProviderWrapper session={session}>
-          <ToastProvider />
-          {children}
-          <Footer />
+          <MathJaxWrapper>
+            <ToastProvider />
+            {children}
+            <Footer />
+          </MathJaxWrapper>
         </SessionProviderWrapper>
       </body>
     </html>

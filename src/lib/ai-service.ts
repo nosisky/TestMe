@@ -192,10 +192,14 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
        - Powers: x^{exponent}
        - Greek letters: \\alpha, \\beta, \\gamma, etc.
        - Special symbols: \\rightarrow, \\Rightarrow, \\infty, etc.
-    5. Ensure ALL steps in explanations also use proper LaTeX formatting
+    5. CRITICAL: Format EVERY single mathematical term in the explanation with LaTeX, even simple variables:
+       - Use $x$ instead of x
+       - Use $5$ instead of 5
+       - Use $x = 5$ instead of x = 5
+       - Every step should be properly formatted with $$...$$ when on separate lines
     6. Provide 4 possible answers with only 1 correct option
     7. Mark which answer is correct (0-3 index)
-    8. Include a brief explanation for the correct answer, using LaTeX for all mathematical expressions
+    8. Include a detailed explanation where EVERY step uses proper LaTeX formatting
     
     Format your response as a JSON object with this structure:
     {
@@ -234,6 +238,16 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
       "options": ["$x = -5, -7$", "$x = 5, 7$", "$x = -3, -12$", "$x = 3, 12$"],
       "correctAnswer": 0,
       "explanation": "Using the quadratic formula: $$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$$ With $a=1$, $b=12$, and $c=35$: $$x = \\frac{-12 \\pm \\sqrt{12^2-4 \\cdot 1 \\cdot 35}}{2 \\cdot 1} = \\frac{-12 \\pm \\sqrt{144-140}}{2} = \\frac{-12 \\pm \\sqrt{4}}{2} = \\frac{-12 \\pm 2}{2}$$ This gives us $x = \\frac{-12+2}{2} = -5$ or $x = \\frac{-12-2}{2} = -7$"
+    }
+    
+    Another example with completing the square method:
+    {
+      "type": "math",
+      "question": "Solve the equation $x^2 + 12x + 35 = 0$ using the completing the square method.",
+      "formula": "$$x^2 + 12x + 35 = 0$$",
+      "options": ["$x = -5, -7$", "$x = 5, 7$", "$x = -3, -12$", "$x = 3, 12$"],
+      "correctAnswer": 0,
+      "explanation": "Following the completing the square method: $$x^2 + 12x + 35 = 0$$ $$x^2 + 12x = -35$$ Adding $(\\frac{b}{2})^2 = (\\frac{12}{2})^2 = 6^2 = 36$ to both sides: $$x^2 + 12x + 36 = -35 + 36$$ $$x^2 + 12x + 36 = 1$$ $$(x + 6)^2 = 1$$ $$x + 6 = \\pm 1$$ $$x = -6 \\pm 1$$ $$x = -5 \\text{ or } x = -7$$"
     }
   `;
   

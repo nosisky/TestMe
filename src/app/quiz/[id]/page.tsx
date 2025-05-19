@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import styles from './quiz.module.scss';
-import { MathJax, MathJaxContext } from 'better-react-mathjax';
+import { MathJax } from 'better-react-mathjax';
 
 interface QuizQuestion {
   _id?: string;
@@ -44,17 +44,6 @@ export default function QuizPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
   
-  // Configure MathJax
-  const mathJaxConfig = {
-    tex: {
-      inlineMath: [['$', '$'], ['\\(', '\\)']],
-      displayMath: [['$$', '$$'], ['\\[', '\\]']],
-    },
-    startup: {
-      typeset: false
-    }
-  };
-
   useEffect(() => {
     if (quizId) {
       fetchQuiz();
@@ -150,7 +139,7 @@ export default function QuizPage() {
   const renderMultipleChoiceQuestion = (question: QuizQuestion) => {
     return (
       <>
-        <h2 className={styles.question}>{question.question}</h2>
+        <h2 className={styles.question}><MathJax>{question.question}</MathJax></h2>
         <div className={styles.options}>
           {question.options.map((option, index) => (
             <button
@@ -161,7 +150,7 @@ export default function QuizPage() {
               onClick={() => handleOptionSelect(currentQuestionIndex, index)}
             >
               <span className={styles.optionLetter}>{String.fromCharCode(65 + index)}</span>
-              <span className={styles.optionText}>{option}</span>
+              <span className={styles.optionText}><MathJax>{option}</MathJax></span>
             </button>
           ))}
         </div>
@@ -172,7 +161,7 @@ export default function QuizPage() {
   const renderTrueFalseQuestion = (question: QuizQuestion) => {
     return (
       <>
-        <h2 className={styles.question}>{question.question}</h2>
+        <h2 className={styles.question}><MathJax>{question.question}</MathJax></h2>
         <div className={styles.trueFalseOptions}>
           <button
             className={`${styles.trueFalseButton} ${
@@ -198,7 +187,7 @@ export default function QuizPage() {
   const renderMathQuestion = (question: QuizQuestion) => {
     return (
       <>
-        <h2 className={styles.question}>{question.question}</h2>
+        <h2 className={styles.question}><MathJax>{question.question}</MathJax></h2>
         {question.formula && (
           <div className={styles.mathFormula}>
             <MathJax>
@@ -273,50 +262,48 @@ export default function QuizPage() {
   const selectedOptionForCurrentQuestion = userAnswers[currentQuestionIndex];
 
   return (
-    <MathJaxContext config={mathJaxConfig}>
-      <div className={styles.quizContainer}>
-        <Header />
-        <main className={styles.quizMain}>
-          <div className={styles.quizHeader}>
-            <h1>{quiz.title || 'Quiz'}</h1>
-            <div className={styles.quizProgress}>
-              <div className={styles.progressTrack}>
-                <div 
-                  className={styles.progressBar} 
-                  style={{ width: `${((currentQuestionIndex + 1) / quiz.questions.length) * 100}%` }}
-                ></div>
-              </div>
-              <div className={styles.questionCounter}>
-                Question {currentQuestionIndex + 1} of {quiz.questions.length}
-              </div>
+    <div className={styles.quizContainer}>
+      <Header />
+      <main className={styles.quizMain}>
+        <div className={styles.quizHeader}>
+          <h1>{quiz.title || 'Quiz'}</h1>
+          <div className={styles.quizProgress}>
+            <div className={styles.progressTrack}>
+              <div 
+                className={styles.progressBar} 
+                style={{ width: `${((currentQuestionIndex + 1) / quiz.questions.length) * 100}%` }}
+              ></div>
+            </div>
+            <div className={styles.questionCounter}>
+              Question {currentQuestionIndex + 1} of {quiz.questions.length}
             </div>
           </div>
+        </div>
+        
+        <div className={styles.questionCard}>
+          {renderQuestion(currentQuestion)}
           
-          <div className={styles.questionCard}>
-            {renderQuestion(currentQuestion)}
-            
-            <div className={styles.navigationButtons}>
-              {currentQuestionIndex > 0 ? (
-                <button
-                  className={`${styles.navButton} ${styles.prevButton}`}
-                  onClick={handlePreviousQuestion}
-                >
-                  Previous
-                </button>
-              ) : (
-                <div className={styles.spacer}></div>
-              )}
+          <div className={styles.navigationButtons}>
+            {currentQuestionIndex > 0 ? (
               <button
-                className={`${styles.navButton} ${styles.nextButton}`}
-                onClick={handleNextQuestion}
-                disabled={selectedOptionForCurrentQuestion === null}
+                className={`${styles.navButton} ${styles.prevButton}`}
+                onClick={handlePreviousQuestion}
               >
-                {currentQuestionIndex < quiz.questions.length - 1 ? 'Next' : 'Finish Quiz'}
+                Previous
               </button>
-            </div>
+            ) : (
+              <div className={styles.spacer}></div>
+            )}
+            <button
+              className={`${styles.navButton} ${styles.nextButton}`}
+              onClick={handleNextQuestion}
+              disabled={selectedOptionForCurrentQuestion === null}
+            >
+              {currentQuestionIndex < quiz.questions.length - 1 ? 'Next' : 'Finish Quiz'}
+            </button>
           </div>
-        </main>
-      </div>
-    </MathJaxContext>
+        </div>
+      </main>
+    </div>
   );
 } 
