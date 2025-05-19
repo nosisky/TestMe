@@ -56,7 +56,12 @@ TestMe is a web application that generates quizzes from YouTube videos, PDFs, im
    CLAUDE_API_KEY=your_claude_api_key
    DEEPSEEK_API_KEY=your_deepseek_api_key
    
-   # Default AI provider (openai, claude, or deepseek)
+   # AWS Bedrock configuration
+   AWS_ACCESS_KEY_ID=your_aws_access_key_id
+   AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+   AWS_REGION=us-east-1
+   
+   # Default AI provider (openai, claude, deepseek, or bedrock)
    DEFAULT_AI_PROVIDER=openai
    ```
 
@@ -86,10 +91,15 @@ TestMe is a web application that generates quizzes from YouTube videos, PDFs, im
    - Create a new API key
    - Add the API key to your `.env.local` file as `CLAUDE_API_KEY`
 
-5. **DeepSeek API Key** (Optional):
-   - Visit [DeepSeek API](https://platform.deepseek.com/)
-   - Sign up and create a new API key
-   - Add the API key to your `.env.local` file as `DEEPSEEK_API_KEY`
+5. **AWS Bedrock Configuration** (Optional):
+   - Sign in to your AWS account or create a new one
+   - Request access to AWS Bedrock models in your account
+   - Create an IAM user with the `AmazonBedrockFullAccess` policy
+   - Create access keys for this user
+   - Set the following environment variables in your `.env.local` file:
+     - `AWS_ACCESS_KEY_ID`: Your AWS access key ID
+     - `AWS_SECRET_ACCESS_KEY`: Your AWS secret access key
+     - `AWS_REGION`: The AWS region where Bedrock is available (e.g., us-east-1)
 
 6. **NextAuth Secret**:
    - Generate a random string or use a tool like `openssl rand -base64 32` in your terminal

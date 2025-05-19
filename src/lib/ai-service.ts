@@ -4,6 +4,7 @@
  * - OpenAI
  * - Anthropic Claude
  * - DeepSeek
+ * - AWS Bedrock
  * 
  * The AI SDK provides a unified interface for all providers, making it easy to switch
  * between them or add new ones in the future.
@@ -12,6 +13,7 @@ import { generateText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { deepseek } from '@ai-sdk/deepseek';
+import { bedrock } from '@ai-sdk/amazon-bedrock';
 import dbConnect from './mongodb';
 import AIConfig, { AIProvider, initializeAIConfigs, IAIConfig } from '@/models/AIConfig';
 import { generateMockQuizQuestions } from './mock-ai-service';
@@ -80,11 +82,25 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
   
   const activeProvider = await getActiveAIProvider();
   
-  // Determine which question types to include
-  const includeTypes = params.includeTypes || {
-    multipleChoice: true,
-    trueFalse: true,
-    math: true
+  // Detect if content is likely mathematical/technical
+  const isContentLikelyMathematical = 
+    params.content.match(/\d+\s*[+\-*/^=<>≤≥]\s*\d+/) !== null || // Contains math operations
+    params.content.toLowerCase().includes("equation") ||
+    params.content.toLowerCase().includes("formula") ||
+    params.content.toLowerCase().includes("math") ||
+    params.content.toLowerCase().includes("physics") ||
+    params.content.toLowerCase().includes("chemistry") ||
+    params.content.toLowerCase().includes("calculus") ||
+    params.content.toLowerCase().includes("algebra") ||
+    params.content.toLowerCase().includes("geometry");
+  
+  console.log(`Content analysis: Is mathematical - ${isContentLikelyMathematical}`);
+  
+  // Base includeTypes on user selection but override math based on content analysis
+  const includeTypes = {
+    multipleChoice: params.includeTypes?.multipleChoice ?? true,
+    trueFalse: params.includeTypes?.trueFalse ?? true,
+    math: isContentLikelyMathematical // Override math type based on content analysis
   };
 
   // Count how many types are selected
@@ -122,23 +138,21 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
     }
   } else {
     // If all three types are selected, distribute with priority to multiple choice, then true/false, then math
-    multipleChoiceCount = Math.ceil(numQuestions * 0.5);
-    trueFalseCount = Math.ceil(numQuestions * 0.3);
-    mathCount = numQuestions - multipleChoiceCount - trueFalseCount;
+    // For mathematical content, allocate more questions to math type
+    if (isContentLikelyMathematical) {
+      multipleChoiceCount = Math.ceil(numQuestions * 0.4);
+      trueFalseCount = Math.ceil(numQuestions * 0.2);
+      mathCount = numQuestions - multipleChoiceCount - trueFalseCount;
+    } else {
+      multipleChoiceCount = Math.ceil(numQuestions * 0.6);
+      trueFalseCount = Math.ceil(numQuestions * 0.4);
+      mathCount = 0;
+    }
   }
   
   // Ensure we're asking for the right number of questions
   console.log(`Question distribution: MC=${multipleChoiceCount}, TF=${trueFalseCount}, Math=${mathCount}, Total=${multipleChoiceCount + trueFalseCount + mathCount}`);
   
-  // Detect if content is likely mathematical/technical
-  const isContentLikelyMathematical = 
-    params.content.match(/\d+\s*[+\-*/^=<>≤≥]\s*\d+/) !== null || // Contains math operations
-    params.content.toLowerCase().includes("equation") ||
-    params.content.toLowerCase().includes("formula") ||
-    params.content.toLowerCase().includes("math") ||
-    params.content.toLowerCase().includes("physics") ||
-    params.content.toLowerCase().includes("chemistry");
-
   const prompt = `
     You are an expert quiz creator. Based on the following content,
     create a quiz with ${numQuestions} questions at ${params.difficulty} difficulty level.
@@ -168,10 +182,20 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
     
     For mathematical questions:
     1. Create a math problem relevant to the content
-    2. Include a LaTeX formula using MathJax syntax (e.g., \\frac{1}{2} for fractions)
-    3. Provide 4 possible answers with only 1 correct option
-    4. Mark which answer is correct (0-3 index)
-    5. Include a brief explanation for the correct answer
+    2. Include a LaTeX formula using proper syntax
+    3. IMPORTANT: Wrap ALL mathematical expressions in the appropriate LaTeX delimiters:
+       - For inline math, use $...$ (e.g., $x^2 + 5x + 6$)
+       - For display math (equations on their own line), use $$...$$ (e.g., $$\\frac{x^2}{2} + 5x$$)
+    4. Use proper LaTeX commands for mathematical notation:
+       - Fractions: \\frac{numerator}{denominator}
+       - Square roots: \\sqrt{expression}
+       - Powers: x^{exponent}
+       - Greek letters: \\alpha, \\beta, \\gamma, etc.
+       - Special symbols: \\rightarrow, \\Rightarrow, \\infty, etc.
+    5. Ensure ALL steps in explanations also use proper LaTeX formatting
+    6. Provide 4 possible answers with only 1 correct option
+    7. Mark which answer is correct (0-3 index)
+    8. Include a brief explanation for the correct answer, using LaTeX for all mathematical expressions
     
     Format your response as a JSON object with this structure:
     {
@@ -194,12 +218,22 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
         {
           "type": "math",
           "question": "Math problem question",
-          "formula": "\\frac{x^2}{2} + 5x",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
+          "formula": "$$\\frac{x^2}{2} + 5x$$",
+          "options": ["$Option A$", "$Option B$", "$Option C$", "$Option D$"],
           "correctAnswer": 2,
-          "explanation": "Explanation of the correct mathematical solution"
+          "explanation": "Explanation with math: $x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$"
         }
       ]
+    }
+
+    Example of a good math question with proper LaTeX:
+    {
+      "type": "math",
+      "question": "Solve the quadratic equation $x^2 + 12x + 35 = 0$",
+      "formula": "$$x^2 + 12x + 35 = 0$$",
+      "options": ["$x = -5, -7$", "$x = 5, 7$", "$x = -3, -12$", "$x = 3, 12$"],
+      "correctAnswer": 0,
+      "explanation": "Using the quadratic formula: $$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$$ With $a=1$, $b=12$, and $c=35$: $$x = \\frac{-12 \\pm \\sqrt{12^2-4 \\cdot 1 \\cdot 35}}{2 \\cdot 1} = \\frac{-12 \\pm \\sqrt{144-140}}{2} = \\frac{-12 \\pm \\sqrt{4}}{2} = \\frac{-12 \\pm 2}{2}$$ This gives us $x = \\frac{-12+2}{2} = -5$ or $x = \\frac{-12-2}{2} = -7$"
     }
   `;
   
@@ -216,6 +250,9 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
         break;
       case 'deepseek':
         model = deepseek(activeProvider.defaultModel);
+        break;
+      case 'bedrock':
+        model = bedrock(activeProvider.defaultModel);
         break;
       default:
         // Fallback to OpenAI

@@ -8,11 +8,17 @@ import styles from "./ConversationalQuizCreator.module.scss";
 type QuizType = "youtube" | "pdf" | "text" | "image";
 type QuizSize = "quick" | "standard" | "deep" | "expert";
 
+// Add a type interface for question types
+interface QuestionTypesConfig {
+  multipleChoice: boolean;
+  trueFalse: boolean;
+}
+
 const ConversationalQuizCreator = () => {
   const router = useRouter();
   const { data: session } = useSession();
   const [step, setStep] = useState<"type" | "input" | "config" | "creating" | "success">("type");
-  const [quizType, setQuizType] = useState<QuizType | null>(null);
+  const [quizType, setQuizType] = useState<QuizType>("youtube");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [textContent, setTextContent] = useState("");
@@ -20,14 +26,13 @@ const ConversationalQuizCreator = () => {
   const [error, setError] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-  const [createdQuizId, setCreatedQuizId] = useState<string | null>(null);
+  const [createdQuizId, setCreatedQuizId] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [quizShareUrl, setQuizShareUrl] = useState<string>("");
   const [isCopied, setIsCopied] = useState(false);
-  const [includeTypes, setIncludeTypes] = useState({
+  const [includeTypes, setIncludeTypes] = useState<QuestionTypesConfig>({
     multipleChoice: true,
-    trueFalse: true,
-    math: false
+    trueFalse: true
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -76,7 +81,7 @@ const ConversationalQuizCreator = () => {
 
   const handleSizeSelect = (size: QuizSize) => {
     // Validate that at least one question type is selected
-    if (!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math) {
+    if (!includeTypes.multipleChoice && !includeTypes.trueFalse) {
       setError("Please select at least one question type.");
       return;
     }
@@ -109,7 +114,7 @@ const ConversationalQuizCreator = () => {
   const handleBack = () => {
     if (step === "input") {
       setStep("type");
-      setQuizType(null);
+      setQuizType("youtube");
     } else if (step === "config") {
       setStep("input");
     }
@@ -136,43 +141,29 @@ const ConversationalQuizCreator = () => {
   };
 
   const detectContentType = () => {
-    // Default to enabling just multiple-choice and true/false for text and YouTube
-    const defaultSettings = {
-      multipleChoice: true,
-      trueFalse: true,
-      math: false
-    };
+    let detectedType: QuizType | null = null;
     
-    // For technical subjects, we might want to enable math questions
-    if (quizType === "text") {
-      // Check if text content appears to be technical/mathematical
-      const mathTerms = [
-        "equation", "formula", "calculus", "theorem", 
-        "math", "physics", "chemistry", "engineering",
-        "=", "+", "-", "*", "/", "^", "√", "∫", "≠", "≤", "≥",
-        "geometry", "algebra", "trigonometry", "algorithm"
-      ];
-      
-      const hasMathContent = mathTerms.some(term => 
-        textContent.toLowerCase().includes(term)
-      );
-      
-      setIncludeTypes({
-        ...defaultSettings,
-        math: hasMathContent
-      });
+    // Check if URL is provided and it's a valid YouTube URL
+    if (youtubeUrl.trim()) {
+      if (validateYoutubeUrl(youtubeUrl)) {
+        detectedType = "youtube";
+      } 
+      // Check if it's a lengthy text (more than 100 chars)
+      else if (youtubeUrl.length > 100) {
+        detectedType = "text";
+        setTextContent(youtubeUrl);
+      }
     }
-    else if (quizType === "youtube") {
-      // For YouTube, default to non-technical (user can change if needed)
-      setIncludeTypes(defaultSettings);
-    }
-    else if (quizType === "pdf") {
-      // For PDFs, enable all question types since they often contain diverse content
-      setIncludeTypes({
-        multipleChoice: true,
-        trueFalse: true,
-        math: true
-      });
+    
+    if (detectedType) {
+      setQuizType(detectedType);
+      setYoutubeUrl("");
+      setStep("config");
+      
+      // Reset any previous errors
+      setError("");
+    } else {
+      setError("We couldn't detect what type of content that is. Please try again or select a specific option.");
     }
   };
 
@@ -240,7 +231,7 @@ const ConversationalQuizCreator = () => {
             questionCount,
             difficulty,
             createdBy: userId, // Associate quiz with user
-            includeTypes // Add question types to the request
+            includeTypes // The backend will handle math detection
           })
         });
         
@@ -276,7 +267,7 @@ const ConversationalQuizCreator = () => {
         url.searchParams.append('createdBy', userId); // Associate quiz with user
         url.searchParams.append('includeMultipleChoice', includeTypes.multipleChoice.toString());
         url.searchParams.append('includeTrueFalse', includeTypes.trueFalse.toString());
-        url.searchParams.append('includeMath', includeTypes.math.toString());
+        // The backend will auto-detect math content
         
         console.log(`PDF quiz params: numQuestions=${url.searchParams.get('numQuestions')}, difficulty=${url.searchParams.get('difficulty')}`);
         
@@ -314,7 +305,7 @@ const ConversationalQuizCreator = () => {
             numQuestions: questionCount,
             difficulty,
             createdBy: userId, // Associate quiz with user
-            includeTypes // Add question types to the request
+            includeTypes // The backend will handle math detection
           })
         });
         
@@ -635,17 +626,13 @@ const ConversationalQuizCreator = () => {
                       />
                       <span>True/False</span>
                     </label>
-                    <label className={styles.checkboxLabel}>
-                      <input 
-                        type="checkbox" 
-                        checked={includeTypes.math} 
-                        onChange={() => setIncludeTypes({...includeTypes, math: !includeTypes.math})}
-                        className={styles.checkbox}
-                      />
-                      <span>Mathematical</span>
-                    </label>
+                    {/* Math questions are automatically added based on content analysis */}
+                    <div className={styles.infoText}>
+                      <span className={styles.infoIcon}>ℹ️</span>
+                      <span>Mathematical questions will be added automatically when appropriate for the content</span>
+                    </div>
                   </div>
-                  {!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math && (
+                  {!includeTypes.multipleChoice && !includeTypes.trueFalse && (
                     <div className={styles.errorMessage}>Please select at least one question type</div>
                   )}
                 </div>
@@ -892,17 +879,13 @@ const ConversationalQuizCreator = () => {
                   />
                   <span>True/False</span>
                 </label>
-                <label className={styles.checkboxLabel}>
-                  <input 
-                    type="checkbox" 
-                    checked={includeTypes.math} 
-                    onChange={() => setIncludeTypes({...includeTypes, math: !includeTypes.math})}
-                    className={styles.checkbox}
-                  />
-                  <span>Mathematical</span>
-                </label>
+                {/* Math questions are automatically added based on content analysis */}
+                <div className={styles.infoText}>
+                  <span className={styles.infoIcon}>ℹ️</span>
+                  <span>Mathematical questions will be added automatically when appropriate for the content</span>
+                </div>
               </div>
-              {!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math && (
+              {!includeTypes.multipleChoice && !includeTypes.trueFalse && (
                 <div className={styles.errorMessage}>Please select at least one question type</div>
               )}
             </div>

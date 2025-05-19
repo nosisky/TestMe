@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export type AIProvider = 'openai' | 'claude' | 'deepseek';
+export type AIProvider = 'openai' | 'claude' | 'deepseek' | 'bedrock';
 
 export interface IAIConfig extends Document {
   provider: AIProvider;
@@ -16,7 +16,7 @@ const AIConfigSchema = new Schema<IAIConfig>(
   {
     provider: {
       type: String,
-      enum: ['openai', 'claude', 'deepseek'],
+      enum: ['openai', 'claude', 'deepseek', 'bedrock'],
       required: true,
       default: 'openai'
     },
@@ -65,6 +65,13 @@ const defaultConfigs = [
   {
     provider: 'deepseek',
     defaultModel: 'deepseek-chat-v1',
+    temperature: 0.7,
+    maxTokens: 2048,
+    isActive: false
+  },
+  {
+    provider: 'bedrock',
+    defaultModel: 'anthropic.claude-3-sonnet-20240229-v1:0',
     temperature: 0.7,
     maxTokens: 2048,
     isActive: false

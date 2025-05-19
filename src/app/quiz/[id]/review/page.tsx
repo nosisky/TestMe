@@ -6,12 +6,15 @@ import Link from 'next/link';
 import Header from '../../../components/Header';
 import styles from './review.module.scss';
 import { handleFetchError } from "@/lib/api-utils";
+import { MathJax, MathJaxContext } from 'better-react-mathjax';
 
 interface QuizQuestion {
   question: string;
   options: string[];
   correctAnswer: number;
   explanation: string;
+  type?: 'multiple_choice' | 'true_false' | 'math';
+  formula?: string;
 }
 
 interface Quiz {
@@ -38,6 +41,17 @@ export default function QuizReviewPage() {
   const [error, setError] = useState('');
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [hasAnswers, setHasAnswers] = useState(false);
+  
+  // Configure MathJax
+  const mathJaxConfig = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    },
+    startup: {
+      typeset: false
+    }
+  };
   
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -197,94 +211,109 @@ export default function QuizReviewPage() {
   }
   
   return (
-    <div className={styles.reviewContainer}>
-      <Header />
-      
-      <main className={styles.reviewMain}>
-        <div className={styles.reviewHeader}>
-          <Link href={`/dashboard`} className={styles.backButton}>
-            ← Back
-          </Link>
-          <h1>Quiz Review: {quiz.title}</h1>
-          
-          <div className={styles.scoreCard}>
-            <div className={styles.scoreValue}>
-              {score.correct}/{score.total}
+    <MathJaxContext config={mathJaxConfig}>
+      <div className={styles.reviewContainer}>
+        <Header />
+        
+        <main className={styles.reviewMain}>
+          <div className={styles.reviewHeader}>
+            <Link href={`/dashboard`} className={styles.backButton}>
+              ← Back
+            </Link>
+            <h1>Quiz Review: {quiz.title}</h1>
+            
+            <div className={styles.scoreCard}>
+              <div className={styles.scoreValue}>
+                {score.correct}/{score.total}
+              </div>
+              <div className={styles.scoreLabel}>
+                {Math.round((score.correct / score.total) * 100)}% Correct
+              </div>
             </div>
-            <div className={styles.scoreLabel}>
-              {Math.round((score.correct / score.total) * 100)}% Correct
-            </div>
+            
+            <p className={styles.subheading}>
+              Review all {quiz.questions?.length ?? 0} questions and answers below.
+            </p>
           </div>
           
-          <p className={styles.subheading}>
-            Review all {quiz.questions?.length ?? 0} questions and answers below.
-          </p>
-        </div>
-        
-        <div className={styles.questionsContainer}>
-          {(quiz.questions ?? []).map((question, index) => {
-            const userAnswer = userAnswers[index];
-            const isCorrect = userAnswer === question.correctAnswer;
-            
-            return (
-              <div 
-                key={index} 
-                className={`${styles.questionCard} ${
-                  isCorrect ? styles.correctQuestion : styles.incorrectQuestion
-                }`}
-              >
-                <div className={styles.questionStatus}>
-                  {isCorrect ? (
-                    <span className={styles.correctBadge}>✓ Correct</span>
-                  ) : (
-                    <span className={styles.incorrectBadge}>✗ Incorrect</span>
+          <div className={styles.questionsContainer}>
+            {(quiz.questions ?? []).map((question, index) => {
+              const userAnswer = userAnswers[index];
+              const isCorrect = userAnswer === question.correctAnswer;
+              
+              return (
+                <div 
+                  key={index} 
+                  className={`${styles.questionCard} ${
+                    isCorrect ? styles.correctQuestion : styles.incorrectQuestion
+                  }`}
+                >
+                  <div className={styles.questionStatus}>
+                    {isCorrect ? (
+                      <span className={styles.correctBadge}>✓ Correct</span>
+                    ) : (
+                      <span className={styles.incorrectBadge}>✗ Incorrect</span>
+                    )}
+                  </div>
+                  
+                  <h3 className={styles.questionNumber}>Question {index + 1}</h3>
+                  <h2 className={styles.question}>
+                    <MathJax>{question.question}</MathJax>
+                  </h2>
+                  
+                  {/* Display formula for math questions */}
+                  {question.type === 'math' && question.formula && (
+                    <div className={styles.mathFormula}>
+                      <MathJax>{question.formula}</MathJax>
+                    </div>
+                  )}
+                  
+                  <div className={styles.options}>
+                    {(question.options ?? []).map((option, optIndex) => (
+                      <div
+                        key={optIndex}
+                        className={`${styles.option} ${
+                          optIndex === question.correctAnswer ? styles.correctOption : ''
+                        } ${
+                          optIndex === userAnswer && optIndex !== question.correctAnswer ? styles.incorrectOption : ''
+                        } ${
+                          optIndex === userAnswer && optIndex === question.correctAnswer ? styles.selectedCorrectOption : ''
+                        }`}
+                      >
+                        <span className={styles.optionLetter}>
+                          {String.fromCharCode(65 + optIndex)}
+                        </span>
+                        <span className={styles.optionText}>
+                          <MathJax>{option}</MathJax>
+                        </span>
+                        {optIndex === question.correctAnswer && (
+                          <span className={styles.correctMark}>✓ Correct Answer</span>
+                        )}
+                        {optIndex === userAnswer && optIndex !== question.correctAnswer && (
+                          <span className={styles.incorrectMark}>✗ Your Answer</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {question.explanation && (
+                    <div className={styles.explanation}>
+                      <h4>Explanation:</h4>
+                      <p><MathJax>{question.explanation}</MathJax></p>
+                    </div>
                   )}
                 </div>
-                
-                <h3 className={styles.questionNumber}>Question {index + 1}</h3>
-                <h2 className={styles.question}>{question.question}</h2>
-                
-                <div className={styles.options}>
-                  {(question.options ?? []).map((option, optIndex) => (
-                    <div
-                      key={optIndex}
-                      className={`${styles.optionItem} 
-                        ${optIndex === question.correctAnswer ? styles.correctOption : ''} 
-                        ${userAnswer === optIndex && userAnswer !== question.correctAnswer ? styles.incorrectOption : ''}
-                        ${userAnswer === optIndex ? styles.userSelectedOption : ''}`}
-                    >
-                      <span className={styles.optionLetter}>
-                        {String.fromCharCode(65 + optIndex)}
-                      </span>
-                      <span className={styles.optionText}>{option}</span>
-                      {optIndex === question.correctAnswer && (
-                        <span className={styles.correctBadge}>Correct Answer</span>
-                      )}
-                      {userAnswer === optIndex && userAnswer !== question.correctAnswer && (
-                        <span className={styles.incorrectBadge}>Your Answer</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                
-                <div className={styles.explanation}>
-                  <h3>Explanation:</h3>
-                  <p>{question.explanation}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        
-        <div className={styles.actionButtons}>
-          <Link href="/dashboard" className={styles.primaryButton}>
-            Back to Dashboard
-          </Link>
-          <Link href={`/quiz/${quizId}`} className={styles.secondaryButton}>
-            Retry Quiz
-          </Link>
-        </div>
-      </main>
-    </div>
+              );
+            })}
+          </div>
+          
+          <div className={styles.actionsFooter}>
+            <Link href="/dashboard" className={styles.primaryButton}>
+              Back to Dashboard
+            </Link>
+          </div>
+        </main>
+      </div>
+    </MathJaxContext>
   );
 } 

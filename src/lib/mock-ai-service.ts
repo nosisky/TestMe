@@ -99,11 +99,25 @@ export async function generateMockQuizQuestions(params: GenerateQuestionsParams)
   // Extract topics to make questions more relevant to the content
   const topics = extractTopics(params.content);
   
-  // Determine which question types to include
-  const includeTypes = params.includeTypes || {
-    multipleChoice: true,
-    trueFalse: true,
-    math: false
+  // Detect if content is likely mathematical/technical
+  const isContentLikelyMathematical = 
+    params.content.match(/\d+\s*[+\-*/^=<>≤≥]\s*\d+/) !== null || // Contains math operations
+    params.content.toLowerCase().includes("equation") ||
+    params.content.toLowerCase().includes("formula") ||
+    params.content.toLowerCase().includes("math") ||
+    params.content.toLowerCase().includes("physics") ||
+    params.content.toLowerCase().includes("chemistry") ||
+    params.content.toLowerCase().includes("calculus") ||
+    params.content.toLowerCase().includes("algebra") ||
+    params.content.toLowerCase().includes("geometry");
+  
+  console.log(`Mock AI Service - Content analysis: Is mathematical - ${isContentLikelyMathematical}`);
+  
+  // Base includeTypes on user selection but override math based on content analysis
+  const includeTypes = {
+    multipleChoice: params.includeTypes?.multipleChoice ?? true,
+    trueFalse: params.includeTypes?.trueFalse ?? true,
+    math: isContentLikelyMathematical // Override math type based on content analysis
   };
   
   // If no question types are selected, default to multiple choice
@@ -141,9 +155,15 @@ export async function generateMockQuizQuestions(params: GenerateQuestionsParams)
     }
   } else {
     // If all three types are selected, distribute with priority to multiple choice
-    multipleChoiceCount = Math.ceil(numQuestions * 0.5);
-    trueFalseCount = Math.ceil(numQuestions * 0.3);
-    mathCount = numQuestions - multipleChoiceCount - trueFalseCount;
+    if (isContentLikelyMathematical) {
+      multipleChoiceCount = Math.ceil(numQuestions * 0.4);
+      trueFalseCount = Math.ceil(numQuestions * 0.2);
+      mathCount = numQuestions - multipleChoiceCount - trueFalseCount;
+    } else {
+      multipleChoiceCount = Math.ceil(numQuestions * 0.6);
+      trueFalseCount = Math.ceil(numQuestions * 0.4);
+      mathCount = 0;
+    }
   }
   
   console.log(`Mock AI Service - Question distribution: MC=${multipleChoiceCount}, TF=${trueFalseCount}, Math=${mathCount}`);
@@ -218,20 +238,29 @@ export async function generateMockQuizQuestions(params: GenerateQuestionsParams)
     
     // Generate a simple formula for demonstration
     const formulas = [
-      "\\frac{x}{y} = z",
-      "\\sqrt{x^2 + y^2} = z",
-      "\\sum_{i=1}^{n} x_i = y",
-      "P(x) = \\frac{1}{\\sqrt{2\\pi\\sigma^2}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}",
-      "\\int_{a}^{b} f(x) dx = F(b) - F(a)",
-      "E = mc^2",
-      "F = G\\frac{m_1 m_2}{r^2}",
-      "PV = nRT"
+      "$$\\frac{x}{y} = z$$",
+      "$$\\sqrt{x^2 + y^2} = z$$",
+      "$$\\sum_{i=1}^{n} x_i = y$$",
+      "$$P(x) = \\frac{1}{\\sqrt{2\\pi\\sigma^2}} e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}}$$",
+      "$$\\int_{a}^{b} f(x) dx = F(b) - F(a)$$",
+      "$$E = mc^2$$",
+      "$$F = G\\frac{m_1 m_2}{r^2}$$",
+      "$$PV = nRT$$"
     ];
     
     const formula = formulas[Math.floor(Math.random() * formulas.length)];
     const options = generateMathOptions(topic, params.difficulty);
     const correctAnswer = Math.floor(Math.random() * 4);
-    const explanation = `This is the correct mathematical solution for ${topic} based on the principles described in the content.`;
+    
+    // Generate a more mathematical explanation with LaTeX
+    const explanations = [
+      `This is the correct solution because when we apply the formula $${topic}$, we get $${options[correctAnswer].replace(/^\$|\$$/g, '')}$.`,
+      `By using the property of $${topic}$ with respect to $${topic2}$, we find that $${options[correctAnswer].replace(/^\$|\$$/g, '')}$ is the only valid answer.`,
+      `The solution comes from applying $${formula.replace(/^\$\$|\$\$$/g, '')}$ to the problem, which yields $${options[correctAnswer].replace(/^\$|\$$/g, '')}$.`,
+      `When we solve for the unknown variable in $${formula.replace(/^\$\$|\$\$$/g, '')}$, we get $${options[correctAnswer].replace(/^\$|\$$/g, '')}$ through algebraic manipulation.`
+    ];
+    
+    const explanation = explanations[Math.floor(Math.random() * explanations.length)];
     
     questions.push({
       type: 'math',
@@ -299,25 +328,25 @@ function generateMathOptions(topic: string, difficulty: string): string[] {
   
   if (difficulty === 'easy') {
     return [
-      `${randomInt(1, 10)}`,
-      `${randomInt(11, 20)}`,
-      `${randomInt(21, 30)}`,
-      `${randomInt(31, 40)}`
+      `$${randomInt(1, 10)}$`,
+      `$${randomInt(11, 20)}$`,
+      `$${randomInt(21, 30)}$`,
+      `$${randomInt(31, 40)}$`
     ];
   } else if (difficulty === 'hard') {
     return [
-      `${variable} = ${randomFloat(0.01, 0.99)}`,
-      `${variable} = ${randomFloat(1, 9.99)}`,
-      `${variable} = \\sqrt{${randomInt(2, 10)}}`,
-      `${variable} = \\frac{${randomInt(1, 10)}}{${randomInt(2, 10)}}`
+      `$${variable} = ${randomFloat(0.01, 0.99)}$`,
+      `$${variable} = ${randomFloat(1, 9.99)}$`,
+      `$${variable} = \\sqrt{${randomInt(2, 10)}}$`,
+      `$${variable} = \\frac{${randomInt(1, 10)}}{${randomInt(2, 10)}}$`
     ];
   }
   
   // Medium difficulty (default)
   return [
-    `${randomInt(1, 100)}%`,
-    `${randomFloat(0.1, 9.9)}`,
-    `\\frac{1}{${randomInt(2, 10)}}`,
-    `${randomInt(1, 20)} \\times ${randomInt(1, 10)}`
+    `$${randomInt(1, 100)}\\%$`,
+    `$${randomFloat(0.1, 9.9)}$`,
+    `$\\frac{1}{${randomInt(2, 10)}}$`,
+    `$${randomInt(1, 20)} \\times ${randomInt(1, 10)}$`
   ];
 } 

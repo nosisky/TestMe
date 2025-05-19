@@ -135,6 +135,7 @@ export default function QuizPage() {
   
   // Render different question types
   const renderQuestion = (question: QuizQuestion) => {
+    console.log(question.type, 'question.type', question)
     switch (question.type) {
       case 'true_false':
         return renderTrueFalseQuestion(question);

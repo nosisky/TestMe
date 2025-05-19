@@ -118,7 +118,9 @@
 }
 
 .optionText {
-  flex-grow: 1;
+  flex: 1;
+  margin-right: 1rem;
+  display: inline-block;
 }
 
 .correctBadge {
@@ -305,4 +307,27 @@
     color: var(--text-secondary);
     margin-bottom: 1.5rem;
   }
+}
+
+/* Math formula styling */
+.mathFormula {
+  background-color: var(--background-secondary);
+  padding: 1.5rem;
+  margin: 1rem 0;
+  border-radius: 0.5rem;
+  text-align: center;
+  font-size: 1.2rem;
+  overflow-x: auto;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    font-size: 1rem;
+  }
+}
+
+/* Option text needs space for MathJax rendering */
+.optionText {
+  flex: 1;
+  margin-right: 1rem;
+  display: inline-block;
 } 
