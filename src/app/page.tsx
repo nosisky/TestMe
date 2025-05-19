@@ -10,13 +10,13 @@ export default function Home() {
 
       <div className={styles.hero}>
         <h1>
-          Speed Up <span className={styles.emoji}>🚀</span> Your
+          Master Any Subject,
           <br />
-          Learning with TestMe!
+          in Half the Time
         </h1>
         <p className={styles.subtitle}>
-          Generate quizzes from YouTube videos, PDFs, or your own text.
-          <br />{' '}Test yourself smarter with AI-powered questions.
+          Our AI turns your learning materials into targeted quizzes
+          <br />that identify and strengthen your weak spots.
         </p>
         
         {/* Show quiz creator interface immediately without requiring login */}
