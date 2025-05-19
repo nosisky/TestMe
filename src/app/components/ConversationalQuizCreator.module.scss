@@ -558,23 +558,34 @@
 
 /* Config step styles */
 .configContainer {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
   padding: 2rem;
-  animation: fadeIn 0.3s ease;
+  max-width: 700px;
+  width: 100%;
+  box-shadow: var(--shadow);
   
   h2 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
     text-align: center;
-    font-size: 1.5rem;
-    margin-bottom: 2rem;
-    color: var(--text-primary);
   }
+}
+
+.mobileConfigContainer {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  width: 100%;
+  box-shadow: var(--shadow);
+  margin-top: 1rem;
   
-  @media (max-width: 768px) {
-    padding: 1.5rem;
-    
-    h2 {
-      font-size: 1.3rem;
-      margin-bottom: 1.5rem;
-    }
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    text-align: center;
   }
 }
 
@@ -1128,4 +1139,116 @@
   @media (max-width: 768px) {
     width: 100%;
   }
+}
+
+/* Question types section styles */
+.questionTypesSection {
+  margin-bottom: 2rem;
+  background: var(--bg-secondary);
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+  }
+  
+  .questionTypesDescription {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+  }
+}
+
+.checkboxGroup, .mobileCheckboxGroup {
+  display: flex;
+  gap: 1.5rem;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
+.mobileCheckboxGroup {
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+  
+  span {
+    margin-top: 1px;
+  }
+}
+
+.mobileSizeOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.mobileButton {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: var(--card-bg);
+  text-align: left;
+  position: relative;
+  transition: all 0.2s;
+  
+  h3 {
+    font-size: 1rem;
+    margin: 0;
+  }
+  
+  &:hover:not(:disabled) {
+    background: var(--bg-secondary);
+    transform: translateY(-2px);
+    border-color: var(--primary);
+  }
+  
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+  
+  &.primaryButton {
+    background: var(--bg-secondary);
+    border-color: var(--primary);
+  }
+  
+  &.premiumButton {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+    opacity: 0.7;
+  }
+}
+
+.recommendedBadge {
+  position: absolute;
+  top: -8px;
+  right: 8px;
+  background: var(--primary);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 12px;
+  text-transform: uppercase;
 } 

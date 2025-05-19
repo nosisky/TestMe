@@ -5,24 +5,32 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import styles from './quiz.module.scss';
+import { MathJax, MathJaxContext } from 'better-react-mathjax';
 
 interface QuizQuestion {
-  _id?: string; // Assuming questions might have IDs if fetched individually or for keys
+  _id?: string;
   question: string;
+  type: 'multiple_choice' | 'true_false' | 'math';
   options: string[];
-  correctAnswer: number; // Index of the correct option
+  correctAnswer: number;
   explanation?: string;
+  formula?: string;
+  isTrue?: boolean;
 }
 
 interface Quiz {
-  id: string;
-  title?: string; // Title might be fetched for context
+  _id: string;
+  title: string;
+  description?: string;
   questions: QuizQuestion[];
-  // any other relevant quiz properties
+  difficulty: string;
+  createdAt: string;
+  createdBy: string;
 }
 
-// To store answers. Key is question index, value is selected option index.
-type UserAnswers = Record<number, number | null>;
+interface UserAnswers {
+  [questionIndex: number]: number | null;
+}
 
 export default function QuizPage() {
   const params = useParams();
@@ -35,13 +43,17 @@ export default function QuizPage() {
   const [error, setError] = useState('');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
-  // No more selectedOption or showExplanation for immediate feedback
-  // const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  // const [showExplanation, setShowExplanation] = useState(false);
   
-  // quizCompleted and score will be handled by the results page
-  // const [score, setScore] = useState(0);
-  // const [quizCompleted, setQuizCompleted] = useState(false);
+  // Configure MathJax
+  const mathJaxConfig = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    },
+    startup: {
+      typeset: false
+    }
+  };
 
   useEffect(() => {
     if (quizId) {
@@ -60,7 +72,7 @@ export default function QuizPage() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`/api/quiz/take/${quizId}`); // New endpoint for full quiz data
+      const response = await fetch(`/api/quiz/take/${quizId}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to load quiz for taking');
@@ -110,9 +122,6 @@ export default function QuizPage() {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
       // All questions answered, navigate to results page
-      // Pass answers and quizId to the results page via router state or query params
-      // For simplicity with large answer sets, we might use localStorage or a context here,
-      // but for now, let's plan to pass via router state if small enough or re-fetch on results page.
       localStorage.setItem(`quizAnswers_${quizId}`, JSON.stringify(userAnswers));
       router.push(`/quiz/${quizId}/results`);
     }
@@ -122,6 +131,98 @@ export default function QuizPage() {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
+  };
+  
+  // Render different question types
+  const renderQuestion = (question: QuizQuestion) => {
+    switch (question.type) {
+      case 'true_false':
+        return renderTrueFalseQuestion(question);
+      case 'math':
+        return renderMathQuestion(question);
+      case 'multiple_choice':
+      default:
+        return renderMultipleChoiceQuestion(question);
+    }
+  };
+  
+  const renderMultipleChoiceQuestion = (question: QuizQuestion) => {
+    return (
+      <>
+        <h2 className={styles.question}>{question.question}</h2>
+        <div className={styles.options}>
+          {question.options.map((option, index) => (
+            <button
+              key={index}
+              className={`${styles.optionButton} ${
+                userAnswers[currentQuestionIndex] === index ? styles.selectedOption : ''
+              }`}
+              onClick={() => handleOptionSelect(currentQuestionIndex, index)}
+            >
+              <span className={styles.optionLetter}>{String.fromCharCode(65 + index)}</span>
+              <span className={styles.optionText}>{option}</span>
+            </button>
+          ))}
+        </div>
+      </>
+    );
+  };
+  
+  const renderTrueFalseQuestion = (question: QuizQuestion) => {
+    return (
+      <>
+        <h2 className={styles.question}>{question.question}</h2>
+        <div className={styles.trueFalseOptions}>
+          <button
+            className={`${styles.trueFalseButton} ${
+              userAnswers[currentQuestionIndex] === 0 ? styles.selectedOption : ''
+            }`}
+            onClick={() => handleOptionSelect(currentQuestionIndex, 0)}
+          >
+            <span className={styles.truthValue}>True</span>
+          </button>
+          <button
+            className={`${styles.trueFalseButton} ${
+              userAnswers[currentQuestionIndex] === 1 ? styles.selectedOption : ''
+            }`}
+            onClick={() => handleOptionSelect(currentQuestionIndex, 1)}
+          >
+            <span className={styles.truthValue}>False</span>
+          </button>
+        </div>
+      </>
+    );
+  };
+  
+  const renderMathQuestion = (question: QuizQuestion) => {
+    return (
+      <>
+        <h2 className={styles.question}>{question.question}</h2>
+        {question.formula && (
+          <div className={styles.mathFormula}>
+            <MathJax>
+              {question.formula}
+            </MathJax>
+          </div>
+        )}
+        <div className={styles.options}>
+          {question.options.map((option, index) => (
+            <button
+              key={index}
+              className={`${styles.optionButton} ${
+                userAnswers[currentQuestionIndex] === index ? styles.selectedOption : ''
+              }`}
+              onClick={() => handleOptionSelect(currentQuestionIndex, index)}
+            >
+              <span className={styles.optionLetter}>{String.fromCharCode(65 + index)}</span>
+              <span className={styles.optionText}>
+                <MathJax>{option}</MathJax>
+              </span>
+            </button>
+          ))}
+        </div>
+      </>
+    );
   };
   
   if (status === 'loading' || loading) {
@@ -135,10 +236,10 @@ export default function QuizPage() {
   
   if (error) {
     return (
-      <div className={styles.quizContainer}> {/* Ensure consistent container */}
+      <div className={styles.quizContainer}>
         <Header />
         <main className={styles.quizMain}>
-          <div className={styles.errorState}> {/* Consistent error display */}
+          <div className={styles.errorState}>
             <h2>Error Loading Quiz</h2>
             <p>{error}</p>
             <Link href="/dashboard" className={styles.buttonPrimary}>
@@ -171,63 +272,50 @@ export default function QuizPage() {
   const selectedOptionForCurrentQuestion = userAnswers[currentQuestionIndex];
 
   return (
-    <div className={styles.quizContainer}>
-      <Header />
-      <main className={styles.quizMain}>
-        <div className={styles.quizHeader}>
-          <h1>{quiz.title || 'Quiz'}</h1>
-          <div className={styles.quizProgress}>
-            <div className={styles.progressTrack}>
-              <div 
-                className={styles.progressBar} 
-                style={{ width: `${((currentQuestionIndex + 1) / quiz.questions.length) * 100}%` }}
-              ></div>
+    <MathJaxContext config={mathJaxConfig}>
+      <div className={styles.quizContainer}>
+        <Header />
+        <main className={styles.quizMain}>
+          <div className={styles.quizHeader}>
+            <h1>{quiz.title || 'Quiz'}</h1>
+            <div className={styles.quizProgress}>
+              <div className={styles.progressTrack}>
+                <div 
+                  className={styles.progressBar} 
+                  style={{ width: `${((currentQuestionIndex + 1) / quiz.questions.length) * 100}%` }}
+                ></div>
+              </div>
+              <div className={styles.questionCounter}>
+                Question {currentQuestionIndex + 1} of {quiz.questions.length}
+              </div>
             </div>
-            <div className={styles.questionCounter}>
-              Question {currentQuestionIndex + 1} of {quiz.questions.length}
-            </div>
-          </div>
-        </div>
-        
-        <div className={styles.questionCard}>
-          <h2 className={styles.question}>{currentQuestion.question}</h2>
-          
-          <div className={styles.options}>
-            {currentQuestion.options.map((option, index) => (
-              <button
-                key={index}
-                className={`${styles.optionButton} ${
-                  selectedOptionForCurrentQuestion === index ? styles.selectedOption : ''
-                }`}
-                onClick={() => handleOptionSelect(currentQuestionIndex, index)}
-              >
-                <span className={styles.optionLetter}>{String.fromCharCode(65 + index)}</span>
-                <span className={styles.optionText}>{option}</span>
-              </button>
-            ))}
           </div>
           
-          <div className={styles.navigationButtons}>
-            {currentQuestionIndex > 0 ? (
+          <div className={styles.questionCard}>
+            {renderQuestion(currentQuestion)}
+            
+            <div className={styles.navigationButtons}>
+              {currentQuestionIndex > 0 ? (
+                <button
+                  className={`${styles.navButton} ${styles.prevButton}`}
+                  onClick={handlePreviousQuestion}
+                >
+                  Previous
+                </button>
+              ) : (
+                <div className={styles.spacer}></div>
+              )}
               <button
-                className={`${styles.navButton} ${styles.prevButton}`}
-                onClick={handlePreviousQuestion}
+                className={`${styles.navButton} ${styles.nextButton}`}
+                onClick={handleNextQuestion}
+                disabled={selectedOptionForCurrentQuestion === null}
               >
-                Previous
+                {currentQuestionIndex < quiz.questions.length - 1 ? 'Next' : 'Finish Quiz'}
               </button>
-            ) : (
-              <div className={styles.spacer}></div> /* Empty spacer for layout balance */
-            )}
-            <button
-              className={`${styles.navButton} ${styles.nextButton}`}
-              onClick={handleNextQuestion}
-              disabled={selectedOptionForCurrentQuestion === null}
-            >
-              {currentQuestionIndex < quiz.questions.length - 1 ? 'Next' : 'Finish Quiz'}
-            </button>
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </MathJaxContext>
   );
 } 

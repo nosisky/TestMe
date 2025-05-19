@@ -27,9 +27,16 @@ export async function POST(request: Request) {
       difficulty = 'medium',
       tags = [],
       createdBy: createdByParam,
+      includeTypes = { multipleChoice: true, trueFalse: true, math: false }
     } = body;
 
     console.log(`Text Quiz Generation - Params: numQuestions=${numQuestions}, difficulty=${difficulty}`);
+    console.log(`Question types: multipleChoice=${includeTypes.multipleChoice}, trueFalse=${includeTypes.trueFalse}, math=${includeTypes.math}`);
+
+    // Ensure at least one question type is selected
+    if (!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math) {
+      return NextResponse.json({ error: 'At least one question type must be selected.' }, { status: 400 });
+    }
 
     // Use createdBy from request if provided, otherwise from session
     const userId = createdByParam || session?.user?.email || 'anonymous';
@@ -50,6 +57,7 @@ export async function POST(request: Request) {
       content: textContent,
       numQuestions: Number(numQuestions),
       difficulty: difficulty,
+      includeTypes: includeTypes
     });
 
     if (!questionsData.questions || questionsData.questions.length === 0) {

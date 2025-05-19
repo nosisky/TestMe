@@ -63,6 +63,11 @@ interface GenerateQuestionsParams {
   content: string;
   numQuestions: number;
   difficulty: string;
+  includeTypes?: {
+    multipleChoice?: boolean;
+    trueFalse?: boolean;
+    math?: boolean;
+  };
 }
 
 // Generate quiz questions using selected AI provider
@@ -85,27 +90,104 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
   
   const activeProvider = await getActiveAIProvider();
   
+  // Determine which question types to include
+  const includeTypes = params.includeTypes || {
+    multipleChoice: true,
+    trueFalse: true,
+    math: true
+  };
+
+  // Calculate distribution of question types
+  let multipleChoiceCount = 0;
+  let trueFalseCount = 0;
+  let mathCount = 0;
+
+  if (includeTypes.multipleChoice && includeTypes.trueFalse && includeTypes.math) {
+    // Evenly distribute if all types are included
+    multipleChoiceCount = Math.ceil(numQuestions / 3);
+    trueFalseCount = Math.ceil(numQuestions / 3);
+    mathCount = numQuestions - multipleChoiceCount - trueFalseCount;
+  } else if (includeTypes.multipleChoice && includeTypes.trueFalse) {
+    // Split between multiple choice and true/false
+    multipleChoiceCount = Math.ceil(numQuestions / 2);
+    trueFalseCount = numQuestions - multipleChoiceCount;
+  } else if (includeTypes.multipleChoice && includeTypes.math) {
+    // Split between multiple choice and math
+    multipleChoiceCount = Math.ceil(numQuestions / 2);
+    mathCount = numQuestions - multipleChoiceCount;
+  } else if (includeTypes.trueFalse && includeTypes.math) {
+    // Split between true/false and math
+    trueFalseCount = Math.ceil(numQuestions / 2);
+    mathCount = numQuestions - trueFalseCount;
+  } else if (includeTypes.multipleChoice) {
+    // Only multiple choice
+    multipleChoiceCount = numQuestions;
+  } else if (includeTypes.trueFalse) {
+    // Only true/false
+    trueFalseCount = numQuestions;
+  } else if (includeTypes.math) {
+    // Only math
+    mathCount = numQuestions;
+  } else {
+    // Default to all multiple choice if no types specified
+    multipleChoiceCount = numQuestions;
+  }
+  
   const prompt = `
     You are an expert quiz creator. Based on the following content,
-    create ${numQuestions} multiple-choice questions at ${params.difficulty} difficulty level.
-    
+    create a quiz with a mix of question types at ${params.difficulty} difficulty level.
+
     Content:
     ${params.content.substring(0, 4000)} // Limit content to first 4000 chars to fit in context window
     
-    For each question:
+    Create a total of ${numQuestions} questions distributed as follows:
+    - ${multipleChoiceCount} multiple choice questions
+    - ${trueFalseCount} true/false questions
+    - ${mathCount} mathematical questions
+    
+    For multiple choice questions:
     1. Create a clear, concise question
     2. Provide 4 possible answers with only 1 correct option
     3. Mark which answer is correct (0-3 index)
     4. Include a brief explanation for why the answer is correct
     
-    Format your response as a JSON array of objects with this structure:
+    For true/false questions:
+    1. Create a clear statement that is either true or false
+    2. Indicate whether the statement is true or false
+    3. Provide a brief explanation for the correct answer
+    
+    For mathematical questions:
+    1. Create a math problem relevant to the content
+    2. Include a LaTeX formula using MathJax syntax (e.g., \\frac{1}{2} for fractions)
+    3. Provide 4 possible answers with only 1 correct option
+    4. Mark which answer is correct (0-3 index)
+    5. Include a brief explanation for the correct answer
+    
+    Format your response as a JSON object with this structure:
     {
       "questions": [
         {
+          "type": "multiple_choice",
           "question": "Question text",
           "options": ["Option A", "Option B", "Option C", "Option D"],
           "correctAnswer": 0,
           "explanation": "Explanation of the correct answer"
+        },
+        {
+          "type": "true_false",
+          "question": "Statement that is true or false",
+          "options": ["True", "False"],
+          "correctAnswer": 0,
+          "isTrue": true,
+          "explanation": "Explanation of why the statement is true or false"
+        },
+        {
+          "type": "math",
+          "question": "Math problem question",
+          "formula": "\\frac{x^2}{2} + 5x",
+          "options": ["Option A", "Option B", "Option C", "Option D"],
+          "correctAnswer": 2,
+          "explanation": "Explanation of the correct mathematical solution"
         }
       ]
     }

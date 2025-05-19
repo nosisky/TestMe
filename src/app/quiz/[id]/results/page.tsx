@@ -8,13 +8,17 @@ import Header from '@/app/components/Header';
 import SocialShareButtons from '@/app/components/SocialShareButtons';
 import MetaTags from '@/app/components/MetaTags';
 import styles from './results.module.scss'; // To be created
+import { MathJax, MathJaxContext } from 'better-react-mathjax';
 
 interface QuizQuestion {
   _id?: string;
   question: string;
+  type: 'multiple_choice' | 'true_false' | 'math';
   options: string[];
-  correctAnswer: number; // Index of the correct option
+  correctAnswer: number;
   explanation?: string;
+  formula?: string;
+  isTrue?: boolean;
 }
 
 interface Quiz {
@@ -40,7 +44,8 @@ export default function QuizResultsPage() {
   const [userAnswers, setUserAnswers] = useState<UserAnswers | null>(null);
   const [score, setScore] = useState<Score | null>(null);
   const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showReview, setShowReview] = useState(false);
   
   useEffect(() => {
     // Allow any user to view results, regardless of authentication status
@@ -182,6 +187,87 @@ export default function QuizResultsPage() {
     );
   };
 
+  // Configure MathJax
+  const mathJaxConfig = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    },
+    startup: {
+      typeset: false
+    }
+  };
+
+  // Render different question types in the results view
+  const renderQuestionResult = (q: QuizQuestion, index: number, userAnswerIndex: number | null) => {
+    const isCorrect = userAnswerIndex === q.correctAnswer;
+    
+    // Common layout for all question types
+    return (
+      <div key={q._id || index} className={`${styles.questionReviewCard} ${isCorrect ? styles.correct : styles.incorrect}`}>
+        <h3>Question {index + 1}: {q.question}</h3>
+        
+        {/* Display formula for math questions */}
+        {q.type === 'math' && q.formula && (
+          <div className={styles.mathFormula}>
+            <MathJax>{q.formula}</MathJax>
+          </div>
+        )}
+        
+        {/* Render options based on question type */}
+        {q.type === 'true_false' ? (
+          <div className={styles.trueFalseReview}>
+            <div className={
+              `${styles.tfOption} 
+               ${0 === q.correctAnswer ? styles.correctAnswerOption : ''} 
+               ${0 === userAnswerIndex && !isCorrect ? styles.incorrectUserOption : ''}
+               ${0 === userAnswerIndex && isCorrect ? styles.correctUserOption : ''}`
+            }>
+              <span className={styles.tfValue}>True</span>
+              {0 === q.correctAnswer && <span className={styles.badgeCorrect}> Correct Answer</span>}
+              {!isCreatorView && 0 === userAnswerIndex && !isCorrect && <span className={styles.badgeUserChoice}> Your Answer</span>}
+              {!isCreatorView && 0 === userAnswerIndex && isCorrect && <span className={styles.badgeUserChoiceCorrect}> Your Answer (Correct)</span>}
+            </div>
+            <div className={
+              `${styles.tfOption} 
+               ${1 === q.correctAnswer ? styles.correctAnswerOption : ''} 
+               ${1 === userAnswerIndex && !isCorrect ? styles.incorrectUserOption : ''}
+               ${1 === userAnswerIndex && isCorrect ? styles.correctUserOption : ''}`
+            }>
+              <span className={styles.tfValue}>False</span>
+              {1 === q.correctAnswer && <span className={styles.badgeCorrect}> Correct Answer</span>}
+              {!isCreatorView && 1 === userAnswerIndex && !isCorrect && <span className={styles.badgeUserChoice}> Your Answer</span>}
+              {!isCreatorView && 1 === userAnswerIndex && isCorrect && <span className={styles.badgeUserChoiceCorrect}> Your Answer (Correct)</span>}
+            </div>
+          </div>
+        ) : (
+          <ul className={styles.optionsList}>
+            {q.options.map((option, optIndex) => (
+              <li key={optIndex} className={
+                `${styles.optionItem} 
+                 ${optIndex === q.correctAnswer ? styles.correctAnswerOption : ''} 
+                 ${optIndex === userAnswerIndex && !isCorrect ? styles.incorrectUserOption : ''}
+                 ${optIndex === userAnswerIndex && isCorrect ? styles.correctUserOption : ''}`
+              }>
+                <span className={styles.optionLetter}>{String.fromCharCode(65 + optIndex)}</span> 
+                {q.type === 'math' ? <MathJax>{option}</MathJax> : option}
+                {optIndex === q.correctAnswer && <span className={styles.badgeCorrect}> Correct Answer</span>}
+                {!isCreatorView && optIndex === userAnswerIndex && !isCorrect && <span className={styles.badgeUserChoice}> Your Answer</span>}
+                {!isCreatorView && optIndex === userAnswerIndex && isCorrect && <span className={styles.badgeUserChoiceCorrect}> Your Answer (Correct)</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+        
+        {q.explanation && (
+          <div className={styles.explanation}>
+            <strong>Explanation:</strong> {q.explanation}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (status === 'loading' || loading) {
     return (
       <div className={styles.pageContainer}>
@@ -248,89 +334,66 @@ export default function QuizResultsPage() {
   }
 
   return (
-    <div className={styles.pageContainer}>
-      <MetaTags 
-        title={`${isCreatorView ? 'Quiz Review' : 'Quiz Completed!'} | ${quiz.title}`}
-        description={`${isCreatorView ? 'Review' : 'You scored'} ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz. ${isCreatorView ? 'View detailed answers.' : 'Check out your results!'}`}
-        url={typeof window !== 'undefined' ? window.location.href : `${process.env.NEXT_PUBLIC_SITE_URL || ''}/quiz/${quizId}/results`}
-      />
-      <Header />
-      <main className={styles.mainContent}>
-        <div className={styles.resultsSummaryCard}>
-          <h1>{isCreatorView ? 'Quiz Review' : 'Quiz Completed!'}</h1>
-          <h2>{quiz.title}</h2>
-          <div className={styles.scoreDisplay}>
-            <p className={styles.scoreText}>{isCreatorView ? 'Correct Answers' : 'You Scored'}</p>
-            <div className={styles.scoreCircle}>
-              <span className={styles.scoreValue}>{score.correct}</span>
-              <span className={styles.scoreTotal}>/{score.total}</span>
+    <MathJaxContext config={mathJaxConfig}>
+      <div className={styles.resultsContainer}>
+        <MetaTags 
+          title={`${isCreatorView ? 'Quiz Review' : 'Quiz Completed!'} | ${quiz.title}`}
+          description={`${isCreatorView ? 'Review' : 'You scored'} ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz. ${isCreatorView ? 'View detailed answers.' : 'Check out your results!'}`}
+          url={typeof window !== 'undefined' ? window.location.href : `${process.env.NEXT_PUBLIC_SITE_URL || ''}/quiz/${quizId}/results`}
+        />
+        <Header />
+        <main className={styles.resultsMain}>
+          <div className={styles.resultsHeader}>
+            <h1>Quiz Results</h1>
+            <h2>{quiz.title}</h2>
+            
+            <div className={styles.scoreSection}>
+              <div className={styles.scoreBox}>
+                <div className={styles.scoreValue}>{score.correct}</div>
+                <div className={styles.scoreLabel}>Correct</div>
+              </div>
+              <div className={styles.scoreDivider}></div>
+              <div className={styles.scoreBox}>
+                <div className={styles.scoreValue}>{score.total}</div>
+                <div className={styles.scoreLabel}>Total</div>
+              </div>
+              <div className={styles.scoreDivider}></div>
+              <div className={styles.scoreBox}>
+                <div className={styles.scoreValue}>{Math.round((score.correct / score.total) * 100)}%</div>
+                <div className={styles.scoreLabel}>Score</div>
+              </div>
             </div>
-            <p className={styles.scorePercentage}>{score.percentage}%</p>
-          </div>
-          <div className={styles.summaryActions}>
-            {isCreatorView ? (
-              <Link href={`/dashboard/analytics/${quizId}`} className={`${styles.button} ${styles.buttonPrimary}`}>
-                Back to Analytics
-              </Link>
-            ) : (
-              <Link href={`/quiz/${quizId}/instructions`} className={`${styles.button} ${styles.buttonPrimary}`}>
-                Retry Quiz
-              </Link>
+            
+            {timeTaken && (
+              <div className={styles.timeTaken}>
+                <span>Time Taken: {formatTime(timeTaken)}</span>
+              </div>
             )}
-            <Link href="/" className={`${styles.button} ${styles.buttonSecondary}`}>
-              Back to Home
-            </Link>
+            
+            <div className={styles.actionButtons}>
+              <button className={styles.reviewButton} onClick={() => setShowReview(!showReview)}>
+                {showReview ? 'Hide Review' : 'Show Review'}
+              </button>
+              <Link className={styles.dashboardButton} href="/dashboard">
+                Back to Dashboard
+              </Link>
+            </div>
           </div>
-
-          <SocialShareButtons 
-            url={`/quiz/${quizId}/instructions`}
-            title={`Check out this quiz: ${quiz.title}`}
-            description={`I scored ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz. Can you beat my score?`}
-            hashtags={['quiz', 'testme']}
-          />
-        </div>
-
-        {/* Show account creation prompt for unauthenticated users */}
-        <CreateAccountPrompt />
-
-        <div className={styles.detailedReviewSection}>
-          <h2>Detailed Review</h2>
-          {isCreatorView && (
-            <div className={styles.creatorNote}>
-              <p>You are viewing this quiz as a creator. This view shows all correct answers and explanations.</p>
+          
+          {showReview && (
+            <div className={styles.reviewSection}>
+              <h2>Review Your Answers</h2>
+              
+              <div className={styles.questionsContainer}>
+                {quiz.questions.map((q, index) => {
+                  const userAnswerIndex = userAnswers[index];
+                  return renderQuestionResult(q, index, userAnswerIndex);
+                })}
+              </div>
             </div>
           )}
-          {quiz.questions.map((q, index) => {
-            const userAnswerIndex = userAnswers[index];
-            const isCorrect = userAnswerIndex === q.correctAnswer;
-            return (
-              <div key={q._id || index} className={`${styles.questionReviewCard} ${isCorrect ? styles.correct : styles.incorrect}`}>
-                <h3>Question {index + 1}: {q.question}</h3>
-                <ul className={styles.optionsList}>
-                  {q.options.map((option, optIndex) => (
-                    <li key={optIndex} className={
-                      `${styles.optionItem} 
-                       ${optIndex === q.correctAnswer ? styles.correctAnswerOption : ''} 
-                       ${optIndex === userAnswerIndex && !isCorrect ? styles.incorrectUserOption : ''}
-                       ${optIndex === userAnswerIndex && isCorrect ? styles.correctUserOption : ''}`
-                    }>
-                      <span className={styles.optionLetter}>{String.fromCharCode(65 + optIndex)}</span> {option}
-                      {optIndex === q.correctAnswer && <span className={styles.badgeCorrect}> Correct Answer</span>}
-                      {!isCreatorView && optIndex === userAnswerIndex && !isCorrect && <span className={styles.badgeUserChoice}> Your Answer</span>}
-                      {!isCreatorView && optIndex === userAnswerIndex && isCorrect && <span className={styles.badgeUserChoiceCorrect}> Your Answer (Correct)</span>}
-                    </li>
-                  ))}
-                </ul>
-                {q.explanation && (
-                  <div className={styles.explanation}>
-                    <strong>Explanation:</strong> {q.explanation}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </MathJaxContext>
   );
 } 

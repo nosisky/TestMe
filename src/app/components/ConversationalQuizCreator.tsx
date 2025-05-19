@@ -24,6 +24,11 @@ const ConversationalQuizCreator = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [quizShareUrl, setQuizShareUrl] = useState<string>("");
   const [isCopied, setIsCopied] = useState(false);
+  const [includeTypes, setIncludeTypes] = useState({
+    multipleChoice: true,
+    trueFalse: true,
+    math: false
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -70,6 +75,12 @@ const ConversationalQuizCreator = () => {
   };
 
   const handleSizeSelect = (size: QuizSize) => {
+    // Validate that at least one question type is selected
+    if (!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math) {
+      setError("Please select at least one question type.");
+      return;
+    }
+    
     setStep("creating");
     setIsCreating(true);
     createQuiz(size);
@@ -186,7 +197,8 @@ const ConversationalQuizCreator = () => {
             videoId,
             questionCount,
             difficulty,
-            createdBy: userId // Associate quiz with user
+            createdBy: userId, // Associate quiz with user
+            includeTypes // Add question types to the request
           })
         });
         
@@ -220,6 +232,9 @@ const ConversationalQuizCreator = () => {
         url.searchParams.append('numQuestions', questionCount.toString());
         url.searchParams.append('difficulty', difficulty);
         url.searchParams.append('createdBy', userId); // Associate quiz with user
+        url.searchParams.append('includeMultipleChoice', includeTypes.multipleChoice.toString());
+        url.searchParams.append('includeTrueFalse', includeTypes.trueFalse.toString());
+        url.searchParams.append('includeMath', includeTypes.math.toString());
         
         console.log(`PDF quiz params: numQuestions=${url.searchParams.get('numQuestions')}, difficulty=${url.searchParams.get('difficulty')}`);
         
@@ -256,7 +271,8 @@ const ConversationalQuizCreator = () => {
             textContent,
             numQuestions: questionCount,
             difficulty,
-            createdBy: userId // Associate quiz with user
+            createdBy: userId, // Associate quiz with user
+            includeTypes // Add question types to the request
           })
         });
         
@@ -541,8 +557,8 @@ const ConversationalQuizCreator = () => {
             )}
             
             {/* Quiz configuration step for mobile */}
-            {step === "config" && (
-              <div className={styles.configContainer}>
+            {step === "config" && !isCreating && isMobile && (
+              <div className={styles.mobileConfigContainer}>
                 <button className={styles.backButton} onClick={handleBack}>
                   <svg width="16" height="16" viewBox="0 0 24 24">
                     <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -551,32 +567,69 @@ const ConversationalQuizCreator = () => {
                 </button>
                 
                 <h2>How would you like your quiz?</h2>
-                <div className={styles.quizSizes}>
+                
+                {/* Mobile question types section */}
+                <div className={styles.questionTypesSection}>
+                  <h3>Question Types</h3>
+                  <p className={styles.questionTypesDescription}>
+                    Select the types of questions you want:
+                  </p>
+                  <div className={styles.mobileCheckboxGroup}>
+                    <label className={styles.checkboxLabel}>
+                      <input 
+                        type="checkbox" 
+                        checked={includeTypes.multipleChoice} 
+                        onChange={() => setIncludeTypes({...includeTypes, multipleChoice: !includeTypes.multipleChoice})}
+                        className={styles.checkbox}
+                      />
+                      <span>Multiple Choice</span>
+                    </label>
+                    <label className={styles.checkboxLabel}>
+                      <input 
+                        type="checkbox" 
+                        checked={includeTypes.trueFalse} 
+                        onChange={() => setIncludeTypes({...includeTypes, trueFalse: !includeTypes.trueFalse})}
+                        className={styles.checkbox}
+                      />
+                      <span>True/False</span>
+                    </label>
+                    <label className={styles.checkboxLabel}>
+                      <input 
+                        type="checkbox" 
+                        checked={includeTypes.math} 
+                        onChange={() => setIncludeTypes({...includeTypes, math: !includeTypes.math})}
+                        className={styles.checkbox}
+                      />
+                      <span>Mathematical</span>
+                    </label>
+                  </div>
+                  {!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math && (
+                    <div className={styles.errorMessage}>Please select at least one question type</div>
+                  )}
+                </div>
+                
+                <div className={styles.mobileSizeOptions}>
                   <button
-                    className={styles.sizeOption}
+                    className={styles.mobileButton}
                     onClick={() => handleSizeSelect("quick")}
                   >
-                    <h3>Quick Quiz</h3>
-                    <p>5 questions, mixed difficulty</p>
-                    <span className={styles.timeEstimate}>~5 minutes</span>
+                    <h3>Quick Quiz (5 Questions)</h3>
                   </button>
                   
                   <button
-                    className={styles.sizeOption}
+                    className={`${styles.mobileButton} ${styles.primaryButton}`}
                     onClick={() => handleSizeSelect("standard")}
                   >
-                    <h3>Standard Quiz</h3>
-                    <p>10 questions, balanced difficulty</p>
-                    <span className={styles.timeEstimate}>~10 minutes</span>
-                    <div className={styles.recommended}>Recommended</div>
+                    <h3>Standard Quiz (10 Questions)</h3>
+                    <div className={styles.recommendedBadge}>Recommended</div>
                   </button>
                   
-                  <div
-                    className={`${styles.sizeOption} ${!session ? styles.premiumOption : ""} ${!session ? styles.disabledOption : ""}`}
+                  <button
+                    className={`${styles.mobileButton} ${!session ? styles.premiumButton : ""}`}
+                    onClick={() => handleSizeSelect("deep")}
+                    disabled={!session}
                   >
-                    <h3>Deep Dive</h3>
-                    <p>15 questions, more challenging</p>
-                    <span className={styles.timeEstimate}>~15 minutes</span>
+                    <h3>Deep Dive (15 Questions)</h3>
                     {!session && (
                       <div className={styles.premiumBadge}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -584,14 +637,14 @@ const ConversationalQuizCreator = () => {
                         </svg>
                       </div>
                     )}
-                  </div>
+                  </button>
                   
-                  <div
-                    className={`${styles.sizeOption} ${!session ? styles.premiumOption : ""} ${!session ? styles.disabledOption : ""}`}
+                  <button
+                    className={`${styles.mobileButton} ${!session ? styles.premiumButton : ""}`}
+                    onClick={() => handleSizeSelect("expert")}
+                    disabled={!session}
                   >
-                    <h3>Expert Level</h3>
-                    <p>20 questions, advanced concepts</p>
-                    <span className={styles.timeEstimate}>~25 minutes</span>
+                    <h3>Expert Level (20 Questions)</h3>
                     {!session && (
                       <div className={styles.premiumBadge}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -599,8 +652,10 @@ const ConversationalQuizCreator = () => {
                         </svg>
                       </div>
                     )}
-                  </div>
+                  </button>
                 </div>
+                
+                {error && <div className={styles.errorMessage}>{error}</div>}
               </div>
             )}
           </div>
@@ -769,6 +824,47 @@ const ConversationalQuizCreator = () => {
             </button>
             
             <h2>How would you like your quiz?</h2>
+            
+            {/* Add question types section */}
+            <div className={styles.questionTypesSection}>
+              <h3>Question Types</h3>
+              <p className={styles.questionTypesDescription}>
+                Select the types of questions you want in your quiz:
+              </p>
+              <div className={styles.checkboxGroup}>
+                <label className={styles.checkboxLabel}>
+                  <input 
+                    type="checkbox" 
+                    checked={includeTypes.multipleChoice} 
+                    onChange={() => setIncludeTypes({...includeTypes, multipleChoice: !includeTypes.multipleChoice})}
+                    className={styles.checkbox}
+                  />
+                  <span>Multiple Choice</span>
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input 
+                    type="checkbox" 
+                    checked={includeTypes.trueFalse} 
+                    onChange={() => setIncludeTypes({...includeTypes, trueFalse: !includeTypes.trueFalse})}
+                    className={styles.checkbox}
+                  />
+                  <span>True/False</span>
+                </label>
+                <label className={styles.checkboxLabel}>
+                  <input 
+                    type="checkbox" 
+                    checked={includeTypes.math} 
+                    onChange={() => setIncludeTypes({...includeTypes, math: !includeTypes.math})}
+                    className={styles.checkbox}
+                  />
+                  <span>Mathematical</span>
+                </label>
+              </div>
+              {!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math && (
+                <div className={styles.errorMessage}>Please select at least one question type</div>
+              )}
+            </div>
+            
             <div className={styles.quizSizes}>
               <button
                 className={styles.sizeOption}

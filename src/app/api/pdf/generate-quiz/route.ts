@@ -20,7 +20,24 @@ export async function POST(request: Request) {
     const tagsParam = url.searchParams.get('tags');
     const tags = tagsParam ? tagsParam.split(',').map(tag => tag.trim()) : [];
     
+    // Get includeTypes parameters
+    const includeMultipleChoice = url.searchParams.get('includeMultipleChoice') !== 'false';
+    const includeTrueFalse = url.searchParams.get('includeTrueFalse') !== 'false';
+    const includeMath = url.searchParams.get('includeMath') === 'true';
+    
+    const includeTypes = {
+      multipleChoice: includeMultipleChoice,
+      trueFalse: includeTrueFalse,
+      math: includeMath
+    };
+    
     console.log(`PDF Quiz Generation - Raw params: numQuestions=${numQuestionsStr}, parsed=${numQuestions}, difficulty=${difficulty}`);
+    console.log(`Question types: multipleChoice=${includeTypes.multipleChoice}, trueFalse=${includeTypes.trueFalse}, math=${includeTypes.math}`);
+    
+    // Ensure at least one question type is selected
+    if (!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math) {
+      return NextResponse.json({ error: 'At least one question type must be selected.' }, { status: 400 });
+    }
     
     // Use createdBy from query string if provided, otherwise from session
     const createdByParam = url.searchParams.get('createdBy');
@@ -92,7 +109,8 @@ export async function POST(request: Request) {
       const questionsData = await generateQuizQuestions({
         content: pdfText,
         numQuestions,
-        difficulty
+        difficulty,
+        includeTypes
       });
 
       if (!questionsData.questions || !questionsData.questions.length) {

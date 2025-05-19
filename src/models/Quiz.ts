@@ -1,11 +1,19 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+// Define question types
+export type QuestionType = 'multiple_choice' | 'true_false' | 'math';
+
 // Interface representing a quiz question
 export interface IQuizQuestion {
   question: string;
+  type: QuestionType;
   options: string[];
   correctAnswer: number;
   explanation: string;
+  // Fields for math questions
+  formula?: string;
+  // Fields for true/false questions
+  isTrue?: boolean;
 }
 
 // Quiz source type declaration
@@ -58,9 +66,19 @@ export interface IQuiz extends Document {
 
 const QuizQuestionSchema = new Schema<IQuizQuestion>({
   question: { type: String, required: true },
+  type: { 
+    type: String, 
+    enum: ['multiple_choice', 'true_false', 'math'], 
+    default: 'multiple_choice',
+    required: true 
+  },
   options: { type: [String], required: true },
   correctAnswer: { type: Number, required: true },
-  explanation: { type: String, required: true }
+  explanation: { type: String, required: true },
+  // Fields for math questions
+  formula: { type: String }, 
+  // Fields for true/false questions
+  isTrue: { type: Boolean }
 }, { _id: false }); // Subdocuments don't need their own IDs
 
 const QuizSchema = new Schema<IQuiz>({

@@ -69,9 +69,24 @@ export async function POST(request: Request) {
   try {
     // 1. Parse the request body to get the videoId
     const body = await request.json();
-    const { videoId, questionCount = 5, difficulty = 'medium' } = body;
+    const { 
+      videoId, 
+      questionCount = 5, 
+      difficulty = 'medium',
+      includeTypes = { multipleChoice: true, trueFalse: true, math: true },
+      createdBy: createdByParam
+    } = body;
 
     console.log(`YouTube Quiz Generation - Params: questionCount=${questionCount}, difficulty=${difficulty}`);
+    console.log(`Question types: multipleChoice=${includeTypes.multipleChoice}, trueFalse=${includeTypes.trueFalse}, math=${includeTypes.math}`);
+
+    // Ensure at least one question type is selected
+    if (!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math) {
+      return NextResponse.json(
+        { error: 'At least one question type must be selected' },
+        { status: 400 }
+      );
+    }
 
     if (!videoId) {
       return NextResponse.json(
@@ -85,7 +100,7 @@ export async function POST(request: Request) {
 
     // 3. Get the user session (if authenticated)
     const session = await getServerSession();
-    const userId = session?.user?.email || 'anonymous';
+    const userId = createdByParam || session?.user?.email || 'anonymous';
 
     // 4. Get video details and transcript
     const videoDetails = await getVideoDetails(videoId);
@@ -120,6 +135,7 @@ export async function POST(request: Request) {
       content,
       numQuestions: questionCount,
       difficulty,
+      includeTypes: includeTypes
     });
     
     // Extract questions array from the response
