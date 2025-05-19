@@ -116,7 +116,7 @@ export default function Header({ currentPage }: HeaderProps = {}) {
             // Navigation for unauthenticated users (landing page)
             <>
               <Link href="/#features" className={currentPage === 'features' ? styles.activeLink : ''}>Features</Link>
-              <Link href="/#how" className={currentPage === 'how' ? styles.activeLink : ''}>How it works</Link>
+              <Link href="/#how-it-works" className={currentPage === 'how' ? styles.activeLink : ''}>How it works</Link>
             </>
           )}
         </nav>
@@ -168,7 +168,7 @@ export default function Header({ currentPage }: HeaderProps = {}) {
           // Navigation for unauthenticated users (landing page)
           <>
             <Link href="/#features" onClick={closeMenu}>Features</Link>
-            <Link href="/#how" onClick={closeMenu}>How it works</Link>
+            <Link href="/#how-it-works" onClick={closeMenu}>How it works</Link>
             <div className={styles.loginWrapper}>
               <LoginButton />
             </div>
