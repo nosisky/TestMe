@@ -16,7 +16,7 @@ export default function Home() {
         </h1>
         <p className={styles.subtitle}>
           Our AI turns your learning materials into targeted quizzes
-          <br />that identify and strengthen your weak spots.
+          <br />{' '}that identify and strengthen your weak spots.
         </p>
         
         {/* Show quiz creator interface immediately without requiring login */}

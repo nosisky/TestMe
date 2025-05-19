@@ -38,7 +38,7 @@ const ConversationalQuizCreator = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [createdQuizId, setCreatedQuizId] = useState("");
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const [quizShareUrl, setQuizShareUrl] = useState<string>("");
   const [isCopied, setIsCopied] = useState(false);
   const [includeTypes, setIncludeTypes] = useState<QuestionTypesConfig>({
@@ -55,15 +55,19 @@ const ConversationalQuizCreator = () => {
 
   // Set initial mobile state and update on resize
   useEffect(() => {
-    const checkIsMobile = () => {
+    const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
     
-    checkIsMobile();
-    window.addEventListener("resize", checkIsMobile);
+    // Set initial value
+    handleResize();
     
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
     return () => {
-      window.removeEventListener("resize", checkIsMobile);
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
@@ -662,8 +666,9 @@ const ConversationalQuizCreator = () => {
                               <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="currentColor" strokeWidth="2"/>
                               <path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                             </svg>
-                            <span>
-                              Tap to browse files<br />
+                            <span className={styles.uploadText}>
+                              {isMobile ? "Tap to upload a PDF" : "Drag & drop your PDF here or click to browse"}
+                              <br />
                               <span className={styles.fileLimits}>(5MB max)</span>
                             </span>
                           </>
@@ -694,7 +699,7 @@ const ConversationalQuizCreator = () => {
                 )}
                 
                 {quizType === "image" && (
-                  <div className={styles.inputGroup} style={{ marginBottom: '3rem' }}>
+                  <div className={styles.inputGroup}>
                     <h2>Upload an Image with Text</h2>
                     <p className={styles.inputDescription}>
                       Upload an image containing text (like notes, textbooks, diagrams, or screenshots) and we&apos;ll create intelligent quiz questions from it.
@@ -714,28 +719,29 @@ const ConversationalQuizCreator = () => {
                         <div className={styles.selectedFile}>
                           <span className={styles.fileIcon}>📷</span>
                           <span className={styles.fileName}>{imageFile.name}</span>
-                          <img 
-                            src={URL.createObjectURL(imageFile)} 
-                            alt="Preview" 
-                            className={styles.imagePreview}
-                            style={{ marginBottom: '2rem' }}
-                          />
+                          {/* Image preview with responsive layout */}
+                          <div style={{ width: '100%', textAlign: 'center', maxWidth: '300px' }}>
+                            <img 
+                              src={URL.createObjectURL(imageFile)} 
+                              alt="Preview" 
+                              className={styles.imagePreview}
+                            />
+                          </div>
                         </div>
                       ) : (
                         <>
                           <svg className={styles.uploadIcon} width="40" height="40" viewBox="0 0 24 24">
                             <path d="M7 16a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round"/>
                             <path d="M20 16.44V6a2 2 0 00-2-2H6a2 2 0 00-2 2v10.44a2 2 0 00.89 1.66l6 4a2 2 0 002.22 0l6-4a2 2 0 00.89-1.66z" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round"/>
-                            <path d="M12 8v8M8 12h8" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round"/>
                           </svg>
                           <span className={styles.uploadText}>
-                            Drag & drop your image here or click to browse<br />
+                            {isMobile ? "Tap to upload an image" : "Drag & drop your image here or click to browse"}
+                            <br />
                             <span className={styles.fileLimits}>(5MB max, JPG/PNG/GIF/WEBP supported)</span>
                           </span>
                         </>
                       )}
                     </div>
-                    {imageFile && <div style={{ height: '2rem' }}></div>}
                     {error && <div className={styles.errorMessage}>{error}</div>}
                   </div>
                 )}
@@ -962,8 +968,9 @@ const ConversationalQuizCreator = () => {
                           <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="currentColor" strokeWidth="2"/>
                           <path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                         </svg>
-                        <span>
-                          Drag &amp; drop your PDF here or click to browse<br />
+                        <span className={styles.uploadText}>
+                          {isMobile ? "Tap to upload a PDF" : "Drag & drop your PDF here or click to browse"}
+                          <br />
                           <span className={styles.fileLimits}>(5MB max)</span>
                         </span>
                       </>
@@ -994,7 +1001,7 @@ const ConversationalQuizCreator = () => {
             )}
             
             {quizType === "image" && (
-              <div className={styles.inputGroup} style={{ marginBottom: '3rem' }}>
+              <div className={styles.inputGroup}>
                 <h2>Upload an Image with Text</h2>
                 <p className={styles.inputDescription}>
                   Upload an image containing text (like notes, textbooks, diagrams, or screenshots) and we&apos;ll create intelligent quiz questions from it.
@@ -1014,28 +1021,29 @@ const ConversationalQuizCreator = () => {
                     <div className={styles.selectedFile}>
                       <span className={styles.fileIcon}>📷</span>
                       <span className={styles.fileName}>{imageFile.name}</span>
-                      <img 
-                        src={URL.createObjectURL(imageFile)} 
-                        alt="Preview" 
-                        className={styles.imagePreview}
-                        style={{ marginBottom: '2rem' }}
-                      />
+                      {/* Image preview with responsive layout */}
+                      <div style={{ width: '100%', textAlign: 'center', maxWidth: '300px' }}>
+                        <img 
+                          src={URL.createObjectURL(imageFile)} 
+                          alt="Preview" 
+                          className={styles.imagePreview}
+                        />
+                      </div>
                     </div>
                   ) : (
                     <>
                       <svg className={styles.uploadIcon} width="40" height="40" viewBox="0 0 24 24">
                         <path d="M7 16a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round"/>
                         <path d="M20 16.44V6a2 2 0 00-2-2H6a2 2 0 00-2 2v10.44a2 2 0 00.89 1.66l6 4a2 2 0 002.22 0l6-4a2 2 0 00.89-1.66z" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round"/>
-                        <path d="M12 8v8M8 12h8" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round"/>
                       </svg>
                       <span className={styles.uploadText}>
-                        Drag & drop your image here or click to browse<br />
+                        {isMobile ? "Tap to upload an image" : "Drag & drop your image here or click to browse"}
+                        <br />
                         <span className={styles.fileLimits}>(5MB max, JPG/PNG/GIF/WEBP supported)</span>
                       </span>
                     </>
                   )}
                 </div>
-                {imageFile && <div style={{ height: '2rem' }}></div>}
                 {error && <div className={styles.errorMessage}>{error}</div>}
               </div>
             )}

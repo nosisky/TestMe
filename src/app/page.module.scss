@@ -228,9 +228,23 @@
   max-width: 1100px;
   margin: 0 auto 3rem;
   padding: 0 1.5rem;
+  
+  @media (max-width: 768px) {
+    padding: 0 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 0 0.75rem;
+  }
 }
+
 .quizCreatorWrapper {
   width: 100%;
   max-width: 900px;
   margin: 1rem auto;
+  
+  @media (max-width: 768px) {
+    margin: 0.5rem auto;
+  }
 }
