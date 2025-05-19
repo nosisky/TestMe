@@ -417,107 +417,55 @@
   }
 }
 
-.textInput {
-  width: 100%;
-  padding: 1rem;
-  border: 1px solid var(--border-color);
-  background: var(--input-background);
-  color: var(--text-primary);
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  
-  &:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-  }
-  
-  &::placeholder {
-    color: var(--text-tertiary);
-  }
-}
-
-.textareaInput {
-  width: 100%;
-  padding: 1rem;
-  border: 1px solid var(--border-color);
-  background: var(--input-background);
-  color: var(--text-primary);
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  resize: vertical;
-  min-height: 150px;
-  transition: all 0.2s ease;
-  
-  &:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-  }
-  
-  &::placeholder {
-    color: var(--text-tertiary);
-  }
-}
-
-.charCount {
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
-  text-align: right;
-  color: var(--text-tertiary);
-}
-
-.fileUploadArea {
+/* Ensure enough space for the image upload section */
+.uploadContainer {
   border: 2px dashed var(--border-color);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   padding: 2rem;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  background-color: var(--background-secondary);
+  margin-top: 1rem;
+  margin-bottom: 3rem; /* Increased margin to avoid overlap */
+  min-height: 200px;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative; /* Added for better positioning */
   
   &:hover {
     border-color: var(--accent);
     background: var(--background-hover);
-  }
-}
-
-.hiddenFileInput {
-  display: none;
-}
-
-.uploadPrompt {
-  color: var(--text-secondary);
-  font-size: 1rem;
-  
-  .uploadIcon {
-    display: block;
-    margin: 0 auto 1rem;
-    color: var(--text-tertiary);
-  }
-  
-  .fileLimits {
-    display: block;
-    margin-top: 0.5rem;
-    font-size: 0.8rem;
-    color: var(--text-tertiary);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
   }
 }
 
 .selectedFile {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  width: 100%;
+  padding: 0.5rem;
+  padding-bottom: 1.5rem; /* Extra padding at bottom */
   
   .fileIcon {
     font-size: 2rem;
-    margin-right: 0.75rem;
+    margin-bottom: 0.75rem;
   }
   
   .fileName {
     font-weight: 500;
     color: var(--text-primary);
     word-break: break-all;
+    margin-bottom: 0.75rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -542,6 +490,7 @@
   display: block;
   margin: 0 auto;
   transition: all 0.2s ease;
+  margin-top: 2rem;
   
   &:hover {
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
@@ -1272,4 +1221,134 @@
 .infoIcon {
   margin-right: 0.5rem;
   flex-shrink: 0;
+}
+
+.imagePreview {
+  max-width: 100%;
+  max-height: 200px;
+  margin-top: 0.75rem;
+  margin-bottom: 2rem; /* Increased margin at bottom */
+  border-radius: 0.75rem;
+  object-fit: contain;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  
+  &:hover {
+    transform: scale(1.02);
+  }
+}
+
+.uploadText {
+  margin-top: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.textInput {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 0.5rem;
+  background: var(--background);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  margin-bottom: 1rem;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  }
+  
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
+}
+
+.textareaInput {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 0.5rem;
+  background: var(--background);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  resize: vertical;
+  min-height: 150px;
+  margin-bottom: 0.5rem;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  }
+  
+  &::placeholder {
+    color: var(--text-tertiary);
+  }
+}
+
+.fileUploadArea {
+  border: 2px dashed var(--border-color);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  cursor: pointer;
+  background-color: var(--background-secondary);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: var(--accent);
+    background: var(--background-hover);
+  }
+}
+
+.uploadPrompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.uploadIcon {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.fileLimits {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  margin-top: 0.25rem;
+}
+
+.charCount {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-align: right;
+  margin-bottom: 1rem;
+}
+
+.uploadText {
+  margin-top: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.imagePreview {
+  max-width: 100%;
+  max-height: 200px;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+  object-fit: contain;
+  border: 1px solid var(--border-color);
 } 

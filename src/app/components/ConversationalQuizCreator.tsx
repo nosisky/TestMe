@@ -49,6 +49,9 @@ const ConversationalQuizCreator = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const shareUrlRef = useRef<HTMLInputElement>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [anonQuizCount, setAnonQuizCount] = useState<number>(0);
 
   // Set initial mobile state and update on resize
   useEffect(() => {
@@ -82,6 +85,14 @@ const ConversationalQuizCreator = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Load anonymous quiz count from localStorage on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !session) {
+      const count = localStorage.getItem('anonQuizCount');
+      setAnonQuizCount(count ? parseInt(count, 10) : 0);
+    }
+  }, [session]);
 
   const handleTypeSelect = (type: QuizType) => {
     setQuizType(type);
@@ -144,8 +155,8 @@ const ConversationalQuizCreator = () => {
       setError("Please enter at least 50 characters");
       return false;
     }
-    if (quizType === "image") {
-      setError("Image quizzes coming soon!");
+    if (quizType === "image" && !imageFile) {
+      setError("Please upload an image");
       return false;
     }
     return true;
@@ -212,8 +223,35 @@ const ConversationalQuizCreator = () => {
     return (match && match[2].length === 11) ? match[2] : null;
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Image must be less than 5MB");
+        return;
+      }
+      setImageFile(file);
+      setError("");
+    } else {
+      setError("Please upload a valid image file");
+    }
+  };
+
+  const handleImageButtonClick = () => {
+    if (imageInputRef.current) {
+      imageInputRef.current.click();
+    }
+  };
+
   const createQuiz = async (selectedSize: QuizSize) => {
     try {
+      // Check if anonymous user has exceeded quiz limit (3)
+      if (!session && anonQuizCount >= 3) {
+        setShowLoginPrompt(true);
+        setError("You've reached the limit of 3 quizzes for anonymous users. Please create an account to continue.");
+        return;
+      }
+
       setIsCreating(true);
       
       // Get the current user's ID if logged in
@@ -255,11 +293,18 @@ const ConversationalQuizCreator = () => {
         setCreatedQuizId(data._id);
         setQuizShareUrl(`${window.location.origin}/quiz/${data._id}`);
         
-        // If quiz was created but user isn't logged in, show login prompt
+        // If quiz was created but user isn't logged in, increment count
         if (!session) {
-          setShowLoginPrompt(true);
-          setIsCreating(false);
-          return;
+          const newCount = anonQuizCount + 1;
+          localStorage.setItem('anonQuizCount', newCount.toString());
+          setAnonQuizCount(newCount);
+          
+          // If this was their 3rd quiz, show login prompt
+          if (newCount >= 3) {
+            setShowLoginPrompt(true);
+            setIsCreating(false);
+            return;
+          }
         }
         
         // If user is logged in, show success page or redirect
@@ -293,11 +338,18 @@ const ConversationalQuizCreator = () => {
         setCreatedQuizId(data.quiz.id);
         setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}`);
         
-        // If quiz was created but user isn't logged in, show login prompt
+        // If quiz was created but user isn't logged in, increment count
         if (!session) {
-          setShowLoginPrompt(true);
-          setIsCreating(false);
-          return;
+          const newCount = anonQuizCount + 1;
+          localStorage.setItem('anonQuizCount', newCount.toString());
+          setAnonQuizCount(newCount);
+          
+          // If this was their 3rd quiz, show login prompt
+          if (newCount >= 3) {
+            setShowLoginPrompt(true);
+            setIsCreating(false);
+            return;
+          }
         }
         
         // If user is logged in, show success page or redirect
@@ -326,11 +378,61 @@ const ConversationalQuizCreator = () => {
         setCreatedQuizId(data.quiz.id);
         setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}`);
         
-        // If quiz was created but user isn't logged in, show login prompt
+        // If quiz was created but user isn't logged in, increment count
         if (!session) {
-          setShowLoginPrompt(true);
-          setIsCreating(false);
-          return;
+          const newCount = anonQuizCount + 1;
+          localStorage.setItem('anonQuizCount', newCount.toString());
+          setAnonQuizCount(newCount);
+          
+          // If this was their 3rd quiz, show login prompt
+          if (newCount >= 3) {
+            setShowLoginPrompt(true);
+            setIsCreating(false);
+            return;
+          }
+        }
+        
+        // If user is logged in, show success page or redirect
+        setIsCreating(false);
+        setStep("success");
+      }
+      else if (quizType === "image" && imageFile) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        
+        const url = new URL('/api/image/generate-quiz', window.location.origin);
+        url.searchParams.append('numQuestions', questionCount.toString());
+        url.searchParams.append('difficulty', difficulty);
+        url.searchParams.append('createdBy', userId);
+        url.searchParams.append('includeMultipleChoice', includeTypes.multipleChoice.toString());
+        url.searchParams.append('includeTrueFalse', includeTypes.trueFalse.toString());
+        
+        const response = await fetch(url.toString(), {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to create quiz from image');
+        }
+        
+        // Store the quiz ID
+        setCreatedQuizId(data.quiz.id);
+        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}`);
+        
+        // If quiz was created but user isn't logged in, increment count
+        if (!session) {
+          const newCount = anonQuizCount + 1;
+          localStorage.setItem('anonQuizCount', newCount.toString());
+          setAnonQuizCount(newCount);
+          
+          // If this was their 3rd quiz, show login prompt
+          if (newCount >= 3) {
+            setShowLoginPrompt(true);
+            setIsCreating(false);
+            return;
+          }
         }
         
         // If user is logged in, show success page or redirect
@@ -405,6 +507,14 @@ const ConversationalQuizCreator = () => {
       </div>
     </div>
   );
+
+  // Update the login prompt message to show limit information
+  const loginPromptMessage = () => {
+    if (anonQuizCount >= 3) {
+      return "You've reached the limit of 3 quizzes for anonymous users. Create an account to continue creating quizzes.";
+    }
+    return "Create a free account to unlock the full TestMe experience:";
+  };
 
   return (
     <div className={styles.container}>
@@ -481,16 +591,14 @@ const ConversationalQuizCreator = () => {
               </button>
               
               <button
-                className={`${styles.menuItem} ${styles.disabled}`}
+                className={styles.menuItem}
+                onClick={() => handleTypeSelect("image")}
               >
                 <span className={styles.menuIcon}>🖼️</span>
                 <div className={styles.menuContent}>
-                  <span className={styles.menuTitle}>Image</span>
-                  <span className={styles.menuDescription}>
-                    Got a diagram or chart? We&apos;re working on it.
-                  </span>
+                  <span className={styles.menuTitle}>Image with Text</span>
+                  <span className={styles.menuDescription}>Upload an image containing text to create a quiz</span>
                 </div>
-                <span className={styles.comingSoon}>Coming Soon</span>
               </button>
             </div>
           )}
@@ -582,6 +690,53 @@ const ConversationalQuizCreator = () => {
                       {textContent.length}/50 characters minimum
                       {textContent.length >= 50 && " ✓"}
                     </div>
+                  </div>
+                )}
+                
+                {quizType === "image" && (
+                  <div className={styles.inputGroup} style={{ marginBottom: '3rem' }}>
+                    <h2>Upload an Image with Text</h2>
+                    <p className={styles.inputDescription}>
+                      Upload an image containing text (like notes, textbooks, diagrams, or screenshots) and we&apos;ll create intelligent quiz questions from it.
+                    </p>
+                    <input
+                      type="file"
+                      ref={imageInputRef}
+                      onChange={handleImageSelect}
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                    />
+                    <div
+                      className={styles.uploadContainer}
+                      onClick={handleImageButtonClick}
+                    >
+                      {imageFile ? (
+                        <div className={styles.selectedFile}>
+                          <span className={styles.fileIcon}>📷</span>
+                          <span className={styles.fileName}>{imageFile.name}</span>
+                          <img 
+                            src={URL.createObjectURL(imageFile)} 
+                            alt="Preview" 
+                            className={styles.imagePreview}
+                            style={{ marginBottom: '2rem' }}
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <svg className={styles.uploadIcon} width="40" height="40" viewBox="0 0 24 24">
+                            <path d="M7 16a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round"/>
+                            <path d="M20 16.44V6a2 2 0 00-2-2H6a2 2 0 00-2 2v10.44a2 2 0 00.89 1.66l6 4a2 2 0 002.22 0l6-4a2 2 0 00.89-1.66z" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round"/>
+                            <path d="M12 8v8M8 12h8" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round"/>
+                          </svg>
+                          <span className={styles.uploadText}>
+                            Drag & drop your image here or click to browse<br />
+                            <span className={styles.fileLimits}>(5MB max, JPG/PNG/GIF/WEBP supported)</span>
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {imageFile && <div style={{ height: '2rem' }}></div>}
+                    {error && <div className={styles.errorMessage}>{error}</div>}
                   </div>
                 )}
                 
@@ -744,9 +899,9 @@ const ConversationalQuizCreator = () => {
               </button>
               
               <button
-                className={`${styles.optionCard} ${styles.disabled}`}
+                className={`${styles.optionCard}`}
+                onClick={() => handleTypeSelect("image")}
               >
-                <span className={styles.comingSoonBadge}>Coming Soon</span>
                 <span className={styles.optionIcon}>🖼️</span>
                 <h3>Image</h3>
                 <p>Test yourself on diagrams and visual content</p>
@@ -835,6 +990,53 @@ const ConversationalQuizCreator = () => {
                   {textContent.length}/50 characters minimum
                   {textContent.length >= 50 && " ✓"}
                 </div>
+              </div>
+            )}
+            
+            {quizType === "image" && (
+              <div className={styles.inputGroup} style={{ marginBottom: '3rem' }}>
+                <h2>Upload an Image with Text</h2>
+                <p className={styles.inputDescription}>
+                  Upload an image containing text (like notes, textbooks, diagrams, or screenshots) and we&apos;ll create intelligent quiz questions from it.
+                </p>
+                <input
+                  type="file"
+                  ref={imageInputRef}
+                  onChange={handleImageSelect}
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                />
+                <div
+                  className={styles.uploadContainer}
+                  onClick={handleImageButtonClick}
+                >
+                  {imageFile ? (
+                    <div className={styles.selectedFile}>
+                      <span className={styles.fileIcon}>📷</span>
+                      <span className={styles.fileName}>{imageFile.name}</span>
+                      <img 
+                        src={URL.createObjectURL(imageFile)} 
+                        alt="Preview" 
+                        className={styles.imagePreview}
+                        style={{ marginBottom: '2rem' }}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <svg className={styles.uploadIcon} width="40" height="40" viewBox="0 0 24 24">
+                        <path d="M7 16a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round"/>
+                        <path d="M20 16.44V6a2 2 0 00-2-2H6a2 2 0 00-2 2v10.44a2 2 0 00.89 1.66l6 4a2 2 0 002.22 0l6-4a2 2 0 00.89-1.66z" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round"/>
+                        <path d="M12 8v8M8 12h8" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                      <span className={styles.uploadText}>
+                        Drag & drop your image here or click to browse<br />
+                        <span className={styles.fileLimits}>(5MB max, JPG/PNG/GIF/WEBP supported)</span>
+                      </span>
+                    </>
+                  )}
+                </div>
+                {imageFile && <div style={{ height: '2rem' }}></div>}
+                {error && <div className={styles.errorMessage}>{error}</div>}
               </div>
             )}
             
@@ -1012,7 +1214,7 @@ const ConversationalQuizCreator = () => {
           <div className={styles.loginPrompt}>
             <h3>Your quiz is ready! 🎉</h3>
             <p>
-              Create a free account to unlock the full TestMe experience:
+              {loginPromptMessage()}
             </p>
             <ul className={styles.featuresList}>
               <li>
@@ -1036,9 +1238,11 @@ const ConversationalQuizCreator = () => {
               <button onClick={handleLogin} className={styles.loginButton}>
                 Create Free Account
               </button>
-              <button onClick={handleContinueWithoutLogin} className={styles.skipButton}>
-                Just Take This Quiz
-              </button>
+              {anonQuizCount < 3 && (
+                <button onClick={handleContinueWithoutLogin} className={styles.skipButton}>
+                  Just Take This Quiz
+                </button>
+              )}
             </div>
           </div>
         </div>
