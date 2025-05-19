@@ -30,17 +30,12 @@ export async function getActiveAIProvider(): Promise<IAIConfig> {
   
   // Get the active provider configuration
   const activeConfig = await AIConfig.findOne({ isActive: true });
-  
-  console.log('ENV DEFAULT_AI_PROVIDER:', process.env.DEFAULT_AI_PROVIDER);
-  console.log('Active AI provider from database:', activeConfig?.provider || 'none found');
-  
+
   // Fallback to environment variable or OpenAI if no active provider
   if (!activeConfig) {
     const defaultProvider = (process.env.DEFAULT_AI_PROVIDER as AIProvider) || 'openai';
-    console.log('Using fallback provider:', defaultProvider);
     
     const fallbackConfig = await AIConfig.findOne({ provider: defaultProvider });
-    console.log('Fallback config found:', fallbackConfig?.provider || 'none found');
     
     if (!fallbackConfig) {
       throw new Error('No AI provider configuration found');
@@ -69,11 +64,9 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
     ? parseInt(params.numQuestions) 
     : params.numQuestions;
   
-  console.log(`AI Service - Generating ${numQuestions} questions at ${params.difficulty} difficulty`);
   
   // Use mock service when in development or missing API keys
   if (USE_MOCK_SERVICE) {
-    console.log('Using mock AI service for quiz generation');
     return await generateMockQuizQuestions({
       ...params,
       numQuestions
@@ -94,7 +87,6 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
     params.content.toLowerCase().includes("algebra") ||
     params.content.toLowerCase().includes("geometry");
   
-  console.log(`Content analysis: Is mathematical - ${isContentLikelyMathematical}`);
   
   // Base includeTypes on user selection but override math based on content analysis
   const includeTypes = {
@@ -109,7 +101,6 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
                            (includeTypes.math ? 1 : 0);
   
   // Log selected question types
-  console.log(`Question types selected: ${enabledTypesCount} types (MC: ${includeTypes.multipleChoice}, TF: ${includeTypes.trueFalse}, Math: ${includeTypes.math})`);
   
   // Distribute questions more intelligently based on content and selected types
   let multipleChoiceCount = 0;
@@ -151,7 +142,6 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
   }
   
   // Ensure we're asking for the right number of questions
-  console.log(`Question distribution: MC=${multipleChoiceCount}, TF=${trueFalseCount}, Math=${mathCount}, Total=${multipleChoiceCount + trueFalseCount + mathCount}`);
   
   const prompt = `
     You are an expert quiz creator. Based on the following content,
@@ -297,14 +287,12 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
         }
       }
       // Fallback to mock service if JSON parsing fails
-      console.log('Falling back to mock AI service after JSON parsing error');
       return await generateMockQuizQuestions(params);
     }
   } catch (error) {
     console.error(`Error generating questions with ${activeProvider.provider}:`, error);
     
     // Fallback to mock service if AI generation fails
-    console.log('Falling back to mock AI service after API error');
     return await generateMockQuizQuestions(params);
   }
 } 

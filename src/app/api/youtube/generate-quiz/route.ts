@@ -16,24 +16,19 @@ const youtube = google.youtube({
 // Function to fetch transcript using youtube-transcript-api library
 async function getTranscript(videoId: string): Promise<string | null> {
   try {
-    console.log(`[Transcript API] Fetching transcript for videoId: ${videoId}`);
     const transcriptItems = await TranscriptAPI.getTranscript(videoId);
     
     if (!transcriptItems || transcriptItems.length === 0) {
-      console.log(`[Transcript API] No transcript found for videoId: ${videoId}`);
       return null;
     }
     
     // Join all transcript segments into one text string
     const fullTranscript = transcriptItems.map((item) => item.text).join(' ').trim();
 
-    console.log(fullTranscript, '====');
     if (fullTranscript.length === 0) {
-      console.log(`[Transcript API] Empty transcript found for videoId: ${videoId}`);
       return null;
     }
     
-    console.log(`[Transcript API] Successfully fetched transcript for videoId: ${videoId} (${fullTranscript.length} characters)`);
     return fullTranscript;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -77,8 +72,6 @@ export async function POST(request: Request) {
       createdBy: createdByParam
     } = body;
 
-    console.log(`YouTube Quiz Generation - Params: questionCount=${questionCount}, difficulty=${difficulty}`);
-    console.log(`Question types: multipleChoice=${includeTypes.multipleChoice}, trueFalse=${includeTypes.trueFalse}, math=${includeTypes.math}`);
 
     // Ensure at least one question type is selected
     if (!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math) {
@@ -129,7 +122,6 @@ export async function POST(request: Request) {
     const quizTitle = videoDetails.title || `Quiz on YouTube video ${videoId}`;
     const quizDescription = `Quiz generated from YouTube video: ${videoDetails.title}`;
     
-    console.log(`Requesting ${questionCount} questions at ${difficulty} difficulty from AI service for YouTube`);
     
     const questionsResponse = await generateQuizQuestions({
       content,
@@ -141,7 +133,6 @@ export async function POST(request: Request) {
     // Extract questions array from the response
     const questions = questionsResponse.questions || [];
 
-    console.log(questions, '<=----===>');
 
     if (!questions || questions.length === 0) {
       return NextResponse.json(
@@ -169,7 +160,6 @@ export async function POST(request: Request) {
       isPublic: true,
     });
 
-    console.log(quiz, '<=----===>');
 
     await quiz.save();
 

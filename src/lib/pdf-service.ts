@@ -69,7 +69,6 @@ export function validatePdfContent(content: string): void {
     throw new Error('PDF content is too short for question generation (minimum 100 characters)');
   }
   
-  console.log(content.trim().length, 'content length<=----===>');
   // Check for potentially problematic content
   if (content.trim().length > 100000) {
     throw new Error('PDF content is too large (maximum 50,000 characters)');

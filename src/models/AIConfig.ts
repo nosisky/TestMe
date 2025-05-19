@@ -100,7 +100,6 @@ export const initializeAIConfigs = async () => {
     if (existing) {
       // If config exists but active status doesn't match environment variable, update it
       if (existing.isActive !== config.isActive) {
-        console.log(`Updating active status for ${config.provider} to ${config.isActive}`);
         await AIConfig.findOneAndUpdate(
           { provider: config.provider },
           { isActive: config.isActive }
@@ -108,7 +107,6 @@ export const initializeAIConfigs = async () => {
       }
     } else {
       // Create new config
-      console.log(`Creating new config for ${config.provider} with active status ${config.isActive}`);
       await AIConfig.create(config);
     }
   }

@@ -223,7 +223,6 @@ const ConversationalQuizCreator = () => {
       const questionCount = getQuestionCount(selectedSize);
       const difficulty = getDifficulty(selectedSize);
       
-      console.log(`Creating quiz with: type=${quizType}, questionCount=${questionCount}, difficulty=${difficulty}`);
       
       if (quizType === "youtube") {
         const videoId = getYoutubeVideoId(youtubeUrl);
@@ -251,7 +250,6 @@ const ConversationalQuizCreator = () => {
           throw new Error(data.error || 'Failed to create quiz');
         }
         
-        console.log(`Quiz created successfully: ${data._id}, with ${questionCount} questions at ${difficulty} difficulty`);
         
         // Store the quiz ID
         setCreatedQuizId(data._id);
@@ -280,7 +278,6 @@ const ConversationalQuizCreator = () => {
         url.searchParams.append('includeTrueFalse', includeTypes.trueFalse.toString());
         // The backend will auto-detect math content
         
-        console.log(`PDF quiz params: numQuestions=${url.searchParams.get('numQuestions')}, difficulty=${url.searchParams.get('difficulty')}`);
         
         const response = await fetch(url.toString(), {
           method: 'POST',

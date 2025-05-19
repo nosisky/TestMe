@@ -30,8 +30,6 @@ export async function POST(request: Request) {
       includeTypes = { multipleChoice: true, trueFalse: true, math: false }
     } = body;
 
-    console.log(`Text Quiz Generation - Params: numQuestions=${numQuestions}, difficulty=${difficulty}`);
-    console.log(`Question types: multipleChoice=${includeTypes.multipleChoice}, trueFalse=${includeTypes.trueFalse}, math=${includeTypes.math}`);
 
     // Ensure at least one question type is selected
     if (!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math) {
@@ -50,9 +48,7 @@ export async function POST(request: Request) {
 
     const quizTitle = userProvidedTitle?.trim() || generateTitleFromText(textContent);
 
-    // Generate quiz questions using AI service
-    console.log(`Requesting ${numQuestions} questions at ${difficulty} difficulty from AI service for text`);
-    
+
     const questionsData = await generateQuizQuestions({
       content: textContent,
       numQuestions: Number(numQuestions),

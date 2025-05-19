@@ -33,7 +33,6 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
       allowDangerousEmailAccountLinking: true,
       profile(profile) {
-        console.log(profile, '===>');
         return {
           id: profile.sub, // Ensure we're using a consistent ID field
           name: profile.name,

@@ -94,7 +94,6 @@ export async function generateMockQuizQuestions(params: GenerateQuestionsParams)
     ? parseInt(params.numQuestions) 
     : params.numQuestions;
     
-  console.log(`Mock AI Service - Generating ${numQuestions} questions at ${params.difficulty} difficulty`);
   
   // Extract topics to make questions more relevant to the content
   const topics = extractTopics(params.content);
@@ -111,7 +110,6 @@ export async function generateMockQuizQuestions(params: GenerateQuestionsParams)
     params.content.toLowerCase().includes("algebra") ||
     params.content.toLowerCase().includes("geometry");
   
-  console.log(`Mock AI Service - Content analysis: Is mathematical - ${isContentLikelyMathematical}`);
   
   // Base includeTypes on user selection but override math based on content analysis
   const includeTypes = {
@@ -166,7 +164,6 @@ export async function generateMockQuizQuestions(params: GenerateQuestionsParams)
     }
   }
   
-  console.log(`Mock AI Service - Question distribution: MC=${multipleChoiceCount}, TF=${trueFalseCount}, Math=${mathCount}`);
   
   // Determine if it's likely YouTube or PDF content for multiple choice questions
   const isYouTubeContent = params.content.includes('video') || 

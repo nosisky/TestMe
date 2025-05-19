@@ -31,9 +31,7 @@ export async function POST(request: Request) {
       math: includeMath
     };
     
-    console.log(`PDF Quiz Generation - Raw params: numQuestions=${numQuestionsStr}, parsed=${numQuestions}, difficulty=${difficulty}`);
-    console.log(`Question types: multipleChoice=${includeTypes.multipleChoice}, trueFalse=${includeTypes.trueFalse}, math=${includeTypes.math}`);
-    
+
     // Ensure at least one question type is selected
     if (!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math) {
       return NextResponse.json({ error: 'At least one question type must be selected.' }, { status: 400 });
@@ -104,7 +102,6 @@ export async function POST(request: Request) {
 
     // Generate quiz questions using our AI service
     try {
-      console.log(`Requesting ${numQuestions} questions at ${difficulty} difficulty from AI service`);
       
       const questionsData = await generateQuizQuestions({
         content: pdfText,

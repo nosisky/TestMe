@@ -33,14 +33,12 @@ the Paris Climate Accord aims to limit global warming to well below 2°C compare
 `;
 
 async function runTest() {
-  console.log('Generating YouTube content quiz questions...');
   const youtubeQuiz = await generateQuizQuestions({
     content: youtubeSampleContent,
     numQuestions: 5,
     difficulty: 'medium'
   });
   
-  console.log('\nGenerated YouTube Quiz Questions:');
   console.log(JSON.stringify(youtubeQuiz, null, 2));
   
   console.log('\n\nGenerating PDF content quiz questions...');
