@@ -27,7 +27,7 @@ async function dbConnect() {
 
     globalCache.mongooseConnection!.promise = mongoose.connect(MONGODB_URI, opts)
       .then((mongoose) => {
-        console.log('Connected to MongoDB');
+        console.debug('Connected to MongoDB');
         globalCache.mongooseConnection!.conn = mongoose.connection;
         return mongoose.connection;
       })

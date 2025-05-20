@@ -490,4 +490,77 @@
   :global(h1) {
     font-size: 1.5rem;
   }
+}
+
+/* Loading overlay and progress bar styles */
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.loadingContent {
+  background-color: var(--color-background-card);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  
+  h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    color: var(--color-text-primary);
+  }
+  
+  p {
+    margin-top: 1rem;
+    color: var(--color-text-secondary);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background-color: var(--color-background-card-dark, #2d3748);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    
+    h3 {
+      color: var(--color-text-primary-dark, #f7fafc);
+    }
+    
+    p {
+      color: var(--color-text-secondary-dark, #cbd5e0);
+    }
+  }
+}
+
+.progressContainer {
+  width: 100%;
+  height: 12px;
+  background-color: var(--color-background-tertiary);
+  border-radius: 6px;
+  overflow: hidden;
+  
+  @media (prefers-color-scheme: dark) {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.progressBar {
+  height: 100%;
+  background-color: var(--color-primary-600);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+  
+  @media (prefers-color-scheme: dark) {
+    background-color: var(--color-primary-500);
+  }
 } 

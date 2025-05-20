@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -63,31 +63,7 @@ export default function QuizReviewPage() {
     }
   }, [quizId]);
   
-  useEffect(() => {
-    if (status !== "loading") {
-      fetchQuiz();
-    }
-  }, [quizId, status]);
-  
-  // Calculate score when quiz and user answers are loaded
-  useEffect(() => {
-    if (quiz && Object.keys(userAnswers).length > 0) {
-      let correctCount = 0;
-      
-      quiz.questions.forEach((question, index) => {
-        if (userAnswers[index] === question.correctAnswer) {
-          correctCount++;
-        }
-      });
-      
-      setScore({
-        correct: correctCount,
-        total: quiz.questions.length
-      });
-    }
-  }, [quiz, userAnswers]);
-  
-  const fetchQuiz = async () => {
+  const fetchQuiz = useCallback(async () => {
     setLoading(true);
     try {
       // Use the quiz/take endpoint which returns the full quiz data with questions
@@ -114,7 +90,31 @@ export default function QuizReviewPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [quizId]);
+  
+  useEffect(() => {
+    if (status !== "loading") {
+      fetchQuiz();
+    }
+  }, [quizId, status, fetchQuiz]);
+  
+  // Calculate score when quiz and user answers are loaded
+  useEffect(() => {
+    if (quiz && Object.keys(userAnswers).length > 0) {
+      let correctCount = 0;
+      
+      quiz.questions.forEach((question, index) => {
+        if (userAnswers[index] === question.correctAnswer) {
+          correctCount++;
+        }
+      });
+      
+      setScore({
+        correct: correctCount,
+        total: quiz.questions.length
+      });
+    }
+  }, [quiz, userAnswers]);
   
   if (status === "loading" || loading) {
     return (

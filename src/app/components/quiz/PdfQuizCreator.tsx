@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import SocialShareButtons from '@/app/components/SocialShareButtons';
 import RangeSlider from '@/app/components/RangeSlider';
+import LoadingOverlay from '@/app/components/LoadingOverlay';
 import styles from './PdfQuizCreator.module.scss';
 
 interface QuizOptions {
@@ -53,9 +54,9 @@ export default function PdfQuizCreator() {
       return;
     }
     
-    // Validate file size (max 5MB)
-    if (selectedFile.size > 5 * 1024 * 1024) {
-      setError('File size must be less than 5MB');
+    // Validate file size (max 20MB)
+    if (selectedFile.size > 20 * 1024 * 1024) {
+      setError('File size must be less than 20MB');
       setFile(null);
       return;
     }
@@ -113,12 +114,16 @@ export default function PdfQuizCreator() {
         throw new Error(data.error || 'Failed to generate quiz');
       }
       
-      setGeneratedQuizId(data.quiz.id);
-      setShareableLink(`${window.location.origin}/quiz/${data.quiz.id}/instructions`);
-      setShowPostGenerationPrompt(true);
+      // Complete the progress bar to 100%
+      setTimeout(() => {
+        setGeneratedQuizId(data.quiz.id);
+        setShareableLink(`${window.location.origin}/quiz/${data.quiz.id}/instructions`);
+        setShowPostGenerationPrompt(true);
+        setIsUploading(false);
+      }, 500);
+      
     } catch (error) {
       setError((error as Error).message || 'An error occurred while generating the quiz');
-    } finally {
       setIsUploading(false);
     }
   };
@@ -238,7 +243,7 @@ export default function PdfQuizCreator() {
                     <line x1="12" y1="3" x2="12" y2="15"></line>
                   </svg>
                   <span>Drag & drop your PDF or click to browse</span>
-                  <span className={styles.hint}>Max size: 5MB, Max pages: 5</span>
+                  <span className={styles.hint}>Max size: 20MB, Max pages: 50</span>
                 </>
               )}
             </div>
@@ -326,6 +331,11 @@ export default function PdfQuizCreator() {
           </button>
         </div>
       </form>
+      
+      {/* Loading overlay with progress bar */}
+      {isUploading && (
+        <LoadingOverlay contentType="pdf" />
+      )}
     </div>
   );
 } 

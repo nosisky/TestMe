@@ -7,6 +7,9 @@ import { validatePdfContent } from '@/lib/pdf-service';
 import mongoose from 'mongoose';
 import pdfParse from 'pdf-parse';
 
+// File size limit in bytes (20MB)
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
+
 export async function POST(request: Request) {
   try {
     // Check authentication but don't require it
@@ -48,6 +51,14 @@ export async function POST(request: Request) {
     if (!file) {
       return NextResponse.json(
         { error: 'PDF file is required' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate file size (max 20MB)
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: 'PDF file is too large. Maximum file size is 20MB.' },
         { status: 400 }
       );
     }

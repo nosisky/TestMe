@@ -7,6 +7,33 @@ import Header from '@/app/components/Header';
 import SocialShareButtons from '@/app/components/SocialShareButtons';
 import styles from './textQuiz.module.scss';
 
+/**
+ * Checks if text contains meaningful content and not just symbols or patterns
+ */
+function containsMeaningfulText(text: string): boolean {
+  if (!text || text.trim().length === 0) return false;
+  
+  // Check if text is mostly special characters
+  const alphanumericCount = (text.match(/[a-zA-Z0-9]/g) || []).length;
+  const textLength = text.trim().length;
+  
+  // If less than 10% of characters are alphanumeric, it's likely not meaningful text
+  if (alphanumericCount / textLength < 0.1) return false;
+  
+  // Check for repeated patterns that might indicate non-text content
+  const repeatedPatterns = [
+    /^(.)\1{10,}$/,          // Checks for a single repeated character many times
+    /^(..+)\1{5,}$/,         // Checks for a repeated pattern many times
+    /^[\d\s+\-*/=.,!?;:]+$/  // Checks for only numbers and basic punctuation
+  ];
+  
+  for (const pattern of repeatedPatterns) {
+    if (pattern.test(text.trim())) return false;
+  }
+  
+  return true;
+}
+
 export default function TextQuizCreatorPage() {
   const router = useRouter();
   const { status } = useSession();
@@ -38,6 +65,12 @@ export default function TextQuizCreatorPage() {
     e.preventDefault();
     if (textContent.trim().length < 50) { // Basic validation for text length
       setError('Please provide at least 50 characters of text for the quiz.');
+      return;
+    }
+
+    // Validate that the text contains meaningful content
+    if (!containsMeaningfulText(textContent)) {
+      setError('The text provided doesn\'t appear to contain meaningful content. Please enter valid text with actual words, not just symbols or repeated characters.');
       return;
     }
 

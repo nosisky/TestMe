@@ -5,6 +5,33 @@ import Quiz, { IQuizQuestion } from '@/models/Quiz';
 import { generateQuizQuestions } from '@/lib/ai-service';
 import mongoose from 'mongoose';
 
+/**
+ * Checks if text contains meaningful content and not just symbols or patterns
+ */
+function containsMeaningfulText(text: string): boolean {
+  if (!text || text.trim().length === 0) return false;
+  
+  // Check if text is mostly special characters
+  const alphanumericCount = (text.match(/[a-zA-Z0-9]/g) || []).length;
+  const textLength = text.trim().length;
+  
+  // If less than 10% of characters are alphanumeric, it's likely not meaningful text
+  if (alphanumericCount / textLength < 0.1) return false;
+  
+  // Check for repeated patterns that might indicate non-text content
+  const repeatedPatterns = [
+    /^(.)\1{10,}$/,          // Checks for a single repeated character many times
+    /^(..+)\1{5,}$/,         // Checks for a repeated pattern many times
+    /^[\d\s+\-*/=.,!?;:]+$/  // Checks for only numbers and basic punctuation
+  ];
+  
+  for (const pattern of repeatedPatterns) {
+    if (pattern.test(text.trim())) return false;
+  }
+  
+  return true;
+}
+
 // Helper function to generate a title from text content if not provided
 function generateTitleFromText(text: string, maxLength = 50): string {
   if (!text) return 'Untitled Text Quiz';
@@ -42,6 +69,14 @@ export async function POST(request: Request) {
     if (!textContent || typeof textContent !== 'string' || textContent.trim().length < 50) {
       return NextResponse.json({ error: 'Text content must be at least 50 characters long.' }, { status: 400 });
     }
+    
+    // Validate that the text content contains meaningful content, not just symbols
+    if (!containsMeaningfulText(textContent)) {
+      return NextResponse.json({ 
+        error: 'The text provided doesn\'t appear to contain meaningful content. Please enter valid text with actual words, not just symbols or repeated characters.' 
+      }, { status: 400 });
+    }
+    
     if (numQuestions < 3 || numQuestions > 15) {
       return NextResponse.json({ error: 'Number of questions must be between 3 and 15.' }, { status: 400 });
     }

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:mock-quiz": "USE_MOCK_AI=true ts-node src/scripts/generate-test-questions.ts"
+    "test:mock-quiz": "cross-env USE_MOCK_AI=true node --loader ts-node/esm src/scripts/generate-test-questions.ts"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.2.9",
@@ -43,6 +43,7 @@
     "@types/node": "^20.17.47",
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19",
+    "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
     "sharp": "^0.34.1",

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -44,20 +44,7 @@ export default function QuizPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<UserAnswers>({});
   
-  useEffect(() => {
-    if (quizId) {
-      fetchQuiz();
-    }
-  }, [quizId]);
-  
-  useEffect(() => {
-    if (quizId && quiz && quiz.questions.length > 0) {
-      // Save start time for calculating time taken
-      localStorage.setItem(`quizStartTime_${quizId}`, Date.now().toString());
-    }
-  }, [quizId, quiz]);
-  
-  const fetchQuiz = async () => {
+  const fetchQuiz = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -80,7 +67,20 @@ export default function QuizPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [quizId]);
+  
+  useEffect(() => {
+    if (quizId) {
+      fetchQuiz();
+    }
+  }, [quizId, fetchQuiz]);
+  
+  useEffect(() => {
+    if (quizId && quiz && quiz.questions.length > 0) {
+      // Save start time for calculating time taken
+      localStorage.setItem(`quizStartTime_${quizId}`, Date.now().toString());
+    }
+  }, [quizId, quiz]);
   
   const handleOptionSelect = (questionIndex: number, optionIndex: number) => {
     setUserAnswers(prevAnswers => ({
@@ -305,4 +305,4 @@ export default function QuizPage() {
       </main>
     </div>
   );
-} 
+}

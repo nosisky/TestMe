@@ -5,6 +5,16 @@ const nextConfig: NextConfig = {
   images: {
     domains: ['i.ytimg.com', 'img.youtube.com', 'googleusercontent.com', 'lh3.googleusercontent.com'],
   },
+  api: {
+    bodyParser: {
+      sizeLimit: '20mb',
+    },
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '20mb',
+    },
+  },
 };
 
 export default nextConfig;

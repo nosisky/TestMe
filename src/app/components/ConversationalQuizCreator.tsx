@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 import styles from "./ConversationalQuizCreator.module.scss";
+import LoadingOverlay from './LoadingOverlay';
 
 type QuizType = "youtube" | "pdf" | "text" | "image";
 type QuizSize = "quick" | "standard" | "deep" | "expert";
@@ -23,6 +25,34 @@ function validateYoutubeUrl(url: string): boolean {
     }
   }
   return false;
+}
+
+// Add a function to check if text contains meaningful content
+/**
+ * Checks if text contains meaningful content and not just symbols or patterns
+ */
+function containsMeaningfulText(text: string): boolean {
+  if (!text || text.trim().length === 0) return false;
+  
+  // Check if text is mostly special characters
+  const alphanumericCount = (text.match(/[a-zA-Z0-9]/g) || []).length;
+  const textLength = text.trim().length;
+  
+  // If less than 10% of characters are alphanumeric, it's likely not meaningful text
+  if (alphanumericCount / textLength < 0.1) return false;
+  
+  // Check for repeated patterns that might indicate non-text content
+  const repeatedPatterns = [
+    /^(.)\1{10,}$/,          // Checks for a single repeated character many times
+    /^(..+)\1{5,}$/,         // Checks for a repeated pattern many times
+    /^[\d\s+\-*/=.,!?;:]+$/  // Checks for only numbers and basic punctuation
+  ];
+  
+  for (const pattern of repeatedPatterns) {
+    if (pattern.test(text.trim())) return false;
+  }
+  
+  return true;
 }
 
 const ConversationalQuizCreator = () => {
@@ -112,9 +142,35 @@ const ConversationalQuizCreator = () => {
       return;
     }
     
+    // Log the selection to help with debugging
+    console.debug(`Size selected: ${size}, Difficulty: ${getDifficulty(size)}, Question count: ${getQuestionCount(size)}`);
+    
+    // For YouTube, validate that we have a URL
+    if (quizType === "youtube" && !youtubeUrl) {
+      setError("Please enter a YouTube video URL first");
+      return;
+    }
+    
+    // For anonymous users, check if they've exceeded their limit
+    if (!session && anonQuizCount >= 3) {
+      setShowLoginPrompt(true);
+      setError("You've reached the limit of 3 quizzes for anonymous users. Please create an account to continue.");
+      return;
+    }
+
+    // Proceed with quiz creation
     setStep("creating");
     setIsCreating(true);
-    createQuiz(size);
+    
+    // Wrap in setTimeout to ensure state changes are applied first
+    setTimeout(() => {
+      createQuiz(size).catch(err => {
+        console.error("Quiz creation error:", err);
+        setError(err instanceof Error ? err.message : "Failed to create quiz");
+        setIsCreating(false);
+        setStep("config");
+      });
+    }, 100);
   };
 
   const getQuestionCount = (size: QuizSize) => {
@@ -146,6 +202,7 @@ const ConversationalQuizCreator = () => {
     }
   };
 
+  // Update the validateInput function to use the new validation
   const validateInput = () => {
     if (quizType === "youtube" && !youtubeUrl) {
       setError("Please enter a YouTube video URL");
@@ -155,9 +212,15 @@ const ConversationalQuizCreator = () => {
       setError("Please upload a PDF file");
       return false;
     }
-    if (quizType === "text" && (!textContent || textContent.length < 50)) {
-      setError("Please enter at least 50 characters");
-      return false;
+    if (quizType === "text") {
+      if (!textContent || textContent.length < 50) {
+        setError("Please enter at least 50 characters");
+        return false;
+      }
+      if (!containsMeaningfulText(textContent)) {
+        setError("Your text doesn't appear to contain meaningful content. Please enter valid text with actual words, not just symbols or repeated characters.");
+        return false;
+      }
     }
     if (quizType === "image" && !imageFile) {
       setError("Please upload an image");
@@ -175,21 +238,37 @@ const ConversationalQuizCreator = () => {
         detectedType = "youtube";
       } 
       // Check if it's a lengthy text (more than 100 chars)
+      // This implies it was NOT a valid YouTube URL but might be text content
       else if (youtubeUrl.length > 100) {
         detectedType = "text";
+        // If we re-classify what was in youtubeUrl field as text,
+        // then set textContent with it. youtubeUrl will be cleared below.
         setTextContent(youtubeUrl);
       }
     }
     
     if (detectedType) {
-      setQuizType(detectedType);
-      setYoutubeUrl("");
-      setStep("config");
+      setQuizType(detectedType); // Set the new (or same) type
       
-      // Reset any previous errors
+      // If the input from youtubeUrl field was re-classified as "text",
+      // then clear youtubeUrl because its content has been moved to textContent.
+      // Otherwise (if it's "youtube"), keep youtubeUrl.
+      if (detectedType === "text") {
+        setYoutubeUrl(""); 
+      }
+      
+      setStep("config");
       setError("");
     } else {
-      setError("We couldn't detect what type of content that is. Please try again or select a specific option.");
+      // This 'else' can be reached if youtubeUrl was empty (already caught by validateInput for YouTube type)
+      // or if it was not a valid YT URL AND not long enough to be considered text.
+      // Provide a more specific error if the current type is YouTube.
+      if (quizType === "youtube" && youtubeUrl.trim() && !validateYoutubeUrl(youtubeUrl)) {
+        setError("The entered URL is not a valid YouTube video link. Please check and try again.");
+      } else {
+        setError("We couldn't detect what type of content that is. Please try again or select a specific option.");
+      }
+      // Do not proceed to config if no valid type detected or input is invalid for current type
     }
   };
 
@@ -204,8 +283,8 @@ const ConversationalQuizCreator = () => {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type === "application/pdf") {
-      if (file.size > 5 * 1024 * 1024) {
-        setError("PDF must be less than 5MB");
+      if (file.size > 20 * 1024 * 1024) {
+        setError("PDF must be less than 20MB");
         return;
       }
       setPdfFile(file);
@@ -230,8 +309,8 @@ const ConversationalQuizCreator = () => {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      if (file.size > 5 * 1024 * 1024) {
-        setError("Image must be less than 5MB");
+      if (file.size > 20 * 1024 * 1024) {
+        setError("Image must be less than 20MB");
         return;
       }
       setImageFile(file);
@@ -249,14 +328,13 @@ const ConversationalQuizCreator = () => {
 
   const createQuiz = async (selectedSize: QuizSize) => {
     try {
+      // This check is now also done in handleSizeSelect, but keeping it here for safety
       // Check if anonymous user has exceeded quiz limit (3)
       if (!session && anonQuizCount >= 3) {
         setShowLoginPrompt(true);
         setError("You've reached the limit of 3 quizzes for anonymous users. Please create an account to continue.");
         return;
       }
-
-      setIsCreating(true);
       
       // Get the current user's ID if logged in
       const userId = session?.user?.email || 'anonymous';
@@ -265,8 +343,17 @@ const ConversationalQuizCreator = () => {
       const questionCount = getQuestionCount(selectedSize);
       const difficulty = getDifficulty(selectedSize);
       
+      console.debug(`Creating quiz: type=${quizType}, size=${selectedSize}, difficulty=${difficulty}, questionCount=${questionCount}, userId=${userId}`);
       
       if (quizType === "youtube") {
+        // Validate we have a video URL
+        if (!youtubeUrl) {
+          setError("Please enter a YouTube video URL");
+          setIsCreating(false);
+          setStep("input");
+          return;
+        }
+
         const videoId = getYoutubeVideoId(youtubeUrl);
         if (!videoId) {
           setError("Invalid YouTube URL");
@@ -275,45 +362,63 @@ const ConversationalQuizCreator = () => {
           return;
         }
         
-        const response = await fetch('/api/youtube/generate-quiz', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        console.debug(`Processing YouTube video: ${videoId}`);
+        
+        try {
+          console.debug(`Sending API request for video ${videoId} with payload:`, {
             videoId,
             questionCount,
             difficulty,
-            createdBy: userId, // Associate quiz with user
-            includeTypes // The backend will handle math detection
-          })
-        });
-        
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to create quiz');
-        }
-        
-        
-        // Store the quiz ID
-        setCreatedQuizId(data._id);
-        setQuizShareUrl(`${window.location.origin}/quiz/${data._id}`);
-        
-        // If quiz was created but user isn't logged in, increment count
-        if (!session) {
-          const newCount = anonQuizCount + 1;
-          localStorage.setItem('anonQuizCount', newCount.toString());
-          setAnonQuizCount(newCount);
+            createdBy: userId,
+            includeTypes
+          });
           
-          // If this was their 3rd quiz, show login prompt
-          if (newCount >= 3) {
-            setShowLoginPrompt(true);
-            setIsCreating(false);
-            return;
+          const response = await fetch('/api/youtube/generate-quiz', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              videoId,
+              questionCount,
+              difficulty,
+              createdBy: userId, // Associate quiz with user
+              includeTypes // The backend will handle math detection
+            })
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error('YouTube quiz creation error:', errorData);
+            throw new Error(errorData.error || 'Failed to create quiz');
           }
+          
+          const data = await response.json();
+          console.debug('Quiz created successfully:', data);
+          
+          // Store the quiz ID
+          setCreatedQuizId(data._id);
+          setQuizShareUrl(`${window.location.origin}/quiz/${data._id}`);
+          
+          // If quiz was created but user isn't logged in, increment count
+          if (!session) {
+            const newCount = anonQuizCount + 1;
+            localStorage.setItem('anonQuizCount', newCount.toString());
+            setAnonQuizCount(newCount);
+            
+            // If this was their 3rd quiz, show login prompt
+            if (newCount >= 3) {
+              setShowLoginPrompt(true);
+              setIsCreating(false);
+              return;
+            }
+          }
+          
+          // If user is logged in, show success page or redirect
+          setIsCreating(false);
+          setStep("success");
+        } catch (error) {
+          console.error('Error in YouTube quiz API call:', error);
+          throw error;
         }
-        
-        // If user is logged in, show success page or redirect
-        setIsCreating(false);
-        setStep("success");
       } 
       else if (quizType === "pdf" && pdfFile) {
         const formData = new FormData();
@@ -669,7 +774,7 @@ const ConversationalQuizCreator = () => {
                             <span className={styles.uploadText}>
                               {isMobile ? "Tap to upload a PDF" : "Drag & drop your PDF here or click to browse"}
                               <br />
-                              <span className={styles.fileLimits}>(5MB max)</span>
+                              <span className={styles.fileLimits}>(20MB max)</span>
                             </span>
                           </>
                         )}
@@ -721,10 +826,14 @@ const ConversationalQuizCreator = () => {
                           <span className={styles.fileName}>{imageFile.name}</span>
                           {/* Image preview with responsive layout */}
                           <div style={{ width: '100%', textAlign: 'center', maxWidth: '300px' }}>
-                            <img 
+                            <Image 
                               src={URL.createObjectURL(imageFile)} 
                               alt="Preview" 
                               className={styles.imagePreview}
+                              width={300}
+                              height={200}
+                              unoptimized
+                              style={{ objectFit: 'contain' }}
                             />
                           </div>
                         </div>
@@ -737,7 +846,7 @@ const ConversationalQuizCreator = () => {
                           <span className={styles.uploadText}>
                             {isMobile ? "Tap to upload an image" : "Drag & drop your image here or click to browse"}
                             <br />
-                            <span className={styles.fileLimits}>(5MB max, JPG/PNG/GIF/WEBP supported)</span>
+                            <span className={styles.fileLimits}>(20MB max, JPG/PNG/GIF/WEBP supported)</span>
                           </span>
                         </>
                       )}
@@ -770,101 +879,100 @@ const ConversationalQuizCreator = () => {
                 
                 <h2>How would you like your quiz?</h2>
                 
-                {/* Mobile question types section */}
-                <div className={styles.questionTypesSection}>
-                  <h3>Question Types</h3>
-                  <p className={styles.questionTypesDescription}>
-                    Select the types of questions you want:
-                  </p>
-                  <div className={styles.mobileCheckboxGroup}>
-                    <label className={styles.checkboxLabel}>
-                      <input 
-                        type="checkbox" 
-                        checked={includeTypes.multipleChoice} 
-                        onChange={() => setIncludeTypes({...includeTypes, multipleChoice: !includeTypes.multipleChoice})}
-                        className={styles.checkbox}
-                      />
-                      <span>Multiple Choice</span>
-                    </label>
-                    <label className={styles.checkboxLabel}>
-                      <input 
-                        type="checkbox" 
-                        checked={includeTypes.trueFalse} 
-                        onChange={() => setIncludeTypes({...includeTypes, trueFalse: !includeTypes.trueFalse})}
-                        className={styles.checkbox}
-                      />
-                      <span>True/False</span>
-                    </label>
-                    {/* Math questions are automatically added based on content analysis */}
-                    <div className={styles.infoText}>
-                      <span className={styles.infoIcon}>ℹ️</span>
-                      <span>Mathematical questions will be added automatically when appropriate for the content</span>
+                {/* Mobile question types and size options in scrollable container */}
+                <div className={styles.mobileConfigScrollContainer}>
+                  {/* Question types section */}
+                  <div className={styles.questionTypesSection}>
+                    <h3>Question Types</h3>
+                    <p className={styles.questionTypesDescription}>
+                      Select the types of questions you want:
+                    </p>
+                    <div className={styles.mobileCheckboxGroup}>
+                      <label className={styles.checkboxLabel}>
+                        <input 
+                          type="checkbox" 
+                          checked={includeTypes.multipleChoice} 
+                          onChange={() => setIncludeTypes({...includeTypes, multipleChoice: !includeTypes.multipleChoice})}
+                          className={styles.checkbox}
+                        />
+                        <span>Multiple Choice</span>
+                      </label>
+                      <label className={styles.checkboxLabel}>
+                        <input 
+                          type="checkbox" 
+                          checked={includeTypes.trueFalse} 
+                          onChange={() => setIncludeTypes({...includeTypes, trueFalse: !includeTypes.trueFalse})}
+                          className={styles.checkbox}
+                        />
+                        <span>True/False</span>
+                      </label>
+                      {/* Math questions are automatically added based on content analysis */}
+                      <div className={styles.infoText}>
+                        <span className={styles.infoIcon}>ℹ️</span>
+                        <span>Mathematical questions will be added automatically when appropriate for the content</span>
+                      </div>
                     </div>
+                    {!includeTypes.multipleChoice && !includeTypes.trueFalse && (
+                      <div className={styles.errorMessage}>Please select at least one question type</div>
+                    )}
                   </div>
-                  {!includeTypes.multipleChoice && !includeTypes.trueFalse && (
-                    <div className={styles.errorMessage}>Please select at least one question type</div>
-                  )}
-                </div>
-                
-                <div className={styles.mobileSizeOptions}>
-                  <button
-                    className={styles.mobileButton}
-                    onClick={() => handleSizeSelect("quick")}
-                  >
-                    <h3>Quick Quiz (5 Questions)</h3>
-                  </button>
                   
-                  <button
-                    className={`${styles.mobileButton} ${styles.primaryButton}`}
-                    onClick={() => handleSizeSelect("standard")}
-                  >
-                    <h3>Standard Quiz (10 Questions)</h3>
-                    <div className={styles.recommendedBadge}>Recommended</div>
-                  </button>
-                  
-                  <button
-                    className={`${styles.mobileButton} ${!session ? styles.premiumButton : ""}`}
-                    onClick={() => handleSizeSelect("deep")}
-                    disabled={!session}
-                  >
-                    <h3>Deep Dive (15 Questions)</h3>
-                    {!session && (
-                      <div className={styles.premiumBadge}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M19 11h-1V7a6 6 0 0 0-12 0v4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V12a1 1 0 0 0-1-1zm-11-4a4 4 0 0 1 8 0v4H8V7zm5 9a1 1 0 1 1-2 0v-2a1 1 0 1 1 2 0v2z" fill="currentColor"/>
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                  
-                  <button
-                    className={`${styles.mobileButton} ${!session ? styles.premiumButton : ""}`}
-                    onClick={() => handleSizeSelect("expert")}
-                    disabled={!session}
-                  >
-                    <h3>Expert Level (20 Questions)</h3>
-                    {!session && (
-                      <div className={styles.premiumBadge}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M19 11h-1V7a6 6 0 0 0-12 0v4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V12a1 1 0 0 0-1-1zm-11-4a4 4 0 0 1 8 0v4H8V7zm5 9a1 1 0 1 1-2 0v-2a1 1 0 1 1 2 0v2z" fill="currentColor"/>
-                        </svg>
-                      </div>
-                    )}
-                  </button>
+                  {/* Size options */}
+                  <div className={styles.mobileSizeOptions}>
+                    <button
+                      className={styles.mobileButton}
+                      onClick={() => handleSizeSelect("quick")}
+                      type="button"
+                    >
+                      <h3>Quick Quiz (5 Questions)</h3>
+                    </button>
+                    
+                    <button
+                      className={`${styles.mobileButton} ${styles.primaryButton}`}
+                      onClick={() => handleSizeSelect("standard")}
+                      type="button"
+                    >
+                      <h3>Standard Quiz (10 Questions)</h3>
+                      <div className={styles.recommendedBadge}>Recommended</div>
+                    </button>
+                    
+                    <button
+                      className={`${styles.mobileButton} ${!session ? styles.premiumButton : ""}`}
+                      onClick={session ? () => handleSizeSelect("deep") : undefined}
+                      disabled={!session}
+                      type="button"
+                    >
+                      <h3>Deep Dive (15 Questions)</h3>
+                      {!session && (
+                        <div className={styles.premiumBadge}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 11h-1V7a6 6 0 0 0-12 0v4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V12a1 1 0 0 0-1-1zm-11-4a4 4 0 0 1 8 0v4H8V7zm5 9a1 1 0 1 1-2 0v-2a1 1 0 1 1 2 0v2z" fill="currentColor"/>
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                    
+                    <button
+                      className={`${styles.mobileButton} ${!session ? styles.premiumButton : ""}`}
+                      onClick={session ? () => handleSizeSelect("expert") : undefined}
+                      disabled={!session}
+                      type="button"
+                    >
+                      <h3>Expert Level (20 Questions)</h3>
+                      {!session && (
+                        <div className={styles.premiumBadge}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M19 11h-1V7a6 6 0 0 0-12 0v4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V12a1 1 0 0 0-1-1zm-11-4a4 4 0 0 1 8 0v4H8V7zm5 9a1 1 0 1 1-2 0v-2a1 1 0 1 1 2 0v2z" fill="currentColor"/>
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 
                 {error && <div className={styles.errorMessage}>{error}</div>}
               </div>
             )}
-          </div>
-        )}
-        
-        {/* Mobile creating state */}
-        {step === "creating" && isCreating && isMobile && (
-          <div className={styles.creatingContainer}>
-            <div className={styles.loadingSpinner}></div>
-            <h2>Creating your perfect quiz...</h2>
-            <p>This typically takes about 15-30 seconds</p>
           </div>
         )}
       </div>
@@ -971,7 +1079,7 @@ const ConversationalQuizCreator = () => {
                         <span className={styles.uploadText}>
                           {isMobile ? "Tap to upload a PDF" : "Drag & drop your PDF here or click to browse"}
                           <br />
-                          <span className={styles.fileLimits}>(5MB max)</span>
+                          <span className={styles.fileLimits}>(20MB max)</span>
                         </span>
                       </>
                     )}
@@ -1023,10 +1131,14 @@ const ConversationalQuizCreator = () => {
                       <span className={styles.fileName}>{imageFile.name}</span>
                       {/* Image preview with responsive layout */}
                       <div style={{ width: '100%', textAlign: 'center', maxWidth: '300px' }}>
-                        <img 
+                        <Image 
                           src={URL.createObjectURL(imageFile)} 
                           alt="Preview" 
                           className={styles.imagePreview}
+                          width={300}
+                          height={200}
+                          unoptimized
+                          style={{ objectFit: 'contain' }}
                         />
                       </div>
                     </div>
@@ -1039,7 +1151,7 @@ const ConversationalQuizCreator = () => {
                       <span className={styles.uploadText}>
                         {isMobile ? "Tap to upload an image" : "Drag & drop your image here or click to browse"}
                         <br />
-                        <span className={styles.fileLimits}>(5MB max, JPG/PNG/GIF/WEBP supported)</span>
+                        <span className={styles.fileLimits}>(20MB max, JPG/PNG/GIF/WEBP supported)</span>
                       </span>
                     </>
                   )}
@@ -1112,6 +1224,7 @@ const ConversationalQuizCreator = () => {
               <button
                 className={styles.sizeOption}
                 onClick={() => handleSizeSelect("quick")}
+                type="button"
               >
                 <h3>Quick Quiz</h3>
                 <p>5 questions, mixed difficulty</p>
@@ -1121,6 +1234,7 @@ const ConversationalQuizCreator = () => {
               <button
                 className={styles.sizeOption}
                 onClick={() => handleSizeSelect("standard")}
+                type="button"
               >
                 <h3>Standard Quiz</h3>
                 <p>10 questions, balanced difficulty</p>
@@ -1141,6 +1255,15 @@ const ConversationalQuizCreator = () => {
                     </svg>
                   </div>
                 )}
+                {session && (
+                  <button
+                    className={styles.selectButton}
+                    onClick={() => handleSizeSelect("deep")}
+                    type="button"
+                  >
+                    Select
+                  </button>
+                )}
               </div>
               
               <div
@@ -1156,19 +1279,24 @@ const ConversationalQuizCreator = () => {
                     </svg>
                   </div>
                 )}
+                {session && (
+                  <button
+                    className={styles.selectButton}
+                    onClick={() => handleSizeSelect("expert")}
+                    type="button"
+                  >
+                    Select
+                  </button>
+                )}
               </div>
             </div>
           </div>
         )}
       </div>
       
-      {/* Creating state - only show this outside of mobile/desktop containers when NOT on mobile */}
-      {step === "creating" && isCreating && !isMobile && (
-        <div className={styles.creatingContainer}>
-          <div className={styles.loadingSpinner}></div>
-          <h2>Creating your perfect quiz...</h2>
-          <p>This typically takes about 15-30 seconds</p>
-        </div>
+      {/* Unified loading overlay for both mobile and desktop */}
+      {step === "creating" && isCreating && (
+        <LoadingOverlay contentType={quizType} />
       )}
       
       {/* Success page with share link */}

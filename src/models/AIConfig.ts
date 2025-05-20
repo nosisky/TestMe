@@ -85,7 +85,7 @@ const AIConfig = mongoose.models.AIConfig || mongoose.model<IAIConfig>('AIConfig
 export const initializeAIConfigs = async () => {
   // First, determine which provider should be active based on env variable
   const defaultProvider = process.env.DEFAULT_AI_PROVIDER as AIProvider || 'openai';
-  console.log('Initializing AI configs with default provider:', defaultProvider);
+  console.debug('Initializing AI configs with default provider:', defaultProvider);
   
   // Create modified configs with the correct active status
   const configsWithCorrectActiveStatus = defaultConfigs.map(config => ({

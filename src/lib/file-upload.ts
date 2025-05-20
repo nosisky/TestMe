@@ -8,7 +8,7 @@ import { IncomingMessage } from 'http';
 
 // Define the allowed file types
 const allowedFileTypes = ['application/pdf'];
-const maxFileSize = 5 * 1024 * 1024; // 5MB
+const maxFileSize = 20 * 1024 * 1024; // 20MB
 
 export interface UploadedFile {
   filepath: string;

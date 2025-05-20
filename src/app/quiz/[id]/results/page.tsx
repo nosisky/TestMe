@@ -185,7 +185,7 @@ export default function QuizResultsPage() {
           answers: detailedAnswers
         }),
       });
-      // console.log('Quiz result saved');
+      // console.debug('Quiz result saved');
     } catch (err) {
       console.error('Failed to save quiz result:', err);
       // Non-critical error, so don't necessarily show to user
@@ -387,7 +387,7 @@ export default function QuizResultsPage() {
                         title: `Quiz Results: ${quiz.title}`,
                         text: `I scored ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz!`,
                         url: window.location.href,
-                      }).catch(err => console.log('Error sharing:', err));
+                      }).catch(err => console.debug('Error sharing:', err));
                     } else {
                       // Fallback - copy to clipboard
                       const url = window.location.href;

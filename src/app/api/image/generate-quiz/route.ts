@@ -6,6 +6,9 @@ import { generateQuizQuestions } from '@/lib/ai-service';
 import { extractTextFromImage } from '@/lib/aws-textract';
 import mongoose from 'mongoose';
 
+// File size limit in bytes (20MB)
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
+
 // Handle multipart form data for image file
 async function parseFormData(request: Request) {
   const formData = await request.formData();
@@ -20,9 +23,9 @@ async function parseFormData(request: Request) {
     throw new Error('Invalid file type. Please upload an image file.');
   }
 
-  // Validate file size (5MB max)
-  if (file.size > 5 * 1024 * 1024) {
-    throw new Error('Image file is too large. Max size is 5MB.');
+  // Validate file size (20MB max)
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error('Image file is too large. Max size is 20MB.');
   }
 
   // Convert file to buffer

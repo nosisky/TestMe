@@ -6,6 +6,7 @@ import Header from "@/app/components/Header";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
+import LoadingOverlay from '@/app/components/LoadingOverlay';
 
 export default function CreateQuizFromImage() {
   const { status } = useSession();
@@ -21,6 +22,9 @@ export default function CreateQuizFromImage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const router = useRouter();
+
+  // File size limit in bytes (20MB)
+  const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
   // Check if device is mobile
   const checkIfMobile = () => {
@@ -78,8 +82,8 @@ export default function CreateQuizFromImage() {
   };
   
   const handleFileSelected = (selectedFile: File) => {
-    if (selectedFile.size > 5 * 1024 * 1024) {
-      setError("File is too large. Maximum size is 5MB.");
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      setError(`File is too large. Maximum size is 20MB.`);
       return;
     }
     
@@ -191,7 +195,6 @@ export default function CreateQuizFromImage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create quiz");
       toast.error("Failed to create quiz");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -322,7 +325,7 @@ export default function CreateQuizFromImage() {
                         <span className={styles.desktop}>Drag & drop an image here, or click to browse</span>
                         <span className={styles.mobile}>Tap to upload an image</span>
                       </p>
-                      <p className={styles.uploadHint}>Supports JPG, PNG, WEBP (max 5MB)</p>
+                      <p className={styles.uploadHint}>Supports JPG, PNG, WEBP (max 20MB)</p>
                     </div>
                   )}
                 </>
@@ -364,6 +367,8 @@ export default function CreateQuizFromImage() {
           </div>
         </div>
       </div>
+      
+      {isLoading && <LoadingOverlay contentType="image" />}
     </div>
   );
 } 

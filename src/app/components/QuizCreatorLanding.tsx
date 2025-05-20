@@ -93,8 +93,8 @@ const QuizCreatorLanding = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type === "application/pdf") {
-      if (file.size > 5 * 1024 * 1024) {
-        setError("PDF must be less than 5MB");
+      if (file.size > 20 * 1024 * 1024) {
+        setError("PDF must be less than 20MB");
         return;
       }
       setPdfFile(file);
@@ -161,7 +161,7 @@ const QuizCreatorLanding = () => {
           
           {activeTab === "pdf" && (
             <div className={styles.inputGroup}>
-              <label htmlFor="pdf-upload">Upload PDF (5MB max)</label>
+              <label htmlFor="pdf-upload">Upload PDF (20MB max)</label>
               <div className={styles.fileUpload}>
                 <input
                   id="pdf-upload"

@@ -19,7 +19,8 @@ import AIConfig, { AIProvider, initializeAIConfigs, IAIConfig } from '@/models/A
 import { generateMockQuizQuestions } from './mock-ai-service';
 
 // Flag to use mock service during development/testing
-const USE_MOCK_SERVICE = !process.env.OPENAI_API_KEY || process.env.USE_MOCK_AI === 'true';
+// Only use mock service if explicitly set to 'true' in environment variables
+const USE_MOCK_SERVICE = process.env.USE_MOCK_AI === 'true';
 
 // Get active AI provider from database
 export async function getActiveAIProvider(): Promise<IAIConfig> {
@@ -65,8 +66,9 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
     : params.numQuestions;
   
   
-  // Use mock service when in development or missing API keys
+  // Use mock service when explicitly set to true in environment variables
   if (USE_MOCK_SERVICE) {
+    console.debug("Using mock AI service for quiz generation");
     return await generateMockQuizQuestions({
       ...params,
       numQuestions
@@ -286,13 +288,18 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
           console.error('Failed to extract valid JSON:', innerError);
         }
       }
-      // Fallback to mock service if JSON parsing fails
-      return await generateMockQuizQuestions(params);
+      // Throw error instead of fallback to mock service when JSON parsing fails
+      throw new Error('Failed to parse AI response as valid JSON. Please try again.');
     }
   } catch (error) {
     console.error(`Error generating questions with ${activeProvider.provider}:`, error);
     
-    // Fallback to mock service if AI generation fails
-    return await generateMockQuizQuestions(params);
+    // Only use mock service if explicitly enabled, otherwise throw error
+    if (USE_MOCK_SERVICE) {
+      console.debug("Using mock AI service as fallback due to error");
+      return await generateMockQuizQuestions(params);
+    } else {
+      throw new Error('AI service failed to generate questions: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   }
 } 

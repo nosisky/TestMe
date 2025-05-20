@@ -39,17 +39,17 @@ async function runTest() {
     difficulty: 'medium'
   });
   
-  console.log(JSON.stringify(youtubeQuiz, null, 2));
+  console.debug(JSON.stringify(youtubeQuiz, null, 2));
   
-  console.log('\n\nGenerating PDF content quiz questions...');
+  console.debug('\n\nGenerating PDF content quiz questions...');
   const pdfQuiz = await generateQuizQuestions({
     content: pdfSampleContent,
     numQuestions: 5,
     difficulty: 'hard'
   });
   
-  console.log('\nGenerated PDF Quiz Questions:');
-  console.log(JSON.stringify(pdfQuiz, null, 2));
+  console.debug('\nGenerated PDF Quiz Questions:');
+  console.debug(JSON.stringify(pdfQuiz, null, 2));
 }
 
 runTest().catch(console.error); 
