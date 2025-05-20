@@ -1,38 +1,31 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import Header from '@/app/components/Header';
-import SocialShareButtons from '@/app/components/SocialShareButtons';
 import styles from './textQuiz.module.scss';
+import QuizGeneratedSuccess from '@/app/components/quiz/QuizGeneratedSuccess';
 
-/**
- * Checks if text contains meaningful content and not just symbols or patterns
- */
-function containsMeaningfulText(text: string): boolean {
-  if (!text || text.trim().length === 0) return false;
+// Helper function to determine if the text has meaningful content
+const containsMeaningfulText = (text: string): boolean => {
+  // Check for repeated patterns or non-word characters
+  const strippedText = text.replace(/\s+/g, ' ').trim();
   
-  // Check if text is mostly special characters
-  const alphanumericCount = (text.match(/[a-zA-Z0-9]/g) || []).length;
-  const textLength = text.trim().length;
+  if (strippedText.length < 50) return false;
   
-  // If less than 10% of characters are alphanumeric, it's likely not meaningful text
-  if (alphanumericCount / textLength < 0.1) return false;
+  // Check if the text has enough unique words (at least 15)
+  const words = strippedText.split(/\s+/);
+  const uniqueWords = new Set(words.map(w => w.toLowerCase()));
   
-  // Check for repeated patterns that might indicate non-text content
-  const repeatedPatterns = [
-    /^(.)\1{10,}$/,          // Checks for a single repeated character many times
-    /^(..+)\1{5,}$/,         // Checks for a repeated pattern many times
-    /^[\d\s+\-*/=.,!?;:]+$/  // Checks for only numbers and basic punctuation
-  ];
-  
-  for (const pattern of repeatedPatterns) {
-    if (pattern.test(text.trim())) return false;
+  // If there's very few unique words compared to total, it might be repetitive text
+  if (uniqueWords.size < 15 || uniqueWords.size < words.length * 0.3) {
+    return false;
   }
   
   return true;
-}
+};
 
 export default function TextQuizCreatorPage() {
   const router = useRouter();
@@ -46,19 +39,21 @@ export default function TextQuizCreatorPage() {
   const [generatedQuizId, setGeneratedQuizId] = useState<string | null>(null);
   const [showPostGenerationPrompt, setShowPostGenerationPrompt] = useState(false);
   const [shareableLink, setShareableLink] = useState('');
-  const [copyStatusMessage, setCopyStatusMessage] = useState('');
   
   // Calculate characters remaining to meet minimum
   const minCharacters = 50;
   const charactersRemaining = Math.max(0, minCharacters - textContent.trim().length);
   const hasMinimumText = textContent.trim().length >= minCharacters;
 
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
+
   if (status === 'loading') {
-    return <div className={styles.loadingContainer}><div className={styles.spinner}></div><p>Loading...</p></div>;
-  }
-  if (status === 'unauthenticated') {
-    router.push('/login');
-    return null; // Avoid rendering anything further
+    return <div className={styles.loadingContainer}><div className={styles.loadingSpinner}></div><p>Loading...</p></div>;
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -79,7 +74,6 @@ export default function TextQuizCreatorPage() {
     setGeneratedQuizId(null);
     setShowPostGenerationPrompt(false);
     setShareableLink('');
-    setCopyStatusMessage('');
 
     try {
       const response = await fetch('/api/text/generate-quiz', {
@@ -107,62 +101,16 @@ export default function TextQuizCreatorPage() {
     }
   };
 
-  const handleTakeQuizNow = () => {
-    if (generatedQuizId) router.push(`/quiz/${generatedQuizId}`);
-  };
-
-  const handleCopyShareableLink = () => {
-    if (!shareableLink) return;
-    navigator.clipboard.writeText(shareableLink).then(() => {
-      setCopyStatusMessage('Link copied!');
-      setTimeout(() => setCopyStatusMessage(''), 3000);
-    }).catch(() => {
-      setCopyStatusMessage('Failed to copy.');
-      setTimeout(() => setCopyStatusMessage(''), 3000);
-    });
-  };
-
   if (showPostGenerationPrompt && generatedQuizId) {
     return (
-      <div className={styles.pageContainer}>
-        <Header />
-        <main className={`${styles.mainContent} ${styles.promptPageMain}`}> 
-          <div className={styles.promptContainer}>
-            <div className={styles.successIconCircle} aria-hidden="true">
-              <svg className={styles.successIcon} viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 16.17l7.59-7.59L19 10l-9 9z"/></svg>
-            </div>
-            <h2 className={styles.promptHeading}>Quiz Generated Successfully!</h2>
-            <p className={styles.promptSubtitle}>Your new quiz from text is ready.</p>
-            <div className={styles.promptActions}>
-              <button onClick={handleTakeQuizNow} className={`${styles.button} ${styles.primaryButtonLarge}`}>
-                Take Quiz Now
-              </button>
-              <button onClick={handleCopyShareableLink} className={`${styles.button} ${styles.secondaryButtonLarge}`}>
-                Copy Shareable Link
-              </button>
-            </div>
-            {copyStatusMessage && <p className={`${styles.copyStatus} ${copyStatusMessage.includes('Failed') ? styles.errorText : styles.successText}`}>{copyStatusMessage}</p>}
-            {shareableLink && (
-              <div className={styles.shareLinkContainer}>
-                <hr className={styles.divider} />
-                <p className={styles.shareLabel}>Or share this link:</p>
-                <div className={styles.shareLinkBox}><a href={shareableLink} target="_blank" rel="noopener noreferrer">{shareableLink}</a></div>
-              </div>
-            )}
-            
-            <SocialShareButtons 
-              url={shareableLink}
-              title={`Check out this quiz: ${quizTitle || 'Text Quiz'}`}
-              description="I've just created a new quiz! Take it now and test your knowledge."
-              hashtags={['quiz', 'testme', 'learning']}
-            />
-            
-            <button onClick={() => router.push('/dashboard')} className={`${styles.button} ${styles.tertiaryButtonLarge} ${styles.createAnotherButton}`}>
-              ← Back to Dashboard
-            </button>
-          </div>
-        </main>
-      </div>
+      <>
+      <Header />
+      <QuizGeneratedSuccess 
+        generatedQuizId={generatedQuizId}
+        shareableLink={shareableLink}
+        sourceType="text"
+      />
+      </>
     );
   }
 
@@ -197,42 +145,40 @@ export default function TextQuizCreatorPage() {
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor="textContent">Your Text Content</label>
+              <label htmlFor="textContent">
+                Text Content <span className={styles.required}>(Required)</span>
+              </label>
               <textarea
                 id="textContent"
                 name="textContent"
                 value={textContent}
                 onChange={(e) => setTextContent(e.target.value)}
-                placeholder="Paste your text here (minimum 50 characters)..."
+                placeholder="Paste or type your content here..."
                 className={styles.textarea}
-                rows={10}
+                rows={12}
                 required
-              />
-              {!hasMinimumText && (
-                <div className={styles.characterCount}>
-                  {charactersRemaining === 0 ? (
-                    <span className={styles.characterCountValid}>Minimum length reached! ✓</span>
-                  ) : (
-                    <span className={styles.characterCountInvalid}>
-                      {charactersRemaining} more character{charactersRemaining !== 1 ? 's' : ''} needed to reach minimum
-                    </span>
-                  )}
-                </div>
-              )}
+              ></textarea>
+              <div className={`${styles.characterCount} ${hasMinimumText ? styles.characterCountValid : styles.characterCountInvalid}`}>
+                {hasMinimumText 
+                  ? `${textContent.length} characters` 
+                  : `${charactersRemaining} more character${charactersRemaining !== 1 ? 's' : ''} needed`}
+              </div>
             </div>
-            
-            {error && <p className={styles.errorTextBig}>{error}</p>}
 
-            <button 
-              type="submit" 
-              disabled={isLoading || !hasMinimumText} 
+            {error && <div className={styles.errorTextBig}>{error}</div>}
+
+            <button
+              type="submit"
               className={`${styles.button} ${styles.primaryButtonLarge} ${styles.generateButtonFullWidth}`}
-              title={!hasMinimumText ? `Please enter at least ${minCharacters} characters` : ''}
+              disabled={isLoading || !hasMinimumText}
             >
               {isLoading ? (
-                <><div className={styles.buttonSpinner}></div> Generating...</>
+                <>
+                  <div className={styles.buttonSpinner}></div>
+                  Generating Quiz...
+                </>
               ) : (
-                'Generate Quiz from Text'
+                'Generate Quiz'
               )}
             </button>
           </form>

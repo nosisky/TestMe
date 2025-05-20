@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import LoadingOverlay from '@/app/components/LoadingOverlay';
+import QuizGeneratedSuccess from '@/app/components/quiz/QuizGeneratedSuccess';
 
 export default function CreateQuizFromImage() {
   const { status } = useSession();
@@ -22,6 +23,9 @@ export default function CreateQuizFromImage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const router = useRouter();
+  const [generatedQuizId, setGeneratedQuizId] = useState<string | null>(null);
+  const [showPostGenerationPrompt, setShowPostGenerationPrompt] = useState(false);
+  const [shareableLink, setShareableLink] = useState("");
 
   // File size limit in bytes (20MB)
   const MAX_FILE_SIZE = 20 * 1024 * 1024;
@@ -189,8 +193,10 @@ export default function CreateQuizFromImage() {
       
       const data = await response.json();
       
-      toast.success("Quiz created successfully!");
-      router.push(`/quiz/${data.quiz.id}/instructions`);
+      setGeneratedQuizId(data.quiz.id);
+      setShareableLink(`${window.location.origin}/quiz/${data.quiz.id}/instructions`);
+      setShowPostGenerationPrompt(true);
+      setIsLoading(false);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create quiz");
@@ -205,6 +211,19 @@ export default function CreateQuizFromImage() {
         <div className={styles.loadingSpinner}></div>
         <p>Loading...</p>
       </div>
+    );
+  }
+
+  if (showPostGenerationPrompt && generatedQuizId) {
+    return (
+      <>
+      <Header />  
+      <QuizGeneratedSuccess 
+        generatedQuizId={generatedQuizId}
+        shareableLink={shareableLink}
+        sourceType="image"
+      />
+      </>
     );
   }
   

@@ -86,12 +86,7 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
 
   return (
     <div className={`custom-range-slider-container ${className}`}>
-      {showLabels && (
-        <div className="range-slider-labels">
-          <span className="min-label">{labelFormatter(min)}</span>
-          <span className="max-label">{labelFormatter(max)}</span>
-        </div>
-      )}
+
       
       <RangeSliderLib
         id="range-slider"
@@ -105,11 +100,7 @@ const RangeSlider: React.FC<RangeSliderProps> = ({
         className={`custom-range-slider ${isSingleSlider ? 'single-slider' : ''}`}
       />
       
-      {showLabels && isSingleSlider && (
-        <div className="current-value-label">
-          {labelFormatter(currentValue[1])}
-        </div>
-      )}
+
       
       {showLabels && !isSingleSlider && (
         <div className="range-values-labels">
