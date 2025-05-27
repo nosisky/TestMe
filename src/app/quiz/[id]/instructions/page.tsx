@@ -103,7 +103,7 @@ export default function QuizInstructionsPage() {
     return (
       <div className={styles.pageContainer}>
         <MetaTags 
-          title={`${quizDetails?.title || 'Quiz Not Found'} | TestMe Quiz`}
+          title="Quiz Not Found | TestMe Quiz"
           description={`The quiz you are looking for could not be found.`}
           url={typeof window !== 'undefined' ? window.location.href : `${process.env.NEXT_PUBLIC_SITE_URL || ''}/quiz/${quizId}/instructions`}
         />
