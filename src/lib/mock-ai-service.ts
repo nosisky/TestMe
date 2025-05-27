@@ -251,10 +251,10 @@ export async function generateMockQuizQuestions(params: GenerateQuestionsParams)
     
     // Generate a more mathematical explanation with LaTeX
     const explanations = [
-      `This is the correct solution because when we apply the formula $$${topic}$$, we get $${options[correctAnswer].replace(/^\$|\$$/g, '')}$.`,
-      `By using the property of $${topic}$ with respect to $${topic2}$, we find that $${options[correctAnswer].replace(/^\$|\$$/g, '')}$ is the only valid answer.`,
-      `The solution comes from applying the formula $$${formula.replace(/^\$\$|\$\$$/g, '')}$$ to the problem, which yields $${options[correctAnswer].replace(/^\$|\$$/g, '')}$.`,
-      `When we solve for the unknown variable in $$${formula.replace(/^\$\$|\$\$$/g, '')}$$, we get $${options[correctAnswer].replace(/^\$|\$$/g, '')}$ through algebraic manipulation.`
+      `This is the correct solution because when we apply the given formula, we get ${options[correctAnswer]}.`,
+      `By using the mathematical relationship, we find that ${options[correctAnswer]} is the only valid answer.`,
+      `The solution comes from applying the formula ${formula} to the problem, which yields ${options[correctAnswer]}.`,
+      `When we solve for the unknown variable in ${formula}, we get ${options[correctAnswer]} through algebraic manipulation.`
     ];
     
     const explanation = explanations[Math.floor(Math.random() * explanations.length)];

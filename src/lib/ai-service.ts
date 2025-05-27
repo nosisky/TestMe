@@ -58,6 +58,47 @@ interface GenerateQuestionsParams {
   };
 }
 
+interface QuizQuestion {
+  type: 'multiple_choice' | 'true_false' | 'math';
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  explanation: string;
+  formula?: string;
+  isTrue?: boolean;
+}
+
+// Helper function to ensure LaTeX formatting in question content
+function ensureLaTeXFormatting(question: QuizQuestion): QuizQuestion {
+  // Basic post-processing to catch common LaTeX formatting issues
+  const fixLaTeXInText = (text: string): string => {
+    if (!text) return text;
+    
+    // Don't process if already heavily LaTeX formatted
+    if (text.includes('$$') || text.match(/\$[^$]+\$/)) {
+      return text;
+    }
+    
+    // Fix standalone numbers (but be careful not to break existing formatting)
+    text = text.replace(/\b(\d+(?:\.\d+)?)\b(?!\$)/g, '$$$1$$');
+    
+    // Fix simple variables in mathematical contexts
+    text = text.replace(/\b([a-zA-Z])\s*([=+\-*/^<>≤≥])\s*(\d+)/g, '$$1$ $2 $$3$');
+    
+    // Fix percentages
+    text = text.replace(/(\d+(?:\.\d+)?)%/g, '$$$1\\%$$');
+    
+    return text;
+  };
+  
+  return {
+    ...question,
+    question: fixLaTeXInText(question.question),
+    options: question.options.map(option => fixLaTeXInText(option)),
+    explanation: fixLaTeXInText(question.explanation),
+  };
+}
+
 // Generate quiz questions using selected AI provider
 export async function generateQuizQuestions(params: GenerateQuestionsParams) {
   // Ensure numQuestions is a number
@@ -161,16 +202,43 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
     ${!isContentLikelyMathematical && mathCount > 0 ? 'Although this seems like non-technical content, please try to create mathematical questions if possible by forming questions about numerical aspects of the content.' : ''}
     ${isContentLikelyMathematical && mathCount === 0 ? 'Although this seems like technical content, please focus only on the requested question types and avoid creating math-heavy questions.' : ''}
     
+    !!!MANDATORY LATEX FORMATTING RULE!!!
+    
+    EVERY SINGLE MATHEMATICAL EXPRESSION MUST BE IN LATEX FORMAT:
+    - ALL numbers: Write $5$ not 5, write $3.14$ not 3.14, write $100$ not 100
+    - ALL variables: Write $x$ not x, write $y$ not y, write $n$ not n
+    - ALL equations: Write $x = 5$ not x = 5, write $y + 2$ not y + 2
+    - ALL formulas: Use $$...$$ for display equations, $...$ for inline math
+    - ALL percentages: Write $25\\%$ not 25%, write $50\\%$ not 50%
+    - ALL fractions: Write $\\frac{1}{2}$ not 1/2, write $\\frac{a}{b}$ not a/b
+    
+    This is ABSOLUTELY CRITICAL for MathJax rendering. Questions without proper LaTeX will display incorrectly.
+    
+    EXAMPLES OF CORRECT FORMAT:
+    ❌ WRONG: "If x equals 5 and y equals 3..."
+    ✅ CORRECT: "If $x$ equals $5$ and $y$ equals $3$..."
+    
+    ❌ WRONG: "The answer is 42"
+    ✅ CORRECT: "The answer is $42$"
+    
+    ❌ WRONG: "Calculate 2 + 3"
+    ✅ CORRECT: "Calculate $2 + 3$"
+    
     For multiple choice questions:
     1. Create a clear, concise question
-    2. Provide 4 possible answers with only 1 correct option
-    3. Mark which answer is correct (0-3 index)
-    4. Include a brief explanation for why the answer is correct
+    2. If the question contains ANY mathematical content (numbers, variables, equations), wrap it in LaTeX
+    3. Provide 4 possible answers with only 1 correct option
+    4. If any answer option contains mathematical content, wrap it in LaTeX delimiters
+    5. Mark which answer is correct (0-3 index)
+    6. Include a brief explanation for why the answer is correct
+    7. If the explanation contains ANY mathematical content, format it with LaTeX
     
     For true/false questions:
     1. Create a clear statement that is either true or false
-    2. Indicate whether the statement is true or false
-    3. Provide a brief explanation for the correct answer
+    2. If the statement contains ANY mathematical content, wrap it in LaTeX
+    3. Indicate whether the statement is true or false
+    4. Provide a brief explanation for the correct answer
+    5. If the explanation contains ANY mathematical content, format it with LaTeX
     
     For mathematical questions:
     1. Create a math problem relevant to the content
@@ -198,26 +266,26 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
       "questions": [
         {
           "type": "multiple_choice",
-          "question": "Question text",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
+          "question": "Question text (use LaTeX for ANY math: $x^2$ or $5$)",
+          "options": ["Option A (use LaTeX for math: $2x$)", "Option B", "Option C", "Option D"],
           "correctAnswer": 0,
-          "explanation": "Explanation of the correct answer"
+          "explanation": "Explanation (use LaTeX for ANY math: $x = 5$)"
         },
         {
           "type": "true_false",
-          "question": "Statement that is true or false",
+          "question": "Statement with math: The value of $x$ is $5$ (always LaTeX for numbers/variables)",
           "options": ["True", "False"],
           "correctAnswer": 0,
           "isTrue": true,
-          "explanation": "Explanation of why the statement is true or false"
+          "explanation": "Explanation with math: $x = 5$ because... (always LaTeX)"
         },
         {
           "type": "math",
-          "question": "Math problem question",
-          "formula": "$$\\frac{x^2}{2} + 5x$$",
-          "options": ["$Option A$", "$Option B$", "$Option C$", "$Option D$"],
-          "correctAnswer": 2,
-          "explanation": "Explanation with math: $x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$"
+          "question": "Math problem question with LaTeX: Solve $x^2 + 5x = 0$",
+          "formula": "$$x^2 + 5x = 0$$",
+          "options": ["$x = 0, -5$", "$x = 0, 5$", "$x = 1, -5$", "$x = -1, 5$"],
+          "correctAnswer": 0,
+          "explanation": "Full solution: $$x^2 + 5x = 0$$ $$x(x + 5) = 0$$ So $x = 0$ or $x = -5$"
         }
       ]
     }
@@ -241,6 +309,37 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
       "correctAnswer": 0,
       "explanation": "Following the completing the square method: $$x^2 + 12x + 35 = 0$$ $$x^2 + 12x = -35$$ Adding $(\\frac{b}{2})^2 = (\\frac{12}{2})^2 = 6^2 = 36$ to both sides: $$x^2 + 12x + 36 = -35 + 36$$ $$x^2 + 12x + 36 = 1$$ $$(x + 6)^2 = 1$$ $$x + 6 = \\pm 1$$ $$x = -6 \\pm 1$$ $$x = -5 \\text{ or } x = -7$$"
     }
+    
+    Example of a multiple choice question with math content (NON-math type but contains mathematical expressions):
+    {
+      "type": "multiple_choice",
+      "question": "If a function has a slope of $m = 2$ and passes through point $(1, 3)$, what is its equation?",
+      "options": ["$y = 2x + 1$", "$y = 2x + 3$", "$y = x + 2$", "$y = 3x + 1$"],
+      "correctAnswer": 0,
+      "explanation": "Using point-slope form: $y - y_1 = m(x - x_1)$. With $m = 2$ and point $(1, 3)$: $y - 3 = 2(x - 1)$, which simplifies to $y = 2x + 1$."
+    }
+    
+    Example of a true/false question with math content:
+    {
+      "type": "true_false",
+      "question": "The derivative of $f(x) = x^3$ is $f'(x) = 3x^2$.",
+      "options": ["True", "False"],
+      "correctAnswer": 0,
+      "isTrue": true,
+      "explanation": "This is true. Using the power rule: $\\frac{d}{dx}[x^n] = nx^{n-1}$, so $\\frac{d}{dx}[x^3] = 3x^{3-1} = 3x^2$."
+    }
+    
+    ⚠️ FINAL CRITICAL REMINDER ⚠️
+    
+    Before submitting your response, VERIFY that:
+    1. ALL numbers are in LaTeX: $5$, $3.14$, $100$, etc.
+    2. ALL variables are in LaTeX: $x$, $y$, $n$, etc.
+    3. ALL equations are in LaTeX: $x = 5$, $y + 2$, etc.
+    4. ALL percentages are in LaTeX: $25\\%$, $50\\%$, etc.
+    5. ALL mathematical expressions use proper LaTeX syntax
+    
+    Questions that fail to follow this formatting will be UNUSABLE by the application.
+    Every mathematical element MUST be wrapped in $ or $$ delimiters for MathJax rendering.
   `;
   
   try {
@@ -276,7 +375,16 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
     
     // Parse the response text as JSON
     try {
-      return JSON.parse(text);
+      const parsedResponse = JSON.parse(text);
+      
+      // Post-process to ensure LaTeX formatting
+      if (parsedResponse.questions) {
+        parsedResponse.questions = parsedResponse.questions.map((question: QuizQuestion) => {
+          return ensureLaTeXFormatting(question);
+        });
+      }
+      
+      return parsedResponse;
     } catch (error) {
       console.error('Error parsing JSON response:', error);
       // Try to extract JSON from the text if it's not valid JSON directly
