@@ -255,7 +255,7 @@ DEEPSEEK_API_KEY=sk-your-deepseek-key-here
 
 **Best for**: Enterprise use, enhanced security, compliance requirements
 
-- **Models**: Claude-3-sonnet (default)
+- **Models**: Claude-3.7-Sonnet (via inference profile)
 - **Pricing**: Variable based on AWS pricing
 - **Setup**: Requires AWS account and Bedrock access
 
@@ -265,6 +265,12 @@ AWS_ACCESS_KEY_ID=your-aws-access-key
 AWS_SECRET_ACCESS_KEY=your-aws-secret-key
 AWS_REGION=us-east-1
 ```
+
+**Important**: Bedrock uses inference profiles for newer Claude models. The system automatically uses `us.anthropic.claude-3-7-sonnet-20250219-v1:0` which is the cross-region inference profile for Claude 3.7 Sonnet.
+
+**JSON Output**: Since Bedrock Claude models don't have native JSON mode, TestMe uses clear delimiters (`<JSON_START>` and `<JSON_END>`) to ensure reliable JSON extraction from responses.
+
+**Supported regions**: us-east-1, us-east-2, us-west-2 (automatically routed based on availability)
 
 ### Provider Comparison
 
@@ -493,25 +499,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Lead Developer
 
 **Dealwap**
-- 📧 Email: [dealwap@gmail.com](mailto:dealwap@gmail.com)
+- 📧 Email: [nosisky@gmail.com](mailto:nosisky@gmail.com)
 - 💼 GitHub: [@dealwap](https://github.com/dealwap)
-- 🌐 Portfolio: [dealwap.dev](https://dealwap.dev)
-- 🐦 Twitter: [@dealwap_dev](https://twitter.com/dealwap_dev)
+- 🐦 Twitter: [@dealwap](https://twitter.com/dealwap)
 
-### Project Information
 
-- **Version**: 1.0.0
-- **Last Updated**: December 2024
-- **Status**: Production Ready ✅
-- **Maintenance**: Actively maintained
-- **License**: MIT License
 
 ### Support & Contact
 
 For support, feature requests, or bug reports:
 
 1. **GitHub Issues**: [Create an issue](https://github.com/dealwap/testme/issues) - Best for bug reports and feature requests
-2. **Email**: [dealwap@gmail.com](mailto:dealwap@gmail.com) - For direct communication and business inquiries
+2. **Email**: [nosisky@gmail.com](mailto:nosisky@gmail.com) - For direct communication and business inquiries
 3. **Documentation**: Check this README and inline code comments
 4. **Community**: Star the repo and follow for updates
 
@@ -687,14 +686,14 @@ Create a `.env.local` file in the root directory with the following configuratio
 # =================================================================
 # APPLICATION CONFIGURATION
 # =================================================================
-NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your_nextauth_secret_here
 
 # =================================================================
 # AUTHENTICATION (Required)
 # =================================================================
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
 
 # =================================================================
 # DATABASE (Required)
@@ -706,7 +705,7 @@ MONGODB_URI=mongodb://localhost:27017/testme
 # =================================================================
 # EXTERNAL APIs (Required)
 # =================================================================
-YOUTUBE_API_KEY=your_youtube_api_key
+   YOUTUBE_API_KEY=your_youtube_api_key
 
 # =================================================================
 # AI PROVIDER CONFIGURATION
@@ -716,19 +715,19 @@ DEFAULT_AI_PROVIDER=openai
 
 # Configure API keys for your chosen provider(s)
 # OpenAI (Recommended - reliable, fast, good quality)
-OPENAI_API_KEY=your_openai_api_key
-
+   OPENAI_API_KEY=your_openai_api_key
+   
 # Anthropic Claude (Best for detailed explanations)
 CLAUDE_API_KEY=your_claude_api_key
-
+   
 # DeepSeek (Most cost-effective option)
-DEEPSEEK_API_KEY=your_deepseek_api_key
-
+   DEEPSEEK_API_KEY=your_deepseek_api_key
+   
 # AWS Bedrock (Enterprise-grade, requires AWS setup)
-AWS_ACCESS_KEY_ID=your_aws_access_key_id
-AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
-AWS_REGION=us-east-1
-
+   AWS_ACCESS_KEY_ID=your_aws_access_key_id
+   AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+   AWS_REGION=us-east-1
+   
 # =================================================================
 # DEVELOPMENT & TESTING
 # =================================================================
@@ -750,7 +749,7 @@ NODE_ENV=development
 - **Setup**: [Get API key](https://platform.openai.com/api-keys)
 
 ```bash
-DEFAULT_AI_PROVIDER=openai
+   DEFAULT_AI_PROVIDER=openai
 OPENAI_API_KEY=sk-your-openai-key-here
 ```
 
@@ -784,7 +783,7 @@ DEEPSEEK_API_KEY=sk-your-deepseek-key-here
 
 **Best for**: Enterprise use, enhanced security, compliance requirements
 
-- **Models**: Claude-3-sonnet (default)
+- **Models**: Claude-3.7-Sonnet (via inference profile)
 - **Pricing**: Variable based on AWS pricing
 - **Setup**: Requires AWS account and Bedrock access
 
@@ -794,6 +793,12 @@ AWS_ACCESS_KEY_ID=your-aws-access-key
 AWS_SECRET_ACCESS_KEY=your-aws-secret-key
 AWS_REGION=us-east-1
 ```
+
+**Important**: Bedrock uses inference profiles for newer Claude models. The system automatically uses `us.anthropic.claude-3-7-sonnet-20250219-v1:0` which is the cross-region inference profile for Claude 3.7 Sonnet.
+
+**JSON Output**: Since Bedrock Claude models don't have native JSON mode, TestMe uses clear delimiters (`<JSON_START>` and `<JSON_END>`) to ensure reliable JSON extraction from responses.
+
+**Supported regions**: us-east-1, us-east-2, us-west-2 (automatically routed based on availability)
 
 ### Provider Comparison
 
@@ -1022,7 +1027,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Lead Developer
 
 **Dealwap**
-- 📧 Email: [dealwap@gmail.com](mailto:dealwap@gmail.com)
+- 📧 Email: [nosisky@gmail.com](mailto:nosisky@gmail.com)
 - 💼 GitHub: [@dealwap](https://github.com/dealwap)
 - 🌐 Portfolio: [dealwap.dev](https://dealwap.dev)
 - 🐦 Twitter: [@dealwap_dev](https://twitter.com/dealwap_dev)
@@ -1040,7 +1045,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For support, feature requests, or bug reports:
 
 1. **GitHub Issues**: [Create an issue](https://github.com/dealwap/testme/issues) - Best for bug reports and feature requests
-2. **Email**: [dealwap@gmail.com](mailto:dealwap@gmail.com) - For direct communication and business inquiries
+2. **Email**: [nosisky@gmail.com](mailto:nosisky@gmail.com) - For direct communication and business inquiries
 3. **Documentation**: Check this README and inline code comments
 4. **Community**: Star the repo and follow for updates
 

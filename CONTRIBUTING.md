@@ -308,7 +308,7 @@ npm run build
 
 - **GitHub Discussions**: For questions and general discussion
 - **GitHub Issues**: For bug reports and feature requests
-- **Email**: [dealwap@gmail.com](mailto:dealwap@gmail.com) for direct contact
+- **Email**: [nosisky@gmail.com](mailto:nosisky@gmail.com) for direct contact
 
 ## 🎉 Recognition
 

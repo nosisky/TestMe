@@ -36,7 +36,7 @@ const AI_CONFIGS: Record<AIProvider, Omit<AIProviderConfig, 'isActive'>> = {
   },
   bedrock: {
     provider: 'bedrock',
-    defaultModel: 'anthropic.claude-3-sonnet-20240229-v1:0',
+    defaultModel: 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
     temperature: 0.7,
     maxTokens: 2048,
   }

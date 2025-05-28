@@ -43,7 +43,10 @@ export async function GET(
           id: index,
           question: question.question,
           options: question.options,
-          type: question.type || 'multiple_choice'
+          type: question.type || 'multiple_choice',
+          correctAnswer: question.correctAnswer,
+          explanation: question.explanation,
+          formula: question.formula
         }))
       }
     });

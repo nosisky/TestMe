@@ -72,10 +72,91 @@ function ensureLaTeXFormatting(question: QuizQuestion): QuizQuestion {
   
   return {
     ...question,
-    question: fixLaTeXInText(question.question),
-    options: question.options.map(option => fixLaTeXInText(option)),
-    explanation: fixLaTeXInText(question.explanation),
+    question: fixLaTeXInText(question.question || ''),
+    options: Array.isArray(question.options) 
+      ? question.options.map(option => fixLaTeXInText(option || ''))
+      : [],
+    explanation: fixLaTeXInText(question.explanation || ''),
   };
+}
+
+/**
+ * Extract JSON from response using clear delimiters (for Bedrock Claude)
+ */
+function extractJSONWithDelimiters(text: string): { questions: QuizQuestion[] } {
+  console.log('Extracting JSON using delimiters...');
+  
+  // Look for content between <JSON_START> and <JSON_END> delimiters
+  const delimiterMatch = text.match(/<JSON_START>\s*([\s\S]*?)\s*<JSON_END>/);
+  
+  if (delimiterMatch) {
+    try {
+      const jsonText = delimiterMatch[1].trim();
+      console.log('Found JSON between delimiters:', jsonText.substring(0, 200) + '...');
+      return JSON.parse(jsonText);
+    } catch {
+      console.warn('Failed to parse delimited JSON, trying fallback methods');
+    }
+  }
+  
+  // Fallback to robust extraction if delimiters weren't used properly
+  console.log('Delimiters not found, falling back to robust extraction');
+  return extractJSONFromResponse(text);
+}
+
+/**
+ * Robust JSON extraction that handles various formats including markdown code blocks
+ */
+function extractJSONFromResponse(text: string): { questions: QuizQuestion[] } {
+  // First, try to parse as-is
+  try {
+    return JSON.parse(text);
+  } catch {
+    // Continue to other methods
+  }
+  
+  // Try to extract JSON from markdown code blocks
+  const jsonBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (jsonBlockMatch) {
+    try {
+      return JSON.parse(jsonBlockMatch[1]);
+    } catch {
+      // Continue to other methods
+    }
+  }
+  
+  // Try to find JSON-like content between curly braces
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch {
+      // Continue to other methods
+    }
+  }
+  
+  // Try to extract content after "format:" or similar patterns
+  const formatMatch = text.match(/(?:format:|output:|result:)\s*(\{[\s\S]*\})/i);
+  if (formatMatch) {
+    try {
+      return JSON.parse(formatMatch[1]);
+    } catch {
+      // Continue to other methods
+    }
+  }
+  
+  // If all else fails, try to clean up the text and parse
+  const cleanedText = text
+    .replace(/^[^{]*(\{.*\})[^}]*$/, '$1') // Extract JSON object
+    .replace(/```json\s*|\s*```/g, '') // Remove markdown
+    .replace(/^\s*["']|["']\s*$/g, '') // Remove quotes around the whole thing
+    .trim();
+  
+  try {
+    return JSON.parse(cleanedText);
+  } catch {
+    throw new Error(`Could not extract valid JSON from response: ${text.substring(0, 200)}...`);
+  }
 }
 
 // Generate quiz questions using selected AI provider
@@ -96,6 +177,10 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
   }
   
   const activeProvider = getActiveAIProviderConfig();
+  
+  // Special handling for Bedrock Claude models to ensure JSON output
+  const isBedrockClaude = activeProvider.provider === 'bedrock' && 
+                         activeProvider.defaultModel.includes('claude');
   
   // Detect if content is likely mathematical/technical
   const isContentLikelyMathematical = 
@@ -165,7 +250,62 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
   
   // Ensure we're asking for the right number of questions
   
-  const prompt = `
+  let prompt: string;
+  let system: string;
+  
+  if (isBedrockClaude) {
+    // For Bedrock Claude, use clear delimiters for easy JSON extraction
+    system = 'You are an expert quiz creator. You must follow the exact format specified, including all delimiters.';
+    
+    prompt = `
+    You are an expert quiz creator. Based on the following content,
+    create a quiz with ${numQuestions} questions at ${params.difficulty} difficulty level.
+
+    Content:
+    ${params.content.substring(0, 4000)} // Limit content to first 4000 chars to fit in context window
+    
+    Create a total of ${numQuestions} questions distributed as follows:
+    - ${multipleChoiceCount} multiple choice questions
+    - ${trueFalseCount} true/false questions
+    - ${mathCount} mathematical questions
+    
+    Content analysis: This appears to be ${isContentLikelyMathematical ? 'technical/mathematical content' : 'non-technical content'}.
+    ${!isContentLikelyMathematical && mathCount > 0 ? 'Although this seems like non-technical content, please try to create mathematical questions if possible by forming questions about numerical aspects of the content.' : ''}
+    ${isContentLikelyMathematical && mathCount === 0 ? 'Although this seems like technical content, please focus only on the requested question types and avoid creating math-heavy questions.' : ''}
+    
+    !!!MANDATORY LATEX FORMATTING RULE!!!
+    
+    EVERY SINGLE MATHEMATICAL EXPRESSION MUST BE IN LATEX FORMAT:
+    - ALL numbers: Write $5$ not 5, write $3.14$ not 3.14, write $100$ not 100
+    - ALL variables: Write $x$ not x, write $y$ not y, write $n$ not n
+    - ALL equations: Write $x = 5$ not x = 5, write $y + 2$ not y + 2
+    - ALL formulas: Use $$...$$ for display equations, $...$ for inline math
+    - ALL percentages: Write $25\\%$ not 25%, write $50\\%$ not 50%
+    - ALL fractions: Write $\\frac{1}{2}$ not 1/2, write $\\frac{a}{b}$ not a/b
+    
+    You must respond with the exact format below, including the delimiters:
+
+    <JSON_START>
+    {
+      "questions": [
+        {
+          "type": "multiple_choice",
+          "question": "Question text (use LaTeX for ANY math: $x^2$ or $5$)",
+          "options": ["Option A (use LaTeX for math: $2x$)", "Option B", "Option C", "Option D"],
+          "correctAnswer": 0,
+          "explanation": "Explanation (use LaTeX for ANY math: $x = 5$)"
+        }
+      ]
+    }
+    <JSON_END>
+
+    Follow this format exactly, including all delimiters.`;
+    
+  } else {
+    // For other providers, use standard prompting
+    system = 'You are a helpful assistant that creates quiz questions.';
+    
+    prompt = `
     You are an expert quiz creator. Based on the following content,
     create a quiz with ${numQuestions} questions at ${params.difficulty} difficulty level.
 
@@ -209,14 +349,14 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
     3. Provide 4 possible answers with only 1 correct option
     4. If any answer option contains mathematical content, wrap it in LaTeX delimiters
     5. Mark which answer is correct (0-3 index)
-    6. Include a brief explanation for why the answer is correct
+    6. Include a DETAILED explanation for why the answer is correct AND why other options are wrong
     7. If the explanation contains ANY mathematical content, format it with LaTeX
     
     For true/false questions:
     1. Create a clear statement that is either true or false
     2. If the statement contains ANY mathematical content, wrap it in LaTeX
     3. Indicate whether the statement is true or false
-    4. Provide a brief explanation for the correct answer
+    4. Provide a COMPREHENSIVE explanation for the correct answer, including reasoning
     5. If the explanation contains ANY mathematical content, format it with LaTeX
     
     For mathematical questions:
@@ -238,7 +378,26 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
        - Every step should be properly formatted with $$...$$ when on separate lines
     6. Provide 4 possible answers with only 1 correct option
     7. Mark which answer is correct (0-3 index)
-    8. Include a detailed breakdown of explanation where EVERY step uses proper LaTeX formatting
+    8. Include a STEP-BY-STEP detailed breakdown of the solution where EVERY step uses proper LaTeX formatting
+    
+    ⚠️ EXPLANATION REQUIREMENTS ⚠️
+    
+    Every explanation must be:
+    - DETAILED and EDUCATIONAL: Don't just state the answer, explain the reasoning process
+    - STEP-BY-STEP: Break down complex solutions into clear steps
+    - COMPREHENSIVE: Address why the correct answer is right AND why other options are wrong (for multiple choice)
+    - CONTEXTUAL: Connect the answer back to the source material when possible
+    - PROPERLY FORMATTED: Use LaTeX for all mathematical content
+    
+    Examples of GOOD explanations:
+    ✅ "The correct answer is $x = 5$ because when we substitute this value into the original equation $2x + 3 = 13$, we get $2(5) + 3 = 10 + 3 = 13$, which is true. The other options would not satisfy the equation."
+    
+    ✅ "This statement is true. According to the fundamental theorem of calculus, the derivative of $f(x) = x^3$ is found using the power rule: $\\frac{d}{dx}[x^n] = nx^{n-1}$. Therefore, $\\frac{d}{dx}[x^3] = 3x^{3-1} = 3x^2$."
+    
+    Examples of BAD explanations:
+    ❌ "The answer is A."
+    ❌ "This is correct."
+    ❌ "Use the formula."
     
     Format your response as a JSON object with this structure:
     {
@@ -320,6 +479,7 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
     Questions that fail to follow this formatting will be UNUSABLE by the application.
     Every mathematical element MUST be wrapped in $ or $$ delimiters for MathJax rendering.
   `;
+  }
   
   try {
     // Create model configuration based on active provider
@@ -346,38 +506,85 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
     // Use the AI SDK to generate text
     const { text } = await generateText({
       model,
-      system: 'You are a helpful assistant that creates quiz questions.',
+      system,
       prompt,
       temperature: activeProvider.temperature,
       maxTokens: activeProvider.maxTokens
     });
+
+    console.log('AI response received:', text.substring(0, 200) + '...');
     
-    // Parse the response text as JSON
-    try {
-      const parsedResponse = JSON.parse(text);
-      
-      // Post-process to ensure LaTeX formatting
-      if (parsedResponse.questions) {
-        parsedResponse.questions = parsedResponse.questions.map((question: QuizQuestion) => {
-          return ensureLaTeXFormatting(question);
-        });
-      }
-      
-      return parsedResponse;
-    } catch (error) {
-      console.error('Error parsing JSON response:', error);
-      // Try to extract JSON from the text if it's not valid JSON directly
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        try {
-          return JSON.parse(jsonMatch[0]);
-        } catch (innerError) {
-          console.error('Failed to extract valid JSON:', innerError);
-        }
-      }
-      // Throw error instead of fallback to mock service when JSON parsing fails
-      throw new Error('Failed to parse AI response as valid JSON. Please try again.');
+    if (!text) {
+      throw new Error('No response generated by AI');
     }
+
+    // Extract JSON using delimiters or fallback methods
+    let parsedResponse;
+    try {
+      if (isBedrockClaude) {
+        parsedResponse = extractJSONWithDelimiters(text);
+      } else {
+        parsedResponse = extractJSONFromResponse(text);
+      }
+    } catch (parseError) {
+      console.error('Failed to parse AI response as JSON:', text.substring(0, 300), parseError);
+      throw new Error('AI returned invalid JSON response');
+    }
+    
+    // Validate the parsed response structure
+    if (!parsedResponse || typeof parsedResponse !== 'object') {
+      throw new Error('AI response is not a valid object');
+    }
+    
+    if (!Array.isArray(parsedResponse.questions)) {
+      console.error('Invalid response structure:', parsedResponse);
+      throw new Error('AI response does not contain a valid questions array');
+    }
+    
+    // Validate each question has required properties
+    const validatedQuestions = parsedResponse.questions.filter((question: unknown) => {
+      if (!question || typeof question !== 'object') {
+        console.warn('Skipping invalid question object:', question);
+        return false;
+      }
+      
+      const q = question as Record<string, unknown>;
+      
+      if (!q.type || !q.question) {
+        console.warn('Skipping question with missing required properties:', question);
+        return false;
+      }
+      
+      if (!Array.isArray(q.options) || q.options.length === 0) {
+        console.warn('Skipping question with invalid options:', question);
+        return false;
+      }
+      
+      if (typeof q.correctAnswer !== 'number' || q.correctAnswer < 0 || q.correctAnswer >= q.options.length) {
+        console.warn('Skipping question with invalid correctAnswer:', question);
+        return false;
+      }
+      
+      if (!q.explanation || typeof q.explanation !== 'string' || q.explanation.trim().length < 10) {
+        console.warn('Skipping question with missing or inadequate explanation:', question);
+        return false;
+      }
+      
+      return true;
+    }) as QuizQuestion[];
+    
+    if (validatedQuestions.length === 0) {
+      throw new Error('No valid questions found in AI response');
+    }
+    
+    // Post-process to ensure LaTeX formatting
+    const processedQuestions = validatedQuestions.map((question: QuizQuestion) => {
+      return ensureLaTeXFormatting(question);
+    });
+    
+    return {
+      questions: processedQuestions
+    };
   } catch (error) {
     console.error(`Error generating questions with ${activeProvider.provider}:`, error);
     
