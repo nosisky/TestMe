@@ -14,6 +14,7 @@ type QuizSize = "quick" | "standard" | "deep" | "expert";
 interface QuestionTypesConfig {
   multipleChoice: boolean;
   trueFalse: boolean;
+  math: boolean;
 }
 
 // YouTube URL validation function
@@ -73,7 +74,8 @@ const ConversationalQuizCreator = () => {
   const [isCopied, setIsCopied] = useState(false);
   const [includeTypes, setIncludeTypes] = useState<QuestionTypesConfig>({
     multipleChoice: true,
-    trueFalse: true
+    trueFalse: true,
+    math: true
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -84,8 +86,10 @@ const ConversationalQuizCreator = () => {
   const [anonQuizCount, setAnonQuizCount] = useState<number>(0);
   const [knowledgeGaps, setKnowledgeGaps] = useState<string[]>([]);
   const [keyTopics, setKeyTopics] = useState<string[]>([]);
+  const [extractedContent, setExtractedContent] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedQuizSize, setSelectedQuizSize] = useState<QuizSize>("standard");
+  const imageFileRef = useRef<File | null>(null);
 
   // Set initial mobile state and update on resize
   useEffect(() => {
@@ -321,6 +325,7 @@ const ConversationalQuizCreator = () => {
         return;
       }
       setImageFile(file);
+      imageFileRef.current = file;
       setError("");
     } else {
       setError("Please upload a valid image file");
@@ -388,6 +393,7 @@ const ConversationalQuizCreator = () => {
       const analysisData = await analysisResponse.json();
       setKnowledgeGaps(analysisData.knowledgeGaps || []);
       setKeyTopics(analysisData.keyTopics || []);
+      setExtractedContent(analysisData.extractedContent || '');
       setIsAnalyzing(false);
     } catch (error) {
       console.error('Content analysis error:', error);
@@ -422,158 +428,48 @@ const ConversationalQuizCreator = () => {
       
       console.debug(`Creating quiz: type=${quizType}, size=${selectedSize}, difficulty=${difficulty}, questionCount=${questionCount}, userId=${userId}`);
       
+      // Generate quiz based on type, using extracted content when available
       if (quizType === "youtube") {
-        // Validate we have a video URL
-        if (!youtubeUrl) {
-          setError("Please enter a YouTube video URL");
-          setIsCreating(false);
-          setStep("input");
-          return;
-        }
-
         const videoId = getYoutubeVideoId(youtubeUrl);
-        if (!videoId) {
-          setError("Invalid YouTube URL");
-          setIsCreating(false);
-          setStep("config");
-          return;
-        }
-        
-        console.debug(`Processing YouTube video: ${videoId}`);
-        
-        try {
-          console.debug(`Sending API request for video ${videoId} with payload:`, {
+        const response = await fetch('/api/youtube/generate-quiz', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             videoId,
+            extractedContent, // Pass the pre-extracted content
             questionCount,
             difficulty,
             createdBy: userId,
             includeTypes
-          });
-          
-          const response = await fetch('/api/youtube/generate-quiz', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              videoId,
-              questionCount,
-              difficulty,
-              createdBy: userId, // Associate quiz with user
-              includeTypes // The backend will handle math detection
-            })
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.error('YouTube quiz creation error:', errorData);
-            throw new Error(errorData.error || 'Failed to create quiz');
-          }
-          
-          const data = await response.json();
-          console.debug('Quiz created successfully:', data);
-          
-          // Store the quiz ID
-          setCreatedQuizId(data._id);
-          setQuizShareUrl(`${window.location.origin}/quiz/${data._id}`);
-          
-          // If quiz was created but user isn't logged in, increment count
-          if (!session) {
-            const newCount = anonQuizCount + 1;
-            localStorage.setItem('anonQuizCount', newCount.toString());
-            setAnonQuizCount(newCount);
-            
-            // If this was their 3rd quiz, show login prompt
-            if (newCount >= 3) {
-              setShowLoginPrompt(true);
-              setIsCreating(false);
-              return;
-            }
-          }
-          
-          // If user is logged in, show success page or redirect
-          setIsCreating(false);
-          setStep("success");
-          
-          // Auto-scroll to success container when success page is shown
-          setTimeout(() => {
-            const successContainer = document.querySelector(`.${styles.successContainer}`);
-            if (successContainer) {
-              successContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            } else {
-              // Fallback to top if container not found
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-          }, 100);
-        } catch (error) {
-          console.error('Error in YouTube quiz API call:', error);
-          throw error;
-        }
-      } 
-      else if (quizType === "pdf" && pdfFile) {
-        const formData = new FormData();
-        formData.append('file', pdfFile);
-        
-        const url = new URL('/api/pdf/generate-quiz', window.location.origin);
-        url.searchParams.append('numQuestions', questionCount.toString());
-        url.searchParams.append('difficulty', difficulty);
-        url.searchParams.append('createdBy', userId); // Associate quiz with user
-        url.searchParams.append('includeMultipleChoice', includeTypes.multipleChoice.toString());
-        url.searchParams.append('includeTrueFalse', includeTypes.trueFalse.toString());
-        // The backend will auto-detect math content
-        
-        
-        const response = await fetch(url.toString(), {
-          method: 'POST',
-          body: formData
+          })
         });
         
-        const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to create quiz');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create quiz');
         }
         
-        // Store the quiz ID
-        setCreatedQuizId(data.quiz.id);
-        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}`);
+        const data = await response.json();
+        setCreatedQuizId(data._id);
+        setQuizShareUrl(`${window.location.origin}/quiz/${data._id}/instructions`);
         
-        // If quiz was created but user isn't logged in, increment count
+        // Track quiz creation for anonymous users
         if (!session) {
-          const newCount = anonQuizCount + 1;
-          localStorage.setItem('anonQuizCount', newCount.toString());
-          setAnonQuizCount(newCount);
-          
-          // If this was their 3rd quiz, show login prompt
-          if (newCount >= 3) {
-            setShowLoginPrompt(true);
-            setIsCreating(false);
-            return;
-          }
+          setAnonQuizCount(prevCount => prevCount + 1);
         }
         
-        // If user is logged in, show success page or redirect
         setIsCreating(false);
         setStep("success");
-        
-        // Auto-scroll to success container when success page is shown
-        setTimeout(() => {
-          const successContainer = document.querySelector(`.${styles.successContainer}`);
-          if (successContainer) {
-            successContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          } else {
-            // Fallback to top if container not found
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-        }, 100);
-      }
-      else if (quizType === "text") {
+      } else if (quizType === "text") {
         const response = await fetch('/api/text/generate-quiz', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            textContent,
+            textContent: extractedContent || textContent, // Use extracted content if available
             numQuestions: questionCount,
             difficulty,
-            createdBy: userId, // Associate quiz with user
-            includeTypes // The backend will handle math detection
+            createdBy: userId,
+            includeTypes
           })
         });
         
@@ -582,92 +478,84 @@ const ConversationalQuizCreator = () => {
           throw new Error(data.error || 'Failed to create quiz');
         }
         
-        // Store the quiz ID
         setCreatedQuizId(data.quiz.id);
-        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}`);
+        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}/instructions`);
         
-        // If quiz was created but user isn't logged in, increment count
+        // Track quiz creation for anonymous users
         if (!session) {
-          const newCount = anonQuizCount + 1;
-          localStorage.setItem('anonQuizCount', newCount.toString());
-          setAnonQuizCount(newCount);
-          
-          // If this was their 3rd quiz, show login prompt
-          if (newCount >= 3) {
-            setShowLoginPrompt(true);
-            setIsCreating(false);
-            return;
-          }
+          setAnonQuizCount(prevCount => prevCount + 1);
         }
         
-        // If user is logged in, show success page or redirect
         setIsCreating(false);
         setStep("success");
-        
-        // Auto-scroll to success container when success page is shown
-        setTimeout(() => {
-          const successContainer = document.querySelector(`.${styles.successContainer}`);
-          if (successContainer) {
-            successContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          } else {
-            // Fallback to top if container not found
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-        }, 100);
-      }
-      else if (quizType === "image" && imageFile) {
+      } else if (quizType === "pdf" && pdfFile) {
         const formData = new FormData();
-        formData.append('file', imageFile);
+        formData.append('file', pdfFile);
+        if (extractedContent) {
+          formData.append('extractedContent', extractedContent); // Pass pre-extracted content
+        }
+        formData.append('numQuestions', questionCount.toString());
+        formData.append('difficulty', difficulty);
+        formData.append('createdBy', userId);
+        formData.append('includeMultipleChoice', includeTypes.multipleChoice.toString());
+        formData.append('includeTrueFalse', includeTypes.trueFalse.toString());
+        formData.append('includeMath', includeTypes.math.toString());
         
-        const url = new URL('/api/image/generate-quiz', window.location.origin);
-        url.searchParams.append('numQuestions', questionCount.toString());
-        url.searchParams.append('difficulty', difficulty);
-        url.searchParams.append('createdBy', userId);
-        url.searchParams.append('includeMultipleChoice', includeTypes.multipleChoice.toString());
-        url.searchParams.append('includeTrueFalse', includeTypes.trueFalse.toString());
-        
-        const response = await fetch(url.toString(), {
+        const response = await fetch('/api/pdf/generate-quiz', {
           method: 'POST',
           body: formData
         });
         
-        const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to create quiz from image');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create quiz');
         }
         
-        // Store the quiz ID
+        const data = await response.json();
         setCreatedQuizId(data.quiz.id);
-        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}`);
+        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}/instructions`);
         
-        // If quiz was created but user isn't logged in, increment count
+        // Track quiz creation for anonymous users
         if (!session) {
-          const newCount = anonQuizCount + 1;
-          localStorage.setItem('anonQuizCount', newCount.toString());
-          setAnonQuizCount(newCount);
-          
-          // If this was their 3rd quiz, show login prompt
-          if (newCount >= 3) {
-            setShowLoginPrompt(true);
-            setIsCreating(false);
-            return;
-          }
+          setAnonQuizCount(prevCount => prevCount + 1);
         }
         
-        // If user is logged in, show success page or redirect
         setIsCreating(false);
         setStep("success");
+      } else if (quizType === "image" && (imageFile || imageFileRef.current)) {
+        const formData = new FormData();
+        formData.append('file', (imageFileRef.current || imageFile)!);
+        if (extractedContent) {
+          formData.append('extractedContent', extractedContent); // Pass pre-extracted content
+        }
+        formData.append('numQuestions', questionCount.toString());
+        formData.append('difficulty', difficulty);
+        formData.append('createdBy', userId);
+        formData.append('includeMultipleChoice', includeTypes.multipleChoice.toString());
+        formData.append('includeTrueFalse', includeTypes.trueFalse.toString());
+        formData.append('includeMath', includeTypes.math.toString());
         
-        // Auto-scroll to success container when success page is shown
-        setTimeout(() => {
-          const successContainer = document.querySelector(`.${styles.successContainer}`);
-          if (successContainer) {
-            successContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          } else {
-            // Fallback to top if container not found
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-        }, 100);
+        const response = await fetch('/api/image/generate-quiz', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create quiz');
+        }
+        
+        const data = await response.json();
+        setCreatedQuizId(data.quiz.id);
+        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}/instructions`);
+        
+        // Track quiz creation for anonymous users
+        if (!session) {
+          setAnonQuizCount(prevCount => prevCount + 1);
+        }
+        
+        setIsCreating(false);
+        setStep("success");
       }
     } catch (err) {
       console.error('Error creating quiz:', err);

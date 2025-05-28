@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -54,84 +54,7 @@ export default function QuizResultsPage() {
     return `${minutes}m ${remainingSeconds}s`;
   };
   
-  useEffect(() => {
-    // Allow any user to view results, regardless of authentication status
-    if (quizId) {
-      loadResults();
-    }
-  }, [quizId]);
-
-  const loadResults = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Fetch full quiz data
-      const quizResponse = await fetch(`/api/quiz/take/${quizId}`);
-      if (!quizResponse.ok) {
-        const errorData = await quizResponse.json();
-        throw new Error(errorData.error || 'Failed to load quiz data for results');
-      }
-      const quizData = await quizResponse.json();
-      setQuiz(quizData.quiz as Quiz);
-
-      // Try to get answers from localStorage first (for quiz takers who just completed the quiz)
-      const storedAnswers = localStorage.getItem(`quizAnswers_${quizId}`);
-      if (storedAnswers) {
-        const parsedAnswers = JSON.parse(storedAnswers) as UserAnswers;
-        setUserAnswers(parsedAnswers);
-
-        // Calculate score with local answers
-        if (quizData.quiz && parsedAnswers) {
-          calculateAndSaveScore(quizData.quiz as Quiz, parsedAnswers);
-        }
-      } else {
-        // For quiz creators viewing analytics, fetch the correct answers directly
-        // We'll show them the correct answers for each question
-        const demoAnswers: UserAnswers = {};
-        
-        // Set all answers to the correct answers
-        quizData.quiz.questions.forEach((q: QuizQuestion, index: number) => {
-          demoAnswers[index] = q.correctAnswer;
-        });
-        
-        setUserAnswers(demoAnswers);
-        
-        // Create a perfect score for display
-        const calculatedScore: Score = {
-          correct: quizData.quiz.questions.length,
-          total: quizData.quiz.questions.length,
-          percentage: 100
-        };
-        setScore(calculatedScore);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred while loading results.');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculateAndSaveScore = (currentQuiz: Quiz, currentAnswers: UserAnswers) => {
-    let correctCount = 0;
-    currentQuiz.questions.forEach((q, index) => {
-      if (currentAnswers[index] === q.correctAnswer) {
-        correctCount++;
-      }
-    });
-    const totalQuestions = currentQuiz.questions.length;
-    const calculatedScore: Score = {
-      correct: correctCount,
-      total: totalQuestions,
-      percentage: totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0,
-    };
-    setScore(calculatedScore);
-
-    // Optionally, save the score to the backend
-    saveQuizResultToDb(currentQuiz._id, calculatedScore, totalQuestions);
-  };
-
-  const saveQuizResultToDb = async (quizIdToSave: string, currentScore: Score, totalQuestions: number) => {
+  const saveQuizResultToDb = useCallback(async (quizIdToSave: string, currentScore: Score, totalQuestions: number, quizQuestions: QuizQuestion[]) => {
     try {
       // Get the start time from localStorage
       const startTime = localStorage.getItem(`quizStartTime_${quizIdToSave}`);
@@ -164,7 +87,7 @@ export default function QuizResultsPage() {
       const userAnswers = storedAnswers ? JSON.parse(storedAnswers) : {};
       
       // Create an array of answer details
-      const detailedAnswers = quiz?.questions.map((question, index) => {
+      const detailedAnswers = quizQuestions.map((question, index) => {
         const selectedOption = userAnswers[index];
         const isCorrect = selectedOption === question.correctAnswer;
         return {
@@ -172,7 +95,7 @@ export default function QuizResultsPage() {
           selectedOption: selectedOption !== undefined ? selectedOption : -1,
           isCorrect: isCorrect
         };
-      }).filter(answer => answer.selectedOption >= 0) || [];
+      }).filter(answer => answer.selectedOption >= 0);
       
       await fetch('/api/quiz/result', {
         method: 'POST',
@@ -190,7 +113,91 @@ export default function QuizResultsPage() {
       console.error('Failed to save quiz result:', err);
       // Non-critical error, so don't necessarily show to user
     }
-  };
+  }, [setTimeTaken]);
+  
+  const calculateAndSaveScore = useCallback((currentQuiz: Quiz, currentAnswers: UserAnswers) => {
+    let correctCount = 0;
+    currentQuiz.questions.forEach((q, index) => {
+      if (currentAnswers[index] === q.correctAnswer) {
+        correctCount++;
+      }
+    });
+    const totalQuestions = currentQuiz.questions.length;
+    const calculatedScore: Score = {
+      correct: correctCount,
+      total: totalQuestions,
+      percentage: totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0,
+    };
+    setScore(calculatedScore);
+
+    // Optionally, save the score to the backend
+    saveQuizResultToDb(currentQuiz._id, calculatedScore, totalQuestions, currentQuiz.questions);
+  }, [saveQuizResultToDb]);
+  
+  const loadQuizData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Fetch full quiz data
+      const quizResponse = await fetch(`/api/quiz/take/${quizId}`);
+      if (!quizResponse.ok) {
+        const errorData = await quizResponse.json();
+        throw new Error(errorData.error || 'Failed to load quiz data for results');
+      }
+      const quizData = await quizResponse.json();
+      const fetchedQuiz = quizData.quiz as Quiz;
+      setQuiz(fetchedQuiz);
+
+      // Try to get answers from localStorage first (for quiz takers who just completed the quiz)
+      const storedAnswers = localStorage.getItem(`quizAnswers_${quizId}`);
+      if (storedAnswers) {
+        const parsedAnswers = JSON.parse(storedAnswers) as UserAnswers;
+        setUserAnswers(parsedAnswers);
+      } else {
+        // For quiz creators viewing analytics, fetch the correct answers directly
+        // We'll show them the correct answers for each question
+        const demoAnswers: UserAnswers = {};
+        
+        // Set all answers to the correct answers
+        fetchedQuiz.questions.forEach((q: QuizQuestion, index: number) => {
+          demoAnswers[index] = q.correctAnswer;
+        });
+        
+        setUserAnswers(demoAnswers);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred while loading results.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [quizId]);
+
+  // Effect to load quiz data
+  useEffect(() => {
+    if (quizId) {
+      loadQuizData();
+    }
+  }, [quizId, loadQuizData]);
+
+  // Effect to calculate score when both quiz and userAnswers are available
+  useEffect(() => {
+    if (quiz && userAnswers) {
+      const storedAnswers = localStorage.getItem(`quizAnswers_${quizId}`);
+      if (storedAnswers) {
+        // Calculate score with local answers for quiz takers
+        calculateAndSaveScore(quiz, userAnswers);
+      } else {
+        // Create a perfect score for display for quiz creators
+        const calculatedScore: Score = {
+          correct: quiz.questions.length,
+          total: quiz.questions.length,
+          percentage: 100
+        };
+        setScore(calculatedScore);
+      }
+    }
+  }, [quiz, userAnswers, quizId, calculateAndSaveScore]);
 
   // Check if this is a quiz creator viewing analytics (no localStorage data)
   const isCreatorView = !localStorage.getItem(`quizAnswers_${quizId}`);

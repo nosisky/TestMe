@@ -582,9 +582,15 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
       return ensureLaTeXFormatting(question);
     });
     
-    return {
-      questions: processedQuestions
+    // After parsing questions from the AI, map any 'mathematical' type to 'math'
+    const questionsData = {
+      questions: processedQuestions.map(q => ({
+        ...q,
+        type: (typeof q.type === 'string' && q.type.toLowerCase() === 'mathematical') ? 'math' : q.type
+      }))
     };
+    
+    return questionsData;
   } catch (error) {
     console.error(`Error generating questions with ${activeProvider.provider}:`, error);
     

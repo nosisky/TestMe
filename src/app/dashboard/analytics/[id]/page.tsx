@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -57,6 +57,20 @@ export default function QuizAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchAnalyticsData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/quiz/analytics/${quizId}`);
+      const data = await handleApiResponse<AnalyticsData>(response);
+      setAnalytics(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load analytics data');
+      handleFetchError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [quizId]);
+
   // Redirect if not authenticated
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -69,21 +83,7 @@ export default function QuizAnalyticsPage() {
     if (status === 'authenticated' && quizId) {
       fetchAnalyticsData();
     }
-  }, [status, quizId]);
-
-  const fetchAnalyticsData = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/quiz/analytics/${quizId}`);
-      const data = await handleApiResponse<AnalyticsData>(response);
-      setAnalytics(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load analytics data');
-      handleFetchError(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [status, quizId, fetchAnalyticsData]);
 
   // Format date
   const formatDate = (dateStr: string) => {

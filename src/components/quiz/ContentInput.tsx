@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { QuizType, QUIZ_TYPE_CONFIG } from '@/constants/quiz';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { validateYoutubeUrl, containsMeaningfulText } from '@/utils/validation';
@@ -119,9 +120,11 @@ export const ContentInput = ({
                 </span>
               </div>
               {fileUpload.previewUrl && (
-                <img 
+                <Image 
                   src={fileUpload.previewUrl} 
                   alt="Preview" 
+                  width={100}
+                  height={100}
                   className={styles.imagePreview}
                 />
               )}

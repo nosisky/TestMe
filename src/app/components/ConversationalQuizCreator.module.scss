@@ -280,11 +280,11 @@
 
 /* Desktop view styles */
 .desktopView {
-  display: block;
-  
-  @media (max-width: 768px) {
-    display: none;
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
 }
 
 .quizTypes {
@@ -543,6 +543,11 @@
 
 /* Config step styles */
 .configContainer {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   background: var(--card-bg);
   border-radius: var(--border-radius);
   padding: 2rem;
@@ -576,12 +581,12 @@
 
 .quizSizes {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.25rem;
-  
+  margin-bottom: 2rem;
+
   @media (max-width: 600px) {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(2, auto);
+    grid-template-columns: 1fr;
     gap: 0.75rem;
   }
 }

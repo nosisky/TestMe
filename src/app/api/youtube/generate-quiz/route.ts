@@ -74,13 +74,14 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { 
       videoId, 
+      extractedContent, // Pre-extracted content from analysis phase
       questionCount = 5, 
       difficulty = 'medium',
       includeTypes = { multipleChoice: true, trueFalse: true, math: true },
       createdBy: createdByParam
     } = body;
 
-    console.debug(`[YouTube Quiz] Received request: videoId=${videoId}, questionCount=${questionCount}, difficulty=${difficulty}, createdBy=${createdByParam || 'not provided'}`);
+    console.debug(`[YouTube Quiz] Received request: videoId=${videoId}, questionCount=${questionCount}, difficulty=${difficulty}, createdBy=${createdByParam || 'not provided'}, hasExtractedContent=${!!extractedContent}`);
 
     // Ensure at least one question type is selected
     if (!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math) {
@@ -134,11 +135,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Try to get the transcript using youtube-transcript-api
-    const transcript = await getTranscript(videoId);
-
-    // Fallback to video description if transcript is not available
-    const content = transcript || videoDetails.description || '';
+    // 5. Use pre-extracted content if available, otherwise extract transcript
+    let content = extractedContent;
+    
+    if (!content) {
+      console.debug('[YouTube Quiz] No pre-extracted content, fetching transcript...');
+      const transcript = await getTranscript(videoId);
+      // Fallback to video description if transcript is not available
+      content = transcript || videoDetails.description || '';
+    } else {
+      console.debug('[YouTube Quiz] Using pre-extracted content');
+    }
 
     if (!content.trim()) {
       console.error('[YouTube Quiz] No content available for quiz generation');

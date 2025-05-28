@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
     console.log('Content analysis request received');
     const contentType = request.headers.get('content-type');
     let analysisData;
+    let extractedContent = '';
 
     if (contentType?.includes('multipart/form-data')) {
       // Handle file uploads (PDF, Image)
@@ -35,7 +36,6 @@ export async function POST(request: NextRequest) {
       }
 
       // Extract content from file
-      let extractedContent = '';
       try {
         if (type === 'pdf') {
           extractedContent = await extractTextFromPDF(file);
@@ -69,7 +69,6 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Video ID is required' }, { status: 400 });
         }
         console.log(`Fetching transcript for video: ${videoId}`);
-        
         let videoContent;
         try {
           videoContent = await getYouTubeTranscript(videoId);
@@ -79,9 +78,9 @@ export async function POST(request: NextRequest) {
             error: `YouTube transcript extraction failed: ${transcriptError instanceof Error ? transcriptError.message : 'Unknown error'}. The video may not have captions available.` 
           }, { status: 400 });
         }
-        
         console.log(`YouTube content length: ${videoContent.length}`);
         console.log(`YouTube content preview: ${videoContent.substring(0, 200)}...`);
+        extractedContent = videoContent;
         analysisData = await analyzeContentWithAI(videoContent, type);
       } else if (type === 'text') {
         if (!content) {
@@ -89,6 +88,7 @@ export async function POST(request: NextRequest) {
         }
         console.log(`Text content length: ${content.length}`);
         console.log(`Text content preview: ${content.substring(0, 200)}...`);
+        extractedContent = content;
         analysisData = await analyzeContentWithAI(content, type);
       } else {
         return NextResponse.json({ error: 'Invalid content type' }, { status: 400 });
@@ -96,7 +96,11 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Analysis completed:', analysisData);
-    return NextResponse.json(analysisData);
+    // Return both analysis data and extracted content for reuse in quiz generation
+    return NextResponse.json({
+      ...analysisData,
+      extractedContent
+    });
   } catch (error) {
     console.error('Content analysis error:', error);
     return NextResponse.json(

@@ -13,6 +13,7 @@ const MAX_FILE_SIZE = 20 * 1024 * 1024;
 async function parseFormData(request: Request) {
   const formData = await request.formData();
   const file = formData.get('file') as File | null;
+  const preExtractedContent = formData.get('extractedContent') as string | null;
 
   if (!file) {
     throw new Error('No image file provided');
@@ -32,7 +33,7 @@ async function parseFormData(request: Request) {
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
-  return { buffer, originalName: file.name };
+  return { buffer, originalName: file.name, preExtractedContent };
 }
 
 // Generate title from extracted text
@@ -66,10 +67,18 @@ export async function POST(request: Request) {
     }
 
     // Parse form data
-    const { buffer, originalName } = await parseFormData(request);
+    const { buffer, originalName, preExtractedContent } = await parseFormData(request);
 
-    // Extract text from image using AWS Textract
-    const extractedText = await extractTextFromImage(buffer);
+    // Extract text from image - use pre-extracted content if available
+    let extractedText: string;
+    
+    if (preExtractedContent) {
+      console.debug('Using pre-extracted image content');
+      extractedText = preExtractedContent;
+    } else {
+      console.debug('Extracting text from image using AWS Textract');
+      extractedText = await extractTextFromImage(buffer);
+    }
 
     if (!extractedText || extractedText.trim().length < 50) {
       return NextResponse.json(

@@ -34,8 +34,8 @@ const UserSchema = new Schema<IUser>({
   }
 });
 
-// Create indexes for faster queries
-UserSchema.index({ email: 1 });
+// Note: email index is automatically created by the unique: true constraint above
+// Additional indexes for faster queries can be added here if needed
 
 // Create or retrieve the model
 const User = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

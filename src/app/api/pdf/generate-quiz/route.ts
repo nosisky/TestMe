@@ -47,6 +47,7 @@ export async function POST(request: Request) {
     // Get the uploaded PDF file
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const preExtractedContent = formData.get('extractedContent') as string; // Check for pre-extracted content
     
     if (!file) {
       return NextResponse.json(
@@ -67,21 +68,41 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     
-    // Parse the PDF using pdf-parse
-    let pdfData;
-    try {
-      pdfData = await pdfParse(buffer);
-    } catch (error) {
-      console.error('Error parsing PDF:', error);
-      return NextResponse.json(
-        { error: 'Failed to parse PDF file' },
-        { status: 400 }
-      );
-    }
+    // Extract text from the PDF - use pre-extracted content if available
+    let pdfText: string;
+    let pageCount: number;
     
-    // Extract text from the PDF
-    const pdfText = pdfData.text;
-    const pageCount = pdfData.numpages;
+    if (preExtractedContent) {
+      console.debug('Using pre-extracted PDF content');
+      pdfText = preExtractedContent;
+      // We still need page count for validation, so parse just for metadata
+      try {
+        const pdfData = await pdfParse(buffer);
+        pageCount = pdfData.numpages;
+      } catch (error) {
+        console.error('Error parsing PDF for metadata:', error);
+        return NextResponse.json(
+          { error: 'Failed to parse PDF file' },
+          { status: 400 }
+        );
+      }
+    } else {
+      console.debug('Extracting text from PDF');
+      // Parse the PDF using pdf-parse
+      let pdfData;
+      try {
+        pdfData = await pdfParse(buffer);
+      } catch (error) {
+        console.error('Error parsing PDF:', error);
+        return NextResponse.json(
+          { error: 'Failed to parse PDF file' },
+          { status: 400 }
+        );
+      }
+      
+      pdfText = pdfData.text;
+      pageCount = pdfData.numpages;
+    }
     
     // Use file name as title or fallback
     const title = file.name.replace('.pdf', '') || 'PDF Quiz';

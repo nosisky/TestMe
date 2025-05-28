@@ -60,12 +60,14 @@ const DashboardQuizCreator = ({ initialType }: DashboardQuizCreatorProps) => {
   });
   const [knowledgeGaps, setKnowledgeGaps] = useState<string[]>([]);
   const [keyTopics, setKeyTopics] = useState<string[]>([]);
+  const [extractedContent, setExtractedContent] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedQuizSize, setSelectedQuizSize] = useState<QuizSize>("standard");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const shareUrlRef = useRef<HTMLInputElement>(null);
+  const imageFileRef = useRef<File | null>(null);
 
   const handleTypeSelect = (type: QuizType) => {
     setQuizType(type);
@@ -222,6 +224,7 @@ const DashboardQuizCreator = ({ initialType }: DashboardQuizCreatorProps) => {
       const analysisData = await analysisResponse.json();
       setKnowledgeGaps(analysisData.knowledgeGaps || []);
       setKeyTopics(analysisData.keyTopics || []);
+      setExtractedContent(analysisData.extractedContent || '');
       setIsAnalyzing(false);
     } catch (error) {
       console.error('Content analysis error:', error);
@@ -261,6 +264,7 @@ const DashboardQuizCreator = ({ initialType }: DashboardQuizCreatorProps) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             videoId,
+            extractedContent,
             questionCount,
             difficulty,
             createdBy: userId,
@@ -328,7 +332,7 @@ const DashboardQuizCreator = ({ initialType }: DashboardQuizCreatorProps) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            textContent,
+            textContent: extractedContent || textContent,
             numQuestions: questionCount,
             difficulty,
             createdBy: userId,
@@ -355,32 +359,31 @@ const DashboardQuizCreator = ({ initialType }: DashboardQuizCreatorProps) => {
           }
         }, 100);
       }
-      else if (quizType === "image" && imageFile) {
+      else if (quizType === "image" && (imageFileRef.current || imageFile)) {
+        const fileToUse = imageFileRef.current || imageFile;
+        if (!fileToUse) {
+          throw new Error('No image file available for quiz creation');
+        }
         const formData = new FormData();
-        formData.append('file', imageFile);
-        
+        formData.append('file', fileToUse);
         const url = new URL('/api/image/generate-quiz', window.location.origin);
         url.searchParams.append('numQuestions', questionCount.toString());
         url.searchParams.append('difficulty', difficulty);
         url.searchParams.append('createdBy', userId);
         url.searchParams.append('includeMultipleChoice', includeTypes.multipleChoice.toString());
         url.searchParams.append('includeTrueFalse', includeTypes.trueFalse.toString());
-        
         const response = await fetch(url.toString(), {
           method: 'POST',
           body: formData
         });
-        
         const data = await response.json();
         if (!response.ok) {
           throw new Error(data.error || 'Failed to create quiz from image');
         }
-        
         setCreatedQuizId(data.quiz.id);
         setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}`);
         setIsCreating(false);
         setStep("success");
-        
         setTimeout(() => {
           const successContainer = document.querySelector(`.${styles.successContainer}`);
           if (successContainer) {
@@ -420,6 +423,7 @@ const DashboardQuizCreator = ({ initialType }: DashboardQuizCreatorProps) => {
         return;
       }
       setImageFile(file);
+      imageFileRef.current = file;
       setError("");
     } else {
       setError("Please upload a valid image file");

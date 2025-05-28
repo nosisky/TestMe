@@ -55,12 +55,6 @@ export default function QuizPage() {
       }
       const data = await response.json();
       setQuiz(data.quiz);
-      // Initialize answers object
-      const initialAnswers: UserAnswers = {};
-      data.quiz.questions.forEach((_: QuizQuestion, index: number) => {
-        initialAnswers[index] = null;
-      });
-      setUserAnswers(initialAnswers);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load quiz. Please try again.');
       console.error(err);
@@ -68,6 +62,17 @@ export default function QuizPage() {
       setLoading(false);
     }
   }, [quizId]);
+
+  // Initialize user answers when quiz is loaded
+  useEffect(() => {
+    if (quiz && quiz.questions && quiz.questions.length > 0) {
+      const initialAnswers: UserAnswers = {};
+      quiz.questions.forEach((_: QuizQuestion, index: number) => {
+        initialAnswers[index] = null;
+      });
+      setUserAnswers(initialAnswers);
+    }
+  }, [quiz]);
   
   useEffect(() => {
     if (quizId) {

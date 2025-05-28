@@ -31,6 +31,29 @@ export const useContentAnalysis = () => {
     setState(prev => ({ ...prev, ...updates }));
   }, []);
 
+  const generateFallbackAnalysis = useCallback((params: AnalyzeContentParams) => {
+    const { quizType } = params;
+    
+    const fallbackTopics = {
+      youtube: ["Video content analysis", "Key concepts from video", "Main discussion points"],
+      pdf: ["Document structure", "Main concepts", "Important definitions"],
+      text: ["Text analysis", "Key themes", "Important concepts"],
+      image: ["Visual content", "Text elements", "Key information"]
+    };
+
+    const fallbackGaps = {
+      youtube: ["Video comprehension", "Detailed understanding", "Application of concepts"],
+      pdf: ["Document interpretation", "Complex concepts", "Practical application"],
+      text: ["Reading comprehension", "Critical analysis", "Concept application"],
+      image: ["Visual interpretation", "Text recognition", "Content analysis"]
+    };
+
+    return {
+      keyTopics: fallbackTopics[quizType] || ["General content analysis"],
+      knowledgeGaps: fallbackGaps[quizType] || ["Content understanding", "Concept application"]
+    };
+  }, []);
+
   const analyzeContent = useCallback(async (params: AnalyzeContentParams) => {
     updateState({ isAnalyzing: true, error: '', keyTopics: [], knowledgeGaps: [] });
 
@@ -69,30 +92,7 @@ export const useContentAnalysis = () => {
 
       return { success: false, error: errorMessage, data: fallbackAnalysis };
     }
-  }, [updateState]);
-
-  const generateFallbackAnalysis = useCallback((params: AnalyzeContentParams) => {
-    const { quizType } = params;
-    
-    const fallbackTopics = {
-      youtube: ["Video content analysis", "Key concepts from video", "Main discussion points"],
-      pdf: ["Document structure", "Main concepts", "Important definitions"],
-      text: ["Text analysis", "Key themes", "Important concepts"],
-      image: ["Visual content", "Text elements", "Key information"]
-    };
-
-    const fallbackGaps = {
-      youtube: ["Video comprehension", "Detailed understanding", "Application of concepts"],
-      pdf: ["Document interpretation", "Complex concepts", "Practical application"],
-      text: ["Reading comprehension", "Critical analysis", "Concept application"],
-      image: ["Visual interpretation", "Text recognition", "Content analysis"]
-    };
-
-    return {
-      keyTopics: fallbackTopics[quizType] || ["General content analysis"],
-      knowledgeGaps: fallbackGaps[quizType] || ["Content understanding", "Concept application"]
-    };
-  }, []);
+  }, [updateState, generateFallbackAnalysis]);
 
   const resetAnalysis = useCallback(() => {
     setState({
