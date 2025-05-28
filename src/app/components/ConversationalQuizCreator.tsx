@@ -58,7 +58,7 @@ function containsMeaningfulText(text: string): boolean {
 const ConversationalQuizCreator = () => {
   const router = useRouter();
   const { data: session } = useSession();
-  const [step, setStep] = useState<"type" | "input" | "config" | "creating" | "success">("type");
+  const [step, setStep] = useState<"type" | "input" | "config" | "analysis" | "creating" | "success">("type");
   const [quizType, setQuizType] = useState<QuizType>("youtube");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -82,6 +82,10 @@ const ConversationalQuizCreator = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [anonQuizCount, setAnonQuizCount] = useState<number>(0);
+  const [knowledgeGaps, setKnowledgeGaps] = useState<string[]>([]);
+  const [keyTopics, setKeyTopics] = useState<string[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [selectedQuizSize, setSelectedQuizSize] = useState<QuizSize>("standard");
 
   // Set initial mobile state and update on resize
   useEffect(() => {
@@ -158,16 +162,17 @@ const ConversationalQuizCreator = () => {
       return;
     }
 
-    // Proceed with quiz creation
-    setStep("creating");
-    setIsCreating(true);
+    // Store the selected size and proceed to knowledge gap analysis
+    setSelectedQuizSize(size);
+    setStep("analysis");
+    setIsAnalyzing(true);
     
     // Wrap in setTimeout to ensure state changes are applied first
     setTimeout(() => {
-      createQuiz(size).catch(err => {
-        console.error("Quiz creation error:", err);
-        setError(err instanceof Error ? err.message : "Failed to create quiz");
-        setIsCreating(false);
+      analyzeContent(size).catch(err => {
+        console.error("Content analysis error:", err);
+        setError(err instanceof Error ? err.message : "Failed to analyze content");
+        setIsAnalyzing(false);
         setStep("config");
       });
     }, 100);
@@ -199,6 +204,8 @@ const ConversationalQuizCreator = () => {
       setQuizType("youtube");
     } else if (step === "config") {
       setStep("input");
+    } else if (step === "analysis") {
+      setStep("config");
     }
   };
 
@@ -326,13 +333,83 @@ const ConversationalQuizCreator = () => {
     }
   };
 
+  const analyzeContent = async (selectedSize: QuizSize) => {
+    try {
+      let analysisResponse;
+      
+      if (quizType === "youtube") {
+        const videoId = getYoutubeVideoId(youtubeUrl);
+        analysisResponse = await fetch('/api/content/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'youtube',
+            videoId: videoId,
+            difficulty: getDifficulty(selectedSize)
+          })
+        });
+      } else if (quizType === "text") {
+        analysisResponse = await fetch('/api/content/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'text',
+            content: textContent,
+            difficulty: getDifficulty(selectedSize)
+          })
+        });
+      } else if (quizType === "pdf" && pdfFile) {
+        const formData = new FormData();
+        formData.append('file', pdfFile);
+        formData.append('type', 'pdf');
+        formData.append('difficulty', getDifficulty(selectedSize));
+        
+        analysisResponse = await fetch('/api/content/analyze', {
+          method: 'POST',
+          body: formData
+        });
+      } else if (quizType === "image" && imageFile) {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+        formData.append('type', 'image');
+        formData.append('difficulty', getDifficulty(selectedSize));
+        
+        analysisResponse = await fetch('/api/content/analyze', {
+          method: 'POST',
+          body: formData
+        });
+      }
+
+      if (!analysisResponse?.ok) {
+        const errorData = await analysisResponse?.json();
+        throw new Error(errorData?.error || 'Failed to analyze content');
+      }
+
+      const analysisData = await analysisResponse.json();
+      setKnowledgeGaps(analysisData.knowledgeGaps || []);
+      setKeyTopics(analysisData.keyTopics || []);
+      setIsAnalyzing(false);
+    } catch (error) {
+      console.error('Content analysis error:', error);
+      setIsAnalyzing(false);
+      throw error;
+    }
+  };
+
   const createQuiz = async (selectedSize: QuizSize) => {
+    // Set loading state and show creating step
+    setIsCreating(true);
+    setStep("creating");
+    setError(""); // Clear any previous errors
+    
     try {
       // This check is now also done in handleSizeSelect, but keeping it here for safety
       // Check if anonymous user has exceeded quiz limit (3)
       if (!session && anonQuizCount >= 3) {
         setShowLoginPrompt(true);
         setError("You've reached the limit of 3 quizzes for anonymous users. Please create an account to continue.");
+        setIsCreating(false);
+        setStep("analysis");
         return;
       }
       
@@ -415,6 +492,17 @@ const ConversationalQuizCreator = () => {
           // If user is logged in, show success page or redirect
           setIsCreating(false);
           setStep("success");
+          
+          // Auto-scroll to success container when success page is shown
+          setTimeout(() => {
+            const successContainer = document.querySelector(`.${styles.successContainer}`);
+            if (successContainer) {
+              successContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+              // Fallback to top if container not found
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }, 100);
         } catch (error) {
           console.error('Error in YouTube quiz API call:', error);
           throw error;
@@ -464,6 +552,17 @@ const ConversationalQuizCreator = () => {
         // If user is logged in, show success page or redirect
         setIsCreating(false);
         setStep("success");
+        
+        // Auto-scroll to success container when success page is shown
+        setTimeout(() => {
+          const successContainer = document.querySelector(`.${styles.successContainer}`);
+          if (successContainer) {
+            successContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else {
+            // Fallback to top if container not found
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }, 100);
       }
       else if (quizType === "text") {
         const response = await fetch('/api/text/generate-quiz', {
@@ -504,6 +603,17 @@ const ConversationalQuizCreator = () => {
         // If user is logged in, show success page or redirect
         setIsCreating(false);
         setStep("success");
+        
+        // Auto-scroll to success container when success page is shown
+        setTimeout(() => {
+          const successContainer = document.querySelector(`.${styles.successContainer}`);
+          if (successContainer) {
+            successContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else {
+            // Fallback to top if container not found
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }, 100);
       }
       else if (quizType === "image" && imageFile) {
         const formData = new FormData();
@@ -547,6 +657,17 @@ const ConversationalQuizCreator = () => {
         // If user is logged in, show success page or redirect
         setIsCreating(false);
         setStep("success");
+        
+        // Auto-scroll to success container when success page is shown
+        setTimeout(() => {
+          const successContainer = document.querySelector(`.${styles.successContainer}`);
+          if (successContainer) {
+            successContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else {
+            // Fallback to top if container not found
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }, 100);
       }
     } catch (err) {
       console.error('Error creating quiz:', err);
@@ -1293,6 +1414,88 @@ const ConversationalQuizCreator = () => {
           </div>
         )}
       </div>
+      
+      {/* Analysis step - Knowledge Gap Analysis */}
+      {step === "analysis" && (
+        <div className={styles.analysisContainer}>
+          <button className={styles.backButton} onClick={handleBack}>
+            <svg width="16" height="16" viewBox="0 0 24 24">
+              <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Back
+          </button>
+          
+          {isAnalyzing ? (
+            <div className={styles.analyzingContent}>
+              <div className={styles.analyzingIcon}>🧠</div>
+              <h2>AI is Analyzing Your Content...</h2>
+              <p>
+                Our AI is reading through your {quizType === "youtube" ? "video transcript" : 
+                  quizType === "pdf" ? "PDF document" : 
+                  quizType === "image" ? "image content" : "text"}, to identify:
+              </p>
+              <ul className={styles.analyzingList}>
+                <li>📚 Key topics and concepts you need to learn</li>
+                <li>🎯 Specific knowledge gaps where you might struggle</li>
+                <li>💡 Areas that would benefit from targeted practice</li>
+              </ul>
+              <div className={styles.loadingDots}>
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.analysisResults}>
+              <div className={styles.analysisHeader}>
+                <h2>🎯 AI Analysis Complete!</h2>
+                <p>Based on your {quizType === "youtube" ? "video content" : 
+                  quizType === "pdf" ? "PDF document" : 
+                  quizType === "image" ? "image" : "text"}, here&apos;s what our AI discovered:</p>
+              </div>
+              
+              <div className={styles.analysisSection}>
+                <h3>📚 Key Topics Covered</h3>
+                <p className={styles.sectionDescription}>Main concepts and learning areas identified in your content:</p>
+                <div className={styles.topicsGrid}>
+                  {keyTopics.map((topic, index) => (
+                    <div key={index} className={styles.topicCard}>
+                      <span className={styles.topicNumber}>{index + 1}</span>
+                      <span className={styles.topicText}>{topic}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.analysisSection}>
+                <h3>🎯 Knowledge Gaps Identified</h3>
+                <p className={styles.sectionDescription}>Areas where students typically need extra practice and focus:</p>
+                <div className={styles.gapsGrid}>
+                  {knowledgeGaps.map((gap, index) => (
+                    <div key={index} className={styles.gapCard}>
+                      <span className={styles.gapIcon}>⚠️</span>
+                      <span className={styles.gapText}>{gap}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.proceedSection}>
+                <div className={styles.proceedInfo}>
+                  <h4>🚀 Ready to Create Your Personalized Quiz?</h4>
+                  <p>Your quiz will focus on these knowledge gaps to maximize your learning efficiency!</p>
+                </div>
+                <button 
+                  className={styles.proceedButton}
+                  onClick={() => createQuiz(selectedQuizSize)}
+                >
+                  Generate My Targeted Quiz
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       
       {/* Unified loading overlay for both mobile and desktop */}
       {step === "creating" && isCreating && (

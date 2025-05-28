@@ -35,12 +35,14 @@
     "react-range-slider-input": "^3.2.1",
     "react-share": "^5.2.2",
     "sass": "^1.88.0",
+    "youtube-transcript": "^1.2.1",
     "youtube-transcript-api": "^2.0.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@types/formidable": "^3.4.5",
     "@types/node": "^20.17.47",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19.1.4",
     "@types/react-dom": "^19",
     "cross-env": "^7.0.3",

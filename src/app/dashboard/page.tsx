@@ -122,31 +122,36 @@ export default function Dashboard() {
         {activeTab === "create" ? (
           <div className={styles.createQuizSection}>
             <h2>Create a New Quiz</h2>
-            <p>Choose a source for your quiz questions:</p>
+            <p>Choose a source for your quiz questions and get AI-powered knowledge gap analysis:</p>
+            
+            <div className={styles.featureHighlight}>
+              <span className={styles.newFeatureIcon}>✨</span>
+              <span>NEW: AI identifies your knowledge gaps before generating personalized quizzes!</span>
+            </div>
             
             <div className={styles.quizOptionsGrid}>
               <Link href="/dashboard/create/youtube" className={styles.quizOption}>
                 <div className={styles.quizOptionIcon}>🎥</div>
                 <h3>YouTube Video</h3>
-                <p>Generate questions from a YouTube video transcript</p>
+                <p>Generate questions from a YouTube video with AI gap analysis</p>
               </Link>
               
               <Link href="/dashboard/create/pdf" className={styles.quizOption}>
                 <div className={styles.quizOptionIcon}>📄</div>
                 <h3>PDF Document</h3>
-                <p>Upload a PDF (up to 5 pages) and create a quiz</p>
+                <p>Upload a PDF and get personalized knowledge gap insights</p>
               </Link>
 
               <Link href="/dashboard/create/text" className={styles.quizOption}>
                 <div className={styles.quizOptionIcon}>✍️</div>
                 <h3>Custom Text</h3>
-                <p>Enter or paste your own text for quiz generation</p>
+                <p>Enter text and discover your learning gaps with AI analysis</p>
               </Link>
               
               <Link href="/dashboard/create/image" className={styles.quizOption}>
                 <div className={styles.quizOptionIcon}>🖼️</div>
                 <h3>Image</h3>
-                <p>Extract text from an image to generate questions</p>
+                <p>Extract text from images with smart knowledge gap detection</p>
               </Link>
               
              
