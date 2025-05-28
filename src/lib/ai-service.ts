@@ -14,37 +14,16 @@ import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { deepseek } from '@ai-sdk/deepseek';
 import { bedrock } from '@ai-sdk/amazon-bedrock';
-import dbConnect from './mongodb';
-import AIConfig, { AIProvider, initializeAIConfigs, IAIConfig } from '@/models/AIConfig';
+import { getActiveAIProvider, AIProviderConfig } from './ai-config';
 import { generateMockQuizQuestions } from './mock-ai-service';
 
 // Flag to use mock service during development/testing
 // Only use mock service if explicitly set to 'true' in environment variables
 const USE_MOCK_SERVICE = process.env.USE_MOCK_AI === 'true';
 
-// Get active AI provider from database
-export async function getActiveAIProvider(): Promise<IAIConfig> {
-  await dbConnect();
-  
-  // Initialize default configs if needed
-  await initializeAIConfigs();
-  
-  // Get the active provider configuration
-  const activeConfig = await AIConfig.findOne({ isActive: true });
-
-  // Fallback to environment variable or OpenAI if no active provider
-  if (!activeConfig) {
-    const defaultProvider = (process.env.DEFAULT_AI_PROVIDER as AIProvider) || 'openai';
-    
-    const fallbackConfig = await AIConfig.findOne({ provider: defaultProvider });
-    
-    if (!fallbackConfig) {
-      throw new Error('No AI provider configuration found');
-    }
-    return fallbackConfig;
-  }
-  
-  return activeConfig;
+// Get active AI provider from configuration
+export function getActiveAIProviderConfig(): AIProviderConfig {
+  return getActiveAIProvider();
 }
 
 interface GenerateQuestionsParams {
@@ -116,7 +95,7 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
     });
   }
   
-  const activeProvider = await getActiveAIProvider();
+  const activeProvider = getActiveAIProviderConfig();
   
   // Detect if content is likely mathematical/technical
   const isContentLikelyMathematical = 
@@ -297,7 +276,7 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
       "formula": "$$x^2 + 12x + 35 = 0$$",
       "options": ["$x = -5, -7$", "$x = 5, 7$", "$x = -3, -12$", "$x = 3, 12$"],
       "correctAnswer": 0,
-      "explanation": "Using the quadratic formula: $$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$$ With $a=1$, $b=12$, and $c=35$: $$x = \\frac{-12 \\pm \\sqrt{12^2-4 \\cdot 1 \\cdot 35}}{2 \\cdot 1} = \\frac{-12 \\pm \\sqrt{144-140}}{2} = \\frac{-12 \\pm \\sqrt{4}}{2} = \\frac{-12 \\pm 2}{2}$$ This gives us $x = \\frac{-12+2}{2} = -5$ or $x = \\frac{-12-2}{2} = -7$"
+      "explanation": "Using the quadratic formula: $$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$$ With $a=1$, $b=12$, and $c=35$: $$x = \\frac{-12 \\pm \\sqrt{12^2-4 \\cdot 1 \\cdot 35}}{2 \\cdot 1} = \\frac{-12 \\pm \\sqrt{144-140}}{2} = \\frac{-12 \\pm \\sqrt{4}}{2}$$ This gives us $x = \\frac{-12+2}{2} = -5$ or $x = \\frac{-12-2}{2} = -7$"
     }
     
     Another example with completing the square method:

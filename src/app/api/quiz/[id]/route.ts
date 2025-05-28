@@ -10,8 +10,12 @@ interface IQuizInstructionData extends Omit<IQuiz, 'questions' | 'source' | '_id
   source?: Partial<IQuizSource>; // Source is partial as we only select youtube.thumbnail
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  request: Request, 
+  context: { params: Promise<{ id: string }> }
+) {
   try {
+    const params = await context.params;
     const { id } = params;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {

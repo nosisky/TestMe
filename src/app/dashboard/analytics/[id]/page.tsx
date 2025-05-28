@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/app/components/Header';
+import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import styles from './analytics.module.scss';
 import { handleApiResponse, handleFetchError } from "@/lib/api-utils";
 
@@ -124,7 +125,8 @@ export default function QuizAnalyticsPage() {
         <main className={styles.mainContent}>
           <div className={styles.loadingState}>
             <div className={styles.spinner}></div>
-            <p>Loading analytics data...</p>
+            <h2>Loading Analytics...</h2>
+            <p>Please wait while we fetch your quiz data.</p>
           </div>
         </main>
       </div>
@@ -139,9 +141,9 @@ export default function QuizAnalyticsPage() {
           <div className={styles.errorState}>
             <h2>Error Loading Analytics</h2>
             <p>{error}</p>
-            <Link href="/dashboard" className={styles.button}>
+            <button onClick={() => router.push('/dashboard')} className={styles.button}>
               Back to Dashboard
-            </Link>
+            </button>
           </div>
         </main>
       </div>
@@ -167,16 +169,21 @@ export default function QuizAnalyticsPage() {
 
   const { quiz, stats, results } = analytics;
 
+  const breadcrumbItems = [
+    { label: "Dashboard", href: "/dashboard", icon: "🏠" },
+    { label: "Analytics", icon: "📊" },
+    { label: quiz.title || "Quiz", icon: "📝" }
+  ];
+
   return (
     <div className={styles.pageContainer}>
       <Header />
       <main className={styles.mainContent}>
         <div className={styles.analyticsHeader}>
-          <div className={styles.breadcrumbs}>
-            <Link href="/dashboard" className={styles.backLink}>
-              ← Back to Dashboard
-            </Link>
-          </div>
+          <Breadcrumb 
+            items={breadcrumbItems}
+            backButtonText="Back to Dashboard"
+          />
           <h1>Quiz Analytics</h1>
           <h2>{quiz.title}</h2>
         </div>

@@ -1,146 +1,1067 @@
-# TestMe - YouTube Quiz Generator
+# TestMe - AI-Powered Quiz Generator
 
-TestMe is a web application that generates quizzes from YouTube videos, PDFs, images, and custom text. It leverages AI to create engaging multiple-choice questions to test knowledge and comprehension.
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7-green?logo=mongodb)](https://www.mongodb.com/)
+[![Vercel AI SDK](https://img.shields.io/badge/Vercel_AI_SDK-3-black?logo=vercel)](https://sdk.vercel.ai/)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+[![Production Ready](https://img.shields.io/badge/Production-Ready-brightgreen.svg)]()
 
-## Features
+> **Transform any content into engaging quizzes with the power of AI**
 
-- **Content Sources**: Generate quizzes from YouTube videos, PDFs (up to 5 pages), images, and custom text
-- **Quiz Configuration**: Customize the number of questions, difficulty levels, and question-skipping options
-- **Interactive Quiz Experience**: Take quizzes with animations, score tracking, and explanations for answers
-- **Quiz Sharing**: Share quizzes with others via links
-- **User Authentication**: Secure login with Google Authentication
-- **Responsive Design**: Works on all device sizes with a modern UI
-- **Multiple AI Providers**: Support for OpenAI, Anthropic Claude, and DeepSeek models
-- **MongoDB Integration**: Persistent storage for users, quizzes and results
+TestMe is a production-ready, full-stack web application that generates intelligent quizzes from multiple content sources using advanced AI. Built with modern technologies and designed for scalability, it supports YouTube videos, PDFs, images, and custom text to create engaging multiple-choice, true/false, and mathematical questions.
 
-## Getting Started
+**🎯 Perfect for**: Educators, content creators, training organizations, and anyone looking to create interactive learning experiences.
+
+**🚀 Live Demo**: [https://testme-quiz.vercel.app](https://testme-quiz.vercel.app)
+
+## 📑 Table of Contents
+
+- [Quick Start](#-quick-start)
+- [Features](#-features)
+- [Demo](#-demo)
+- [Technology Stack](#-technology-stack)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Environment Configuration](#environment-configuration)
+- [AI Provider Setup](#-ai-provider-setup)
+  - [OpenAI (Recommended)](#openai-recommended)
+  - [Anthropic Claude](#anthropic-claude)
+  - [DeepSeek](#deepseek)
+  - [AWS Bedrock](#aws-bedrock)
+  - [Provider Comparison](#provider-comparison)
+- [API Keys Setup Guide](#-api-keys-setup-guide)
+- [Development](#-development)
+- [Deployment](#-deployment)
+- [Configuration Management](#-configuration-management)
+- [Architecture](#-architecture)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Developer](#-developer)
+
+## ⚡ Quick Start
+
+Want to get TestMe running quickly? Follow these essential steps:
+
+```bash
+# 1. Clone and install
+git clone https://github.com/dealwap/testme.git
+cd testme
+npm install
+
+# 2. Setup environment (copy and fill with your API keys)
+cp env.example .env.local
+
+# 3. Start development server
+npm run dev
+```
+
+**Essential environment variables to configure:**
+- `OPENAI_API_KEY` - For AI quiz generation
+- `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET` - For authentication
+- `MONGODB_URI` - For database storage
+- `YOUTUBE_API_KEY` - For YouTube video processing
+
+📚 **Detailed setup instructions are available in the [Getting Started](#-getting-started) section below.**
+
+## ✨ Features
+
+### 🎯 **Core Functionality**
+- **Multi-Source Content**: Generate quizzes from YouTube videos, PDFs (up to 5 pages), images, and custom text
+- **AI-Powered Knowledge Gap Analysis**: Automatically identifies learning gaps and key topics
+- **Smart Question Generation**: Creates multiple-choice, true/false, and mathematical questions
+- **Adaptive Difficulty**: Customizable difficulty levels (easy, medium, hard)
+- **LaTeX Math Support**: Full mathematical equation rendering with MathJax
+
+### 🎨 **User Experience**
+- **Interactive Quiz Interface**: Animated quiz-taking experience with real-time feedback
+- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+- **Dark/Light Mode**: Professional UI with theme switching
+- **Quiz Sharing**: Share quizzes via secure links
+- **Performance Analytics**: Detailed quiz statistics and user performance tracking
+
+### 🔐 **Security & Authentication**
+- **Google OAuth Integration**: Secure authentication with Google accounts
+- **User Management**: Role-based access control (admin/user)
+- **Data Privacy**: Secure storage of user data and quiz results
+
+### 🤖 **AI Integration**
+- **Multiple AI Providers**: Support for OpenAI, Anthropic Claude, DeepSeek, and AWS Bedrock
+- **Environment-Based Configuration**: Secure API key management
+- **Fallback Systems**: Robust error handling with mock service support
+- **Cost Optimization**: Choose providers based on budget and performance needs
+
+## 🚀 Demo
+
+Visit our live demo: [https://testme-quiz.vercel.app](https://testme-quiz.vercel.app)
+
+**Test Account**: Use Google OAuth to create your account or try the demo content.
+
+## 🛠 Technology Stack
+
+### **Frontend**
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Styling**: SCSS Modules with CSS Variables
+- **UI Components**: Custom React components with responsive design
+- **Math Rendering**: MathJax for LaTeX equation support
+
+### **Backend**
+- **Runtime**: Node.js with Next.js API Routes
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: NextAuth.js with Google OAuth
+- **File Processing**: PDF parsing, image analysis, YouTube transcript extraction
+
+### **AI Integration**
+- **AI SDK**: Vercel AI SDK for unified provider interface
+- **Providers**: OpenAI, Anthropic Claude, DeepSeek, AWS Bedrock
+- **Vision**: OpenAI GPT-4 Vision for image text extraction
+
+### **Deployment & DevOps**
+- **Platform**: Vercel (recommended) or Docker
+- **Monitoring**: Built-in analytics and error tracking
+- **CI/CD**: GitHub Actions ready
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
+- **Node.js**: Version 18 or higher
+- **npm** or **yarn**: Package manager
+- **MongoDB**: Local instance or MongoDB Atlas
+- **Git**: Version control
 
 ### Installation
 
-1. Clone the repository
-   ```
+1. **Clone the repository**
+   ```bash
    git clone https://github.com/your-username/testme.git
    cd testme
    ```
 
-2. Install dependencies
-   ```
+2. **Install dependencies**
+   ```bash
    npm install
    ```
 
-3. Create a `.env.local` file in the root directory with the following variables:
-   ```
-   # NextAuth configuration
-   NEXTAUTH_URL=http://localhost:3000
-   NEXTAUTH_SECRET=your_nextauth_secret
-
-   # Google OAuth credentials for authentication
-   GOOGLE_CLIENT_ID=your_google_client_id
-   GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-   # YouTube API key for retrieving video information and captions
-   YOUTUBE_API_KEY=your_youtube_api_key
-
-   # OpenAI API key for generating questions
-   OPENAI_API_KEY=your_openai_api_key
-   
-   # MongoDB connection string
-   MONGODB_URI=mongodb://localhost:27017/testme
-   
-   # AI model API keys (at least one is required)
-   CLAUDE_API_KEY=your_claude_api_key
-   DEEPSEEK_API_KEY=your_deepseek_api_key
-   
-   # AWS Bedrock configuration
-   AWS_ACCESS_KEY_ID=your_aws_access_key_id
-   AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
-   AWS_REGION=us-east-1
-   
-   # Default AI provider (openai, claude, deepseek, or bedrock)
-   DEFAULT_AI_PROVIDER=openai
+3. **Environment setup**
+   ```bash
+   cp env.example .env.local
    ```
 
-### API Keys Setup
+### Environment Configuration
 
-1. **Google OAuth Credentials**:
-   - Visit the [Google Cloud Console](https://console.cloud.google.com/)
-   - Create a new project
-   - Navigate to "APIs & Services" > "Credentials"
-   - Create an OAuth client ID with authorized redirect URIs:
-     - `http://localhost:3000/api/auth/callback/google` (for development)
-     - `https://your-production-domain.com/api/auth/callback/google` (for production)
-   - Add the Client ID and Client Secret to your `.env.local` file
+Create a `.env.local` file in the root directory with the following configuration:
 
-2. **YouTube API Key**:
-   - In the Google Cloud Console, enable the "YouTube Data API v3"
-   - Create an API key and restrict it to the YouTube Data API
-   - Add the API key to your `.env.local` file
+```bash
+# =================================================================
+# APPLICATION CONFIGURATION
+# =================================================================
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret_here
 
-3. **OpenAI API Key**:
-   - Visit [OpenAI API Keys](https://platform.openai.com/api-keys)
-   - Create a new API key
-   - Add the API key to your `.env.local` file
+# =================================================================
+# AUTHENTICATION (Required)
+# =================================================================
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 
-4. **Claude API Key** (Optional):
-   - Visit [Anthropic Console](https://console.anthropic.com/)
-   - Create a new API key
-   - Add the API key to your `.env.local` file as `CLAUDE_API_KEY`
+# =================================================================
+# DATABASE (Required)
+# =================================================================
+MONGODB_URI=mongodb://localhost:27017/testme
+# Or for MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/testme
 
-5. **AWS Bedrock Configuration** (Optional):
-   - Sign in to your AWS account or create a new one
-   - Request access to AWS Bedrock models in your account
-   - Create an IAM user with the `AmazonBedrockFullAccess` policy
-   - Create access keys for this user
-   - Set the following environment variables in your `.env.local` file:
-     - `AWS_ACCESS_KEY_ID`: Your AWS access key ID
-     - `AWS_SECRET_ACCESS_KEY`: Your AWS secret access key
-     - `AWS_REGION`: The AWS region where Bedrock is available (e.g., us-east-1)
+# =================================================================
+# EXTERNAL APIs (Required)
+# =================================================================
+YOUTUBE_API_KEY=your_youtube_api_key
 
-6. **NextAuth Secret**:
-   - Generate a random string or use a tool like `openssl rand -base64 32` in your terminal
-   - Add this as your NEXTAUTH_SECRET in the `.env.local` file
+# =================================================================
+# AI PROVIDER CONFIGURATION
+# =================================================================
+# Choose your primary AI provider (openai, claude, deepseek, bedrock)
+DEFAULT_AI_PROVIDER=openai
 
-### Development
+# Configure API keys for your chosen provider(s)
+# OpenAI (Recommended - reliable, fast, good quality)
+OPENAI_API_KEY=your_openai_api_key
 
-Start the development server:
+# Anthropic Claude (Best for detailed explanations)
+CLAUDE_API_KEY=your_claude_api_key
+
+# DeepSeek (Most cost-effective option)
+DEEPSEEK_API_KEY=your_deepseek_api_key
+
+# AWS Bedrock (Enterprise-grade, requires AWS setup)
+AWS_ACCESS_KEY_ID=your_aws_access_key_id
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+AWS_REGION=us-east-1
+
+# =================================================================
+# DEVELOPMENT & TESTING
+# =================================================================
+# Set to 'true' to use mock AI service for testing (no API costs)
+USE_MOCK_AI=false
+
+# Set to 'development' for detailed logging
+NODE_ENV=development
 ```
+
+## 🤖 AI Provider Setup
+
+### OpenAI (Recommended)
+
+**Best for**: General use, reliable performance, fastest responses
+
+- **Models**: GPT-4o-mini (default), GPT-4, GPT-3.5-turbo
+- **Pricing**: ~$0.0001 per 1K tokens (very affordable)
+- **Setup**: [Get API key](https://platform.openai.com/api-keys)
+
+```bash
+DEFAULT_AI_PROVIDER=openai
+OPENAI_API_KEY=sk-your-openai-key-here
+```
+
+### Anthropic Claude
+
+**Best for**: Detailed explanations, complex reasoning, educational content
+
+- **Models**: Claude-3-haiku (default), Claude-3-sonnet
+- **Pricing**: ~$0.00025 per 1K tokens
+- **Setup**: [Get API key](https://console.anthropic.com/)
+
+```bash
+DEFAULT_AI_PROVIDER=claude
+CLAUDE_API_KEY=sk-ant-your-claude-key-here
+```
+
+### DeepSeek
+
+**Best for**: Cost-effective alternative, budget-conscious deployments
+
+- **Models**: deepseek-chat (default)
+- **Pricing**: ~$0.00014 per 1K tokens (most affordable)
+- **Setup**: [Get API key](https://platform.deepseek.com/)
+
+```bash
+DEFAULT_AI_PROVIDER=deepseek
+DEEPSEEK_API_KEY=sk-your-deepseek-key-here
+```
+
+### AWS Bedrock
+
+**Best for**: Enterprise use, enhanced security, compliance requirements
+
+- **Models**: Claude-3-sonnet (default)
+- **Pricing**: Variable based on AWS pricing
+- **Setup**: Requires AWS account and Bedrock access
+
+```bash
+DEFAULT_AI_PROVIDER=bedrock
+AWS_ACCESS_KEY_ID=your-aws-access-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret-key
+AWS_REGION=us-east-1
+```
+
+### Provider Comparison
+
+| Provider | Cost | Speed | Quality | Best Use Case |
+|----------|------|-------|---------|---------------|
+| **OpenAI** | 💰💰 | ⚡⚡⚡ | ⭐⭐⭐ | General purpose, production |
+| **Claude** | 💰💰💰 | ⚡⚡ | ⭐⭐⭐⭐ | Educational content, detailed explanations |
+| **DeepSeek** | 💰 | ⚡⚡ | ⭐⭐⭐ | Budget deployments, development |
+| **Bedrock** | 💰💰💰 | ⚡⚡ | ⭐⭐⭐⭐ | Enterprise, compliance-critical |
+
+## 🔑 API Keys Setup Guide
+
+### 1. Google OAuth Setup (Required)
+
+1. Visit [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable **Google+ API** and **People API**
+4. Go to **APIs & Services** → **Credentials**
+5. Create **OAuth client ID** with these settings:
+   - **Application type**: Web application
+   - **Authorized JavaScript origins**: 
+     - `http://localhost:3000` (development)
+     - `https://your-domain.com` (production)
+   - **Authorized redirect URIs**:
+     - `http://localhost:3000/api/auth/callback/google` (development)
+     - `https://your-domain.com/api/auth/callback/google` (production)
+
+### 2. YouTube API Setup (Required)
+
+1. In the same Google Cloud project
+2. Enable **YouTube Data API v3**
+3. Create **API Key** and restrict it to YouTube Data API
+4. Add domains that will use the API
+
+### 3. MongoDB Setup (Required)
+
+**Option A: MongoDB Atlas (Recommended for production)**
+1. Create account at [MongoDB Atlas](https://www.mongodb.com/atlas)
+2. Create a cluster
+3. Create database user with read/write permissions
+4. Whitelist your IP address (or 0.0.0.0/0 for development)
+5. Get connection string
+
+**Option B: Local MongoDB**
+```bash
+# Install MongoDB locally
+brew install mongodb-community # macOS
+# or follow official installation guide for your OS
+
+# Start MongoDB service
+brew services start mongodb-community
+```
+
+### 4. Generate NextAuth Secret
+
+```bash
+# Generate a secure random string
+openssl rand -base64 32
+```
+
+## 💻 Development
+
+### Start Development Server
+
+```bash
 npm run dev
 ```
 
 The application will be available at `http://localhost:3000`
 
-## Technical Stack
+### Available Scripts
 
-- **Framework**: Next.js with App Router
-- **Styling**: SCSS Modules with dark/light mode support
-- **Authentication**: NextAuth.js with Google provider
-- **APIs**: YouTube Data API, OpenAI API
-- **Deployment**: Vercel (recommended)
+```bash
+# Development server with Turbopack
+npm run dev
 
-## Future Enhancements
+# Production build
+npm run build
 
-- Database integration with MongoDB/Postgres
-- Quiz analytics and performance tracking
-- Social sharing features
-- More question types (true/false, fill-in-the-blank)
-- Custom quiz themes
+# Start production server
+npm start
 
-## Learn More
+# Run linting
+npm run lint
 
-To learn more about Next.js, take a look at the following resources:
+# Run type checking
+npm run type-check
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Development Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Hot Reload**: Instant updates during development
+- **TypeScript**: Full type safety and IntelliSense
+- **ESLint**: Code quality and consistency
+- **SCSS Modules**: Scoped styling with CSS variables
+- **Mock AI Service**: Test without API costs
 
-## Deploy on Vercel
+## 🚀 Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Vercel (Recommended)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Connect your repository**
+   ```bash
+   npm i -g vercel
+   vercel login
+   vercel
+   ```
+
+2. **Environment Variables**
+   - Copy all variables from `.env.local` to Vercel dashboard
+   - Set `NEXTAUTH_URL` to your production domain
+   - Ensure all API keys are properly configured
+
+3. **Domain Configuration**
+   - Update Google OAuth redirect URIs with production domain
+   - Update CORS settings if needed
+
+### Docker Deployment
+
+```bash
+# Build Docker image
+docker build -t testme .
+
+# Run container
+docker run -p 3000:3000 --env-file .env.local testme
+```
+
+### Manual Deployment
+
+```bash
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+## ⚙️ Configuration Management
+
+### AI Provider Switching
+
+Change AI provider without code changes:
+
+```bash
+# Switch to Claude
+DEFAULT_AI_PROVIDER=claude
+
+# Switch to DeepSeek  
+DEFAULT_AI_PROVIDER=deepseek
+
+# Restart application
+npm run dev
+```
+
+### Environment-Based Configuration
+
+- **Development**: Use mock services and local databases
+- **Staging**: Test with real APIs and staging databases
+- **Production**: Full configuration with monitoring
+
+### Security Best Practices
+
+- ✅ Store API keys in environment variables only
+- ✅ Use different API keys for different environments
+- ✅ Regularly rotate API keys
+- ✅ Monitor API usage and costs
+- ✅ Implement rate limiting
+
+## 🏗 Architecture
+
+### System Design
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Backend       │    │   External      │
+│   (Next.js)     │◄──►│   (API Routes)  │◄──►│   Services      │
+│                 │    │                 │    │                 │
+│ • React UI      │    │ • Authentication│    │ • AI Providers  │
+│ • SCSS Modules  │    │ • Quiz Logic    │    │ • YouTube API   │
+│ • TypeScript    │    │ • File Processing│   │ • MongoDB       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### Data Flow
+
+1. **Content Input**: User uploads/inputs content
+2. **Analysis**: AI analyzes content for key topics and gaps
+3. **Generation**: AI creates targeted quiz questions
+4. **Storage**: Quiz saved to MongoDB
+5. **Delivery**: Interactive quiz served to users
+6. **Analytics**: Performance tracking and insights
+
+### Security Architecture
+
+- **Authentication**: Google OAuth with NextAuth.js
+- **Authorization**: Role-based access control
+- **Data Protection**: Encrypted storage and transmission
+- **API Security**: Rate limiting and input validation
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Code Standards
+
+- **TypeScript**: Strict mode enabled
+- **ESLint**: Follow configured rules
+- **Prettier**: Code formatting
+- **SCSS**: Use modules and CSS variables
+- **Testing**: Write tests for new features
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👨‍💻 Developer
+
+### Lead Developer
+
+**Dealwap**
+- 📧 Email: [dealwap@gmail.com](mailto:dealwap@gmail.com)
+- 💼 GitHub: [@dealwap](https://github.com/dealwap)
+- 🌐 Portfolio: [dealwap.dev](https://dealwap.dev)
+- 🐦 Twitter: [@dealwap_dev](https://twitter.com/dealwap_dev)
+
+### Project Information
+
+- **Version**: 1.0.0
+- **Last Updated**: December 2024
+- **Status**: Production Ready ✅
+- **Maintenance**: Actively maintained
+- **License**: MIT License
+
+### Support & Contact
+
+For support, feature requests, or bug reports:
+
+1. **GitHub Issues**: [Create an issue](https://github.com/dealwap/testme/issues) - Best for bug reports and feature requests
+2. **Email**: [dealwap@gmail.com](mailto:dealwap@gmail.com) - For direct communication and business inquiries
+3. **Documentation**: Check this README and inline code comments
+4. **Community**: Star the repo and follow for updates
+
+### Acknowledgments
+
+Special thanks to:
+- **Vercel AI SDK** team for the excellent AI integration tools
+- **Next.js** team for the amazing full-stack framework
+- **OpenAI, Anthropic, DeepSeek, AWS** for providing powerful AI models
+- The open-source community for inspiration and support
+
+---
+
+<div align="center">
+
+# TestMe - AI-Powered Quiz Generator
+
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7-green?logo=mongodb)](https://www.mongodb.com/)
+[![Vercel AI SDK](https://img.shields.io/badge/Vercel_AI_SDK-3-black?logo=vercel)](https://sdk.vercel.ai/)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+[![Production Ready](https://img.shields.io/badge/Production-Ready-brightgreen.svg)]()
+
+> **Transform any content into engaging quizzes with the power of AI**
+
+TestMe is a production-ready, full-stack web application that generates intelligent quizzes from multiple content sources using advanced AI. Built with modern technologies and designed for scalability, it supports YouTube videos, PDFs, images, and custom text to create engaging multiple-choice, true/false, and mathematical questions.
+
+**🎯 Perfect for**: Educators, content creators, training organizations, and anyone looking to create interactive learning experiences.
+
+**🚀 Live Demo**: [https://testme-quiz.vercel.app](https://testme-quiz.vercel.app)
+
+## 📑 Table of Contents
+
+- [Quick Start](#-quick-start)
+- [Features](#-features)
+- [Demo](#-demo)
+- [Technology Stack](#-technology-stack)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Environment Configuration](#environment-configuration)
+- [AI Provider Setup](#-ai-provider-setup)
+  - [OpenAI (Recommended)](#openai-recommended)
+  - [Anthropic Claude](#anthropic-claude)
+  - [DeepSeek](#deepseek)
+  - [AWS Bedrock](#aws-bedrock)
+  - [Provider Comparison](#provider-comparison)
+- [API Keys Setup Guide](#-api-keys-setup-guide)
+- [Development](#-development)
+- [Deployment](#-deployment)
+- [Configuration Management](#-configuration-management)
+- [Architecture](#-architecture)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Developer](#-developer)
+
+## ⚡ Quick Start
+
+Want to get TestMe running quickly? Follow these essential steps:
+
+```bash
+# 1. Clone and install
+git clone https://github.com/dealwap/testme.git
+cd testme
+npm install
+
+# 2. Setup environment (copy and fill with your API keys)
+cp env.example .env.local
+
+# 3. Start development server
+npm run dev
+```
+
+**Essential environment variables to configure:**
+- `OPENAI_API_KEY` - For AI quiz generation
+- `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET` - For authentication
+- `MONGODB_URI` - For database storage
+- `YOUTUBE_API_KEY` - For YouTube video processing
+
+📚 **Detailed setup instructions are available in the [Getting Started](#-getting-started) section below.**
+
+## ✨ Features
+
+### 🎯 **Core Functionality**
+- **Multi-Source Content**: Generate quizzes from YouTube videos, PDFs (up to 5 pages), images, and custom text
+- **AI-Powered Knowledge Gap Analysis**: Automatically identifies learning gaps and key topics
+- **Smart Question Generation**: Creates multiple-choice, true/false, and mathematical questions
+- **Adaptive Difficulty**: Customizable difficulty levels (easy, medium, hard)
+- **LaTeX Math Support**: Full mathematical equation rendering with MathJax
+
+### 🎨 **User Experience**
+- **Interactive Quiz Interface**: Animated quiz-taking experience with real-time feedback
+- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+- **Dark/Light Mode**: Professional UI with theme switching
+- **Quiz Sharing**: Share quizzes via secure links
+- **Performance Analytics**: Detailed quiz statistics and user performance tracking
+
+### 🔐 **Security & Authentication**
+- **Google OAuth Integration**: Secure authentication with Google accounts
+- **User Management**: Role-based access control (admin/user)
+- **Data Privacy**: Secure storage of user data and quiz results
+
+### 🤖 **AI Integration**
+- **Multiple AI Providers**: Support for OpenAI, Anthropic Claude, DeepSeek, and AWS Bedrock
+- **Environment-Based Configuration**: Secure API key management
+- **Fallback Systems**: Robust error handling with mock service support
+- **Cost Optimization**: Choose providers based on budget and performance needs
+
+## 🚀 Demo
+
+Visit our live demo: [https://testme-quiz.vercel.app](https://testme-quiz.vercel.app)
+
+**Test Account**: Use Google OAuth to create your account or try the demo content.
+
+## 🛠 Technology Stack
+
+### **Frontend**
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Styling**: SCSS Modules with CSS Variables
+- **UI Components**: Custom React components with responsive design
+- **Math Rendering**: MathJax for LaTeX equation support
+
+### **Backend**
+- **Runtime**: Node.js with Next.js API Routes
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: NextAuth.js with Google OAuth
+- **File Processing**: PDF parsing, image analysis, YouTube transcript extraction
+
+### **AI Integration**
+- **AI SDK**: Vercel AI SDK for unified provider interface
+- **Providers**: OpenAI, Anthropic Claude, DeepSeek, AWS Bedrock
+- **Vision**: OpenAI GPT-4 Vision for image text extraction
+
+### **Deployment & DevOps**
+- **Platform**: Vercel (recommended) or Docker
+- **Monitoring**: Built-in analytics and error tracking
+- **CI/CD**: GitHub Actions ready
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Node.js**: Version 18 or higher
+- **npm** or **yarn**: Package manager
+- **MongoDB**: Local instance or MongoDB Atlas
+- **Git**: Version control
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/testme.git
+   cd testme
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Environment setup**
+   ```bash
+   cp env.example .env.local
+   ```
+
+### Environment Configuration
+
+Create a `.env.local` file in the root directory with the following configuration:
+
+```bash
+# =================================================================
+# APPLICATION CONFIGURATION
+# =================================================================
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_nextauth_secret_here
+
+# =================================================================
+# AUTHENTICATION (Required)
+# =================================================================
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# =================================================================
+# DATABASE (Required)
+# =================================================================
+MONGODB_URI=mongodb://localhost:27017/testme
+# Or for MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/testme
+
+# =================================================================
+# EXTERNAL APIs (Required)
+# =================================================================
+YOUTUBE_API_KEY=your_youtube_api_key
+
+# =================================================================
+# AI PROVIDER CONFIGURATION
+# =================================================================
+# Choose your primary AI provider (openai, claude, deepseek, bedrock)
+DEFAULT_AI_PROVIDER=openai
+
+# Configure API keys for your chosen provider(s)
+# OpenAI (Recommended - reliable, fast, good quality)
+OPENAI_API_KEY=your_openai_api_key
+
+# Anthropic Claude (Best for detailed explanations)
+CLAUDE_API_KEY=your_claude_api_key
+
+# DeepSeek (Most cost-effective option)
+DEEPSEEK_API_KEY=your_deepseek_api_key
+
+# AWS Bedrock (Enterprise-grade, requires AWS setup)
+AWS_ACCESS_KEY_ID=your_aws_access_key_id
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+AWS_REGION=us-east-1
+
+# =================================================================
+# DEVELOPMENT & TESTING
+# =================================================================
+# Set to 'true' to use mock AI service for testing (no API costs)
+USE_MOCK_AI=false
+
+# Set to 'development' for detailed logging
+NODE_ENV=development
+```
+
+## 🤖 AI Provider Setup
+
+### OpenAI (Recommended)
+
+**Best for**: General use, reliable performance, fastest responses
+
+- **Models**: GPT-4o-mini (default), GPT-4, GPT-3.5-turbo
+- **Pricing**: ~$0.0001 per 1K tokens (very affordable)
+- **Setup**: [Get API key](https://platform.openai.com/api-keys)
+
+```bash
+DEFAULT_AI_PROVIDER=openai
+OPENAI_API_KEY=sk-your-openai-key-here
+```
+
+### Anthropic Claude
+
+**Best for**: Detailed explanations, complex reasoning, educational content
+
+- **Models**: Claude-3-haiku (default), Claude-3-sonnet
+- **Pricing**: ~$0.00025 per 1K tokens
+- **Setup**: [Get API key](https://console.anthropic.com/)
+
+```bash
+DEFAULT_AI_PROVIDER=claude
+CLAUDE_API_KEY=sk-ant-your-claude-key-here
+```
+
+### DeepSeek
+
+**Best for**: Cost-effective alternative, budget-conscious deployments
+
+- **Models**: deepseek-chat (default)
+- **Pricing**: ~$0.00014 per 1K tokens (most affordable)
+- **Setup**: [Get API key](https://platform.deepseek.com/)
+
+```bash
+DEFAULT_AI_PROVIDER=deepseek
+DEEPSEEK_API_KEY=sk-your-deepseek-key-here
+```
+
+### AWS Bedrock
+
+**Best for**: Enterprise use, enhanced security, compliance requirements
+
+- **Models**: Claude-3-sonnet (default)
+- **Pricing**: Variable based on AWS pricing
+- **Setup**: Requires AWS account and Bedrock access
+
+```bash
+DEFAULT_AI_PROVIDER=bedrock
+AWS_ACCESS_KEY_ID=your-aws-access-key
+AWS_SECRET_ACCESS_KEY=your-aws-secret-key
+AWS_REGION=us-east-1
+```
+
+### Provider Comparison
+
+| Provider | Cost | Speed | Quality | Best Use Case |
+|----------|------|-------|---------|---------------|
+| **OpenAI** | 💰💰 | ⚡⚡⚡ | ⭐⭐⭐ | General purpose, production |
+| **Claude** | 💰💰💰 | ⚡⚡ | ⭐⭐⭐⭐ | Educational content, detailed explanations |
+| **DeepSeek** | 💰 | ⚡⚡ | ⭐⭐⭐ | Budget deployments, development |
+| **Bedrock** | 💰💰💰 | ⚡⚡ | ⭐⭐⭐⭐ | Enterprise, compliance-critical |
+
+## 🔑 API Keys Setup Guide
+
+### 1. Google OAuth Setup (Required)
+
+1. Visit [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing one
+3. Enable **Google+ API** and **People API**
+4. Go to **APIs & Services** → **Credentials**
+5. Create **OAuth client ID** with these settings:
+   - **Application type**: Web application
+   - **Authorized JavaScript origins**: 
+     - `http://localhost:3000` (development)
+     - `https://your-domain.com` (production)
+   - **Authorized redirect URIs**:
+     - `http://localhost:3000/api/auth/callback/google` (development)
+     - `https://your-domain.com/api/auth/callback/google` (production)
+
+### 2. YouTube API Setup (Required)
+
+1. In the same Google Cloud project
+2. Enable **YouTube Data API v3**
+3. Create **API Key** and restrict it to YouTube Data API
+4. Add domains that will use the API
+
+### 3. MongoDB Setup (Required)
+
+**Option A: MongoDB Atlas (Recommended for production)**
+1. Create account at [MongoDB Atlas](https://www.mongodb.com/atlas)
+2. Create a cluster
+3. Create database user with read/write permissions
+4. Whitelist your IP address (or 0.0.0.0/0 for development)
+5. Get connection string
+
+**Option B: Local MongoDB**
+```bash
+# Install MongoDB locally
+brew install mongodb-community # macOS
+# or follow official installation guide for your OS
+
+# Start MongoDB service
+brew services start mongodb-community
+```
+
+### 4. Generate NextAuth Secret
+
+```bash
+# Generate a secure random string
+openssl rand -base64 32
+```
+
+## 💻 Development
+
+### Start Development Server
+
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:3000`
+
+### Available Scripts
+
+```bash
+# Development server with Turbopack
+npm run dev
+
+# Production build
+npm run build
+
+# Start production server
+npm start
+
+# Run linting
+npm run lint
+
+# Run type checking
+npm run type-check
+```
+
+### Development Features
+
+- **Hot Reload**: Instant updates during development
+- **TypeScript**: Full type safety and IntelliSense
+- **ESLint**: Code quality and consistency
+- **SCSS Modules**: Scoped styling with CSS variables
+- **Mock AI Service**: Test without API costs
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+1. **Connect your repository**
+   ```bash
+   npm i -g vercel
+   vercel login
+   vercel
+   ```
+
+2. **Environment Variables**
+   - Copy all variables from `.env.local` to Vercel dashboard
+   - Set `NEXTAUTH_URL` to your production domain
+   - Ensure all API keys are properly configured
+
+3. **Domain Configuration**
+   - Update Google OAuth redirect URIs with production domain
+   - Update CORS settings if needed
+
+### Docker Deployment
+
+```bash
+# Build Docker image
+docker build -t testme .
+
+# Run container
+docker run -p 3000:3000 --env-file .env.local testme
+```
+
+### Manual Deployment
+
+```bash
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+## ⚙️ Configuration Management
+
+### AI Provider Switching
+
+Change AI provider without code changes:
+
+```bash
+# Switch to Claude
+DEFAULT_AI_PROVIDER=claude
+
+# Switch to DeepSeek  
+DEFAULT_AI_PROVIDER=deepseek
+
+# Restart application
+npm run dev
+```
+
+### Environment-Based Configuration
+
+- **Development**: Use mock services and local databases
+- **Staging**: Test with real APIs and staging databases
+- **Production**: Full configuration with monitoring
+
+### Security Best Practices
+
+- ✅ Store API keys in environment variables only
+- ✅ Use different API keys for different environments
+- ✅ Regularly rotate API keys
+- ✅ Monitor API usage and costs
+- ✅ Implement rate limiting
+
+## 🏗 Architecture
+
+### System Design
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Backend       │    │   External      │
+│   (Next.js)     │◄──►│   (API Routes)  │◄──►│   Services      │
+│                 │    │                 │    │                 │
+│ • React UI      │    │ • Authentication│    │ • AI Providers  │
+│ • SCSS Modules  │    │ • Quiz Logic    │    │ • YouTube API   │
+│ • TypeScript    │    │ • File Processing│   │ • MongoDB       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### Data Flow
+
+1. **Content Input**: User uploads/inputs content
+2. **Analysis**: AI analyzes content for key topics and gaps
+3. **Generation**: AI creates targeted quiz questions
+4. **Storage**: Quiz saved to MongoDB
+5. **Delivery**: Interactive quiz served to users
+6. **Analytics**: Performance tracking and insights
+
+### Security Architecture
+
+- **Authentication**: Google OAuth with NextAuth.js
+- **Authorization**: Role-based access control
+- **Data Protection**: Encrypted storage and transmission
+- **API Security**: Rate limiting and input validation
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Code Standards
+
+- **TypeScript**: Strict mode enabled
+- **ESLint**: Follow configured rules
+- **Prettier**: Code formatting
+- **SCSS**: Use modules and CSS variables
+- **Testing**: Write tests for new features
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👨‍💻 Developer
+
+### Lead Developer
+
+**Dealwap**
+- 📧 Email: [dealwap@gmail.com](mailto:dealwap@gmail.com)
+- 💼 GitHub: [@dealwap](https://github.com/dealwap)
+- 🌐 Portfolio: [dealwap.dev](https://dealwap.dev)
+- 🐦 Twitter: [@dealwap_dev](https://twitter.com/dealwap_dev)
+
+### Project Information
+
+- **Version**: 1.0.0
+- **Last Updated**: December 2024
+- **Status**: Production Ready ✅
+- **Maintenance**: Actively maintained
+- **License**: MIT License
+
+### Support & Contact
+
+For support, feature requests, or bug reports:
+
+1. **GitHub Issues**: [Create an issue](https://github.com/dealwap/testme/issues) - Best for bug reports and feature requests
+2. **Email**: [dealwap@gmail.com](mailto:dealwap@gmail.com) - For direct communication and business inquiries
+3. **Documentation**: Check this README and inline code comments
+4. **Community**: Star the repo and follow for updates
+
+### Acknowledgments
+
+Special thanks to:
+- **Vercel AI SDK** team for the excellent AI integration tools
+- **Next.js** team for the amazing full-stack framework
+- **OpenAI, Anthropic, DeepSeek, AWS** for providing powerful AI models
+- The open-source community for inspiration and support
+
+---
+
+<div align="center">
+
+**Built with ❤️ by Dealwap**
+
+*"Making education more engaging through AI-powered quiz generation"*
+
+[![GitHub stars](https://img.shields.io/github/stars/dealwap/testme?style=social)](https://github.com/dealwap/testme)
+[![GitHub forks](https://img.shields.io/github/forks/dealwap/testme?style=social)](https://github.com/dealwap/testme)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+
+</div>

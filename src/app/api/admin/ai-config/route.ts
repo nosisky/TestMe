@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/mongodb';
-import AIConfig, { initializeAIConfigs } from '@/models/AIConfig';
 import User from '@/models/User';
+import { getAllAIProviders, getProviderStatus } from '@/lib/ai-config';
 
 // GET - fetch all AI configurations
 export async function GET() {
@@ -20,13 +20,16 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     
-    // Initialize default configs if needed
-    await initializeAIConfigs();
-    
     // Get all AI provider configurations
-    const configs = await AIConfig.find({}).sort({ provider: 1 });
+    const configs = getAllAIProviders();
+    const status = getProviderStatus();
     
-    return NextResponse.json({ success: true, configs });
+    return NextResponse.json({ 
+      success: true, 
+      configs,
+      status,
+      note: 'AI provider configuration is now controlled via the DEFAULT_AI_PROVIDER environment variable. To change the active provider, update the environment variable and restart the application.'
+    });
   } catch (error) {
     console.error('Error fetching AI configurations:', error);
     return NextResponse.json(
@@ -36,7 +39,7 @@ export async function GET() {
   }
 }
 
-// POST - update AI configuration
+// POST - update AI configuration (now just returns info about environment variables)
 export async function POST(request: Request) {
   try {
     // Check authentication and admin role
@@ -54,7 +57,7 @@ export async function POST(request: Request) {
     
     // Get update data
     const data = await request.json();
-    const { provider, isActive, defaultModel, temperature, maxTokens } = data;
+    const { provider } = data;
     
     if (!provider) {
       return NextResponse.json(
@@ -63,34 +66,18 @@ export async function POST(request: Request) {
       );
     }
     
-    // Initialize default configs if needed
-    await initializeAIConfigs();
-    
-    // If setting this provider as active, deactivate all other providers
-    if (isActive) {
-      await AIConfig.updateMany({}, { isActive: false });
-    }
-    
-    // Update the provider config
-    const config = await AIConfig.findOneAndUpdate(
-      { provider },
-      {
-        defaultModel: defaultModel || undefined,
-        temperature: temperature !== undefined ? temperature : undefined,
-        maxTokens: maxTokens !== undefined ? maxTokens : undefined,
-        isActive: isActive !== undefined ? isActive : undefined
-      },
-      { new: true }
-    );
-    
-    if (!config) {
-      return NextResponse.json(
-        { error: 'AI provider not found' },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json({ success: true, config });
+    // Return information about how to change the provider
+    return NextResponse.json({
+      success: false,
+      message: `AI provider configuration is now controlled via environment variables. To activate ${provider}, set DEFAULT_AI_PROVIDER=${provider} in your environment variables and restart the application.`,
+      currentProvider: getProviderStatus().activeProvider,
+      requestedProvider: provider,
+      instructions: {
+        step1: `Set DEFAULT_AI_PROVIDER=${provider} in your .env.local file`,
+        step2: 'Restart the application',
+        step3: 'Ensure the appropriate API keys are configured for the provider'
+      }
+    });
   } catch (error) {
     console.error('Error updating AI configuration:', error);
     return NextResponse.json(

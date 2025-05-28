@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/mongodb';
-import AIConfig from '@/models/AIConfig';
 import User from '@/models/User';
+import { getProviderStatus } from '@/lib/ai-config';
 
 // POST - reset the AI configuration to use DeepSeek
 export async function POST() {
@@ -20,31 +20,20 @@ export async function POST() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     
-    // Reset all providers to inactive
-    await AIConfig.updateMany({}, { isActive: false });
-    
-    // Set DeepSeek as the active provider
-    const deepseekConfig = await AIConfig.findOneAndUpdate(
-      { provider: 'deepseek' },
-      { isActive: true },
-      { new: true }
-    );
-    
-    if (!deepseekConfig) {
-      return NextResponse.json(
-        { error: 'DeepSeek provider not found' },
-        { status: 404 }
-      );
-    }
-    
-    // Get all updated configs
-    const configs = await AIConfig.find({}).sort({ provider: 1 });
+    const currentStatus = getProviderStatus();
     
     return NextResponse.json({
-      success: true,
-      message: 'Successfully reset AI configuration to use DeepSeek',
-      activeProvider: deepseekConfig,
-      allConfigs: configs
+      success: false,
+      message: 'AI provider configuration is now controlled via environment variables. To reset to DeepSeek, set DEFAULT_AI_PROVIDER=deepseek in your environment variables and restart the application.',
+      currentProvider: currentStatus.activeProvider,
+      targetProvider: 'deepseek',
+      instructions: {
+        step1: 'Set DEFAULT_AI_PROVIDER=deepseek in your .env.local file',
+        step2: 'Ensure DEEPSEEK_API_KEY is configured in your environment',
+        step3: 'Restart the application',
+        note: 'DeepSeek is a cost-effective alternative to OpenAI with competitive performance'
+      },
+      availableProviders: currentStatus.availableProviders
     });
   } catch (error) {
     console.error('Error resetting AI configuration:', error);

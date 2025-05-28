@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/mongodb';
 import QuizResult from '@/models/QuizResult';
-import Quiz from '@/models/Quiz';
+import Quiz, { IQuiz } from '@/models/Quiz';
 import User from '@/models/User';
 import mongoose from 'mongoose';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const session = await getServerSession();
     
@@ -17,6 +20,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       );
     }
     
+    const params = await context.params;
     const { id } = params;
     
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
@@ -26,7 +30,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     await dbConnect();
     
     // Verify that the quiz exists and was created by the current user
-    const quiz = await Quiz.findById(id);
+    const quiz = await Quiz.findById(id).lean() as IQuiz | null;
     
     if (!quiz) {
       return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
@@ -38,9 +42,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
     
     // Fetch all results for this quiz
-    const results = await QuizResult.find({ quizId: id })
-      .sort({ completedAt: -1 })
-      .lean();
+    const results = await QuizResult.find({ quizId: id }).lean();
     
     // Get unique user emails to fetch user data
     const userEmails = [...new Set(results.map(result => result.userId))];
@@ -55,37 +57,63 @@ export async function GET(request: Request, { params }: { params: { id: string }
     // Calculate some aggregate statistics
     const totalAttempts = results.length;
     const averageScore = totalAttempts > 0 
-      ? results.reduce((sum, result) => sum + (result.score / result.totalQuestions) * 100, 0) / totalAttempts 
+      ? results.reduce((sum, result) => sum + result.score, 0) / totalAttempts 
       : 0;
     
-    // Group results by date for time-series data
-    const resultsByDate: Record<string, { count: number, avgScore: number }> = {};
+    // Calculate score distribution
+    const scoreRanges = [
+      { range: '0-20%', count: 0 },
+      { range: '21-40%', count: 0 },
+      { range: '41-60%', count: 0 },
+      { range: '61-80%', count: 0 },
+      { range: '81-100%', count: 0 }
+    ];
+
     results.forEach(result => {
-      const dateKey = new Date(result.completedAt).toISOString().split('T')[0];
-      if (!resultsByDate[dateKey]) {
-        resultsByDate[dateKey] = { count: 0, avgScore: 0 };
-      }
-      resultsByDate[dateKey].count += 1;
-      resultsByDate[dateKey].avgScore += (result.score / result.totalQuestions) * 100;
+      const percentage = (result.score / result.totalQuestions) * 100;
+      if (percentage <= 20) scoreRanges[0].count++;
+      else if (percentage <= 40) scoreRanges[1].count++;
+      else if (percentage <= 60) scoreRanges[2].count++;
+      else if (percentage <= 80) scoreRanges[3].count++;
+      else scoreRanges[4].count++;
     });
-    
-    // Calculate average scores by date
-    Object.keys(resultsByDate).forEach(date => {
-      resultsByDate[date].avgScore = resultsByDate[date].avgScore / resultsByDate[date].count;
-    });
+
+    // Calculate completion times statistics
+    const timesWithData = results.filter(r => r.timeTaken !== undefined && r.timeTaken !== null);
+    const averageTime = timesWithData.length > 0 
+      ? timesWithData.reduce((sum, result) => sum + (result.timeTaken || 0), 0) / timesWithData.length 
+      : 0;
+
+    // Get recent attempts (last 10)
+    const recentAttempts = results
+      .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
+      .slice(0, 10)
+      .map(result => ({
+        userId: result.userId,
+        score: result.score,
+        totalQuestions: result.totalQuestions,
+        percentage: Math.round((result.score / result.totalQuestions) * 100),
+        completedAt: result.completedAt,
+        timeTaken: result.timeTaken
+      }));
     
     return NextResponse.json({
       success: true,
       quiz: {
-        id: quiz._id.toString(),
+        id: (quiz._id as mongoose.Types.ObjectId).toString(),
         title: quiz.title,
         createdAt: quiz.createdAt,
         totalQuestions: quiz.questions.length,
+        difficulty: quiz.difficulty,
+        sourceType: quiz.sourceType
       },
-      stats: {
+      analytics: {
         totalAttempts,
-        averageScore: parseFloat(averageScore.toFixed(1)),
-        resultsByDate
+        averageScore: Math.round(averageScore * 100) / 100,
+        averagePercentage: totalAttempts > 0 ? Math.round((averageScore / quiz.questions.length) * 100) : 0,
+        averageTime: Math.round(averageTime),
+        scoreDistribution: scoreRanges,
+        recentAttempts
       },
       results: results.map(result => ({
         id: result._id ? result._id.toString() : '',
@@ -102,9 +130,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
     });
   } catch (error) {
     console.error('Error fetching quiz analytics:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch quiz analytics' },
-      { status: 500 }
-    );
+    if (error instanceof mongoose.Error.CastError) {
+      return NextResponse.json({ error: 'Invalid quiz ID format' }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'Failed to fetch quiz analytics' }, { status: 500 });
   }
 } 

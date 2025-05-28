@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
-import Quiz, { IQuiz } from '@/models/Quiz'; // Import IQuiz
+import Quiz, { IQuiz, IQuizQuestion } from '@/models/Quiz';
 import mongoose from 'mongoose';
 
 export async function GET(
-  request: Request, 
-  { params }: { params: { id: string } }
+  request: Request,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const { id } = params;
 
     if (!id || !mongoose.Types.ObjectId.isValid(id)) {
@@ -16,21 +17,36 @@ export async function GET(
 
     await dbConnect();
 
-    // Fetch the full quiz document
-    const quiz = await Quiz.findById(id).lean<IQuiz | null>();
+    const quiz = await Quiz.findById(id)
+      .select('title description sourceType difficulty questions tags isPublic source.youtube.thumbnail')
+      .lean() as IQuiz | null;
 
     if (!quiz) {
       return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
     }
-    
-    // Here, we could also increment a 'timesAttempted' or similar counter if needed for stats
-    // For example:
-    // await Quiz.updateOne({ _id: id }, { $inc: { 'stats.timesAttempted': 1 } });
 
-    // We send the full quiz object, including questions and answers, 
-    // as the client will need this for scoring on the results page.
-    return NextResponse.json({ quiz });
+    // Check if quiz is public or not
+    if (!quiz.isPublic) {
+      return NextResponse.json({ error: 'This quiz is private' }, { status: 403 });
+    }
 
+    return NextResponse.json({
+      quiz: {
+        id: (quiz._id as mongoose.Types.ObjectId).toString(),
+        title: quiz.title,
+        description: quiz.description,
+        sourceType: quiz.sourceType,
+        sourceImage: quiz.source?.youtube?.thumbnail,
+        difficulty: quiz.difficulty,
+        tags: quiz.tags || [],
+        questions: quiz.questions.map((question: IQuizQuestion, index: number) => ({
+          id: index,
+          question: question.question,
+          options: question.options,
+          type: question.type || 'multiple_choice'
+        }))
+      }
+    });
   } catch (error) {
     console.error('Error fetching quiz for taking:', error);
     if (error instanceof mongoose.Error.CastError) {

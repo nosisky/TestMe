@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Header from "../../../components/Header";
 import DashboardQuizCreator from "../../../components/DashboardQuizCreator";
+import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import styles from "./youtubeQuiz.module.scss";
 
 export default function YoutubeQuizCreator() {
@@ -26,17 +27,21 @@ export default function YoutubeQuizCreator() {
     );
   }
 
+  const breadcrumbItems = [
+    { label: "Dashboard", href: "/dashboard", icon: "🏠" },
+    { label: "Create Quiz", href: "/dashboard" },
+    { label: "YouTube Video", icon: "🎥" }
+  ];
+
   return (
     <div className={styles.youtubeQuizContainer}>
       <Header />
       
       <main className={styles.createQuizMain}>
-        <div className={styles.breadcrumbs}>
-          <button onClick={() => router.back()} className={styles.backButton}>
-            ← Back to Dashboard
-          </button>
-          <span>Dashboard / Create Quiz / YouTube Video</span>
-        </div>
+        <Breadcrumb 
+          items={breadcrumbItems}
+          backButtonText="Back to Dashboard"
+        />
         
         <DashboardQuizCreator initialType="youtube" />
       </main>

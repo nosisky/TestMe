@@ -1,0 +1,168 @@
+/* Quiz Type Selector styles */
+.container {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: var(--text-light);
+  font-size: 1.125rem;
+  margin-bottom: 2rem;
+}
+
+.selectorWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.triggerButton {
+  text-align: left;
+  padding: 1.5rem;
+  min-height: 80px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.selectedIcon, 
+.placeholderIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.selectedText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
+}
+
+.selectedTitle {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 1.1rem;
+}
+
+.selectedDescription {
+  font-size: 0.9rem;
+  color: var(--text-light);
+  margin-top: 0.25rem;
+}
+
+.placeholderText {
+  color: var(--text-light);
+  font-size: 1.1rem;
+}
+
+.chevron {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  transition: transform 0.2s ease;
+  margin-left: auto;
+  
+  &.open {
+    transform: rotate(180deg);
+  }
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.option {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: var(--background-color-hover);
+  }
+  
+  &.selected {
+    background-color: var(--primary-color-light);
+    
+    .optionTitle {
+      color: var(--primary);
+      font-weight: 600;
+    }
+  }
+}
+
+.optionIcon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.optionContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.optionTitle {
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 0.25rem;
+}
+
+.optionDescription {
+  font-size: 0.875rem;
+  color: var(--text-light);
+}
+
+.checkmark {
+  color: var(--primary);
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .subtitle {
+    font-size: 1rem;
+  }
+  
+  .triggerButton {
+    padding: 1rem;
+    min-height: 70px;
+  }
+  
+  .option {
+    padding: 0.75rem 1rem;
+  }
+} 

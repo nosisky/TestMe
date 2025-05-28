@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Header from "../../../components/Header";
 import DashboardQuizCreator from "../../../components/DashboardQuizCreator";
+import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import styles from "./pdfQuiz.module.scss";
 
 export default function PdfQuizCreator() {
@@ -27,17 +28,21 @@ export default function PdfQuizCreator() {
     );
   }
 
+  const breadcrumbItems = [
+    { label: "Dashboard", href: "/dashboard", icon: "🏠" },
+    { label: "Create Quiz", href: "/dashboard" },
+    { label: "PDF Document", icon: "📄" }
+  ];
+
   return (
     <div className={styles.pdfQuizContainer}>
       <Header />
       
       <main className={styles.createQuizMain}>
-        <div className={styles.breadcrumbs}>
-          <button onClick={() => router.back()} className={styles.backButton}>
-            ← Back to Dashboard
-          </button>
-          <span>Dashboard / Create Quiz / PDF Document</span>
-        </div>
+        <Breadcrumb 
+          items={breadcrumbItems}
+          backButtonText="Back to Dashboard"
+        />
         
         <DashboardQuizCreator initialType="pdf" />
       </main>

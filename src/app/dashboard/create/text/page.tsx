@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Header from "../../../components/Header";
 import DashboardQuizCreator from "../../../components/DashboardQuizCreator";
+import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import styles from "./textQuiz.module.scss";
 
 export default function TextQuizCreator() {
@@ -26,17 +27,21 @@ export default function TextQuizCreator() {
     );
   }
 
+  const breadcrumbItems = [
+    { label: "Dashboard", href: "/dashboard", icon: "🏠" },
+    { label: "Create Quiz", href: "/dashboard" },
+    { label: "Text Content", icon: "✍️" }
+  ];
+
   return (
     <div className={styles.textQuizContainer}>
       <Header />
       
       <main className={styles.createQuizMain}>
-        <div className={styles.breadcrumbs}>
-          <button onClick={() => router.back()} className={styles.backButton}>
-            ← Back to Dashboard
-          </button>
-          <span>Dashboard / Create Quiz / Text Content</span>
-        </div>
+        <Breadcrumb 
+          items={breadcrumbItems}
+          backButtonText="Back to Dashboard"
+        />
         
         <DashboardQuizCreator initialType="text" />
       </main>

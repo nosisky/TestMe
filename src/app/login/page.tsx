@@ -1,3 +1,8 @@
+/**
+ * @author: Nas Abdulrasaq(nosisky@gmail.com)
+ * Email: nosisky@gmail.com
+ * Github: https://github.com/nosisky
+ */
 "use client";
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
@@ -8,7 +13,7 @@ import LoginButton from "../components/LoginButton";
 import Header from "../components/Header";
 
 export default function LoginPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
 
   // Redirect to dashboard if already authenticated

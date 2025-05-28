@@ -1,27 +1,14 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
-import AIConfig, { initializeAIConfigs } from '@/models/AIConfig';
+import { getProviderStatus } from '@/lib/ai-config';
 
 // GET - fetch current active AI provider
 export async function GET() {
   try {
-    // Initialize database connection
-    await dbConnect();
-    
-    // Initialize default configs if needed
-    await initializeAIConfigs();
-    
-    // Get the active provider configuration
-    const activeConfig = await AIConfig.findOne({ isActive: true });
-    
-    // Check what the environment variable says
-    const envDefaultProvider = process.env.DEFAULT_AI_PROVIDER || 'openai';
+    const status = getProviderStatus();
     
     return NextResponse.json({
       success: true,
-      activeProvider: activeConfig?.provider || 'none',
-      envDefaultProvider: envDefaultProvider,
-      defaultFallback: 'openai'
+      ...status
     });
   } catch (error) {
     console.error('Error fetching AI provider status:', error);

@@ -1,3 +1,5 @@
+@use "sass:color";
+
 .container {
   width: 100%;
   max-width: 1000px;
@@ -857,7 +859,7 @@
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
   
   &:hover {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    background: color.scale(#6366f1, $lightness: -7.5%);
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(99, 102, 241, 0.3);
   }
@@ -1059,7 +1061,7 @@
   white-space: nowrap;
   
   &:hover {
-    background: darken(#6366f1, 5%);
+    background: color.scale(#6366f1, $lightness: -7.5%);
     transform: translateY(-2px);
   }
   

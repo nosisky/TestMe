@@ -1,0 +1,151 @@
+/* Content Input styles */
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1.5rem;
+}
+
+.icon {
+  font-size: 1.5rem;
+}
+
+.textInput {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+  background-color: var(--card-bg);
+  color: var(--text);
+  
+  &:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(126, 87, 255, 0.1);
+  }
+  
+  &::placeholder {
+    color: var(--text-light);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.textArea {
+  @extend .textInput;
+  min-height: 150px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.fileUploadArea {
+  margin-bottom: 1rem;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.uploadDropzone {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--background-color-light);
+  
+  &:hover {
+    border-color: var(--primary);
+    background-color: var(--primary-color-light);
+  }
+  
+  h4 {
+    margin: 1rem 0 0.5rem;
+    color: var(--text);
+    font-weight: 500;
+  }
+  
+  p {
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+  }
+}
+
+.uploadIcon {
+  font-size: 3rem;
+  opacity: 0.6;
+}
+
+.filePreview {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  background-color: var(--card-bg);
+}
+
+.fileInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fileName {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.fileSize {
+  color: var(--text-light);
+  font-size: 0.875rem;
+}
+
+.imagePreview {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.error {
+  color: var(--error-color);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--error-bg-light);
+  border-radius: var(--border-radius-sm);
+  border-left: 3px solid var(--error-color);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .uploadDropzone {
+    padding: 2rem 1rem;
+  }
+  
+  .uploadIcon {
+    font-size: 2rem;
+  }
+} 

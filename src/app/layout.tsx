@@ -1,3 +1,8 @@
+/**
+ * @author: Nas Abdulrasaq(nosisky@gmail.com)
+ * Email: nosisky@gmail.com
+ * Github: https://github.com/nosisky
+ */
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./styles/variables.css";

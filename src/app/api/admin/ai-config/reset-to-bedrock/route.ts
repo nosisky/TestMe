@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/mongodb';
-import AIConfig from '@/models/AIConfig';
 import User from '@/models/User';
+import { getProviderStatus } from '@/lib/ai-config';
 
 // POST - reset the AI configuration to use AWS Bedrock
 export async function POST() {
@@ -20,31 +20,21 @@ export async function POST() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     
-    // Reset all providers to inactive
-    await AIConfig.updateMany({}, { isActive: false });
-    
-    // Set AWS Bedrock as the active provider
-    const bedrockConfig = await AIConfig.findOneAndUpdate(
-      { provider: 'bedrock' },
-      { isActive: true },
-      { new: true }
-    );
-    
-    if (!bedrockConfig) {
-      return NextResponse.json(
-        { error: 'AWS Bedrock provider not found' },
-        { status: 404 }
-      );
-    }
-    
-    // Get all updated configs
-    const configs = await AIConfig.find({}).sort({ provider: 1 });
+    const currentStatus = getProviderStatus();
     
     return NextResponse.json({
-      success: true,
-      message: 'Successfully reset AI configuration to use AWS Bedrock',
-      activeProvider: bedrockConfig,
-      allConfigs: configs
+      success: false,
+      message: 'AI provider configuration is now controlled via environment variables. To reset to AWS Bedrock, set DEFAULT_AI_PROVIDER=bedrock in your environment variables and restart the application.',
+      currentProvider: currentStatus.activeProvider,
+      targetProvider: 'bedrock',
+      instructions: {
+        step1: 'Set DEFAULT_AI_PROVIDER=bedrock in your .env.local file',
+        step2: 'Configure AWS credentials: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION',
+        step3: 'Restart the application',
+        note: 'AWS Bedrock provides enterprise-grade AI with enhanced security and compliance features'
+      },
+      requiredEnvVars: ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION'],
+      availableProviders: currentStatus.availableProviders
     });
   } catch (error) {
     console.error('Error resetting AI configuration:', error);

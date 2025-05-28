@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Header from "../../../components/Header";
 import DashboardQuizCreator from "../../../components/DashboardQuizCreator";
+import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import styles from "./image.module.scss";
 
 export default function ImageQuizCreator() {
@@ -26,17 +27,21 @@ export default function ImageQuizCreator() {
     );
   }
 
+  const breadcrumbItems = [
+    { label: "Dashboard", href: "/dashboard", icon: "🏠" },
+    { label: "Create Quiz", href: "/dashboard" },
+    { label: "Image Content", icon: "🖼️" }
+  ];
+
   return (
     <div className={styles.imageQuizContainer}>
       <Header />
       
       <main className={styles.createQuizMain}>
-        <div className={styles.breadcrumbs}>
-          <button onClick={() => router.back()} className={styles.backButton}>
-            ← Back to Dashboard
-          </button>
-          <span>Dashboard / Create Quiz / Image</span>
-        </div>
+        <Breadcrumb 
+          items={breadcrumbItems}
+          backButtonText="Back to Dashboard"
+        />
         
         <DashboardQuizCreator initialType="image" />
       </main>

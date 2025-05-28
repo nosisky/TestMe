@@ -6,35 +6,14 @@ import { deepseek } from '@ai-sdk/deepseek';
 import { bedrock } from '@ai-sdk/amazon-bedrock';
 import pdf from 'pdf-parse';
 import { YoutubeTranscript } from 'youtube-transcript';
-import dbConnect from '@/lib/mongodb';
-import AIConfig, { initializeAIConfigs } from '@/models/AIConfig';
+import { getActiveAIProvider } from '@/lib/ai-config';
 
 // Flag to use mock service during development/testing
 const USE_MOCK_SERVICE = process.env.USE_MOCK_AI === 'true';
 
-// Get active AI provider from database
-async function getActiveAIProvider() {
-  await dbConnect();
-  
-  // Initialize default configs if needed
-  await initializeAIConfigs();
-  
-  // Get the active provider configuration
-  const activeConfig = await AIConfig.findOne({ isActive: true });
-
-  // Fallback to environment variable or OpenAI if no active provider
-  if (!activeConfig) {
-    const defaultProvider = process.env.DEFAULT_AI_PROVIDER || 'openai';
-    
-    const fallbackConfig = await AIConfig.findOne({ provider: defaultProvider });
-    
-    if (!fallbackConfig) {
-      throw new Error('No AI provider configuration found');
-    }
-    return fallbackConfig;
-  }
-  
-  return activeConfig;
+// Get active AI provider from configuration
+function getActiveAIProviderConfig() {
+  return getActiveAIProvider();
 }
 
 export async function POST(request: NextRequest) {
@@ -137,7 +116,7 @@ async function analyzeContentWithAI(content: string, sourceType: string) {
       return generateFallbackAnalysis(sourceType);
     }
     
-    const activeProvider = await getActiveAIProvider();
+    const activeProvider = getActiveAIProviderConfig();
     
     const prompt = `You are an expert educational analyst. Analyze the following ${sourceType} content and provide:
 
@@ -268,7 +247,7 @@ async function extractTextFromImage(file: File): Promise<string> {
       return `Mock extracted text from image: ${file.name}. This image contains educational content with key concepts and information that students need to understand.`;
     }
     
-    const activeProvider = await getActiveAIProvider();
+    const activeProvider = getActiveAIProviderConfig();
     
     // Convert image to base64 for AI vision processing
     const arrayBuffer = await file.arrayBuffer();
