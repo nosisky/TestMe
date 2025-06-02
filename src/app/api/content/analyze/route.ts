@@ -4,12 +4,26 @@ import { openai } from '@ai-sdk/openai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { deepseek } from '@ai-sdk/deepseek';
 import { bedrock } from '@ai-sdk/amazon-bedrock';
+import { Innertube } from 'youtubei.js/web';
+import { google } from 'googleapis';
 import pdf from 'pdf-parse';
-import { YoutubeTranscript } from 'youtube-transcript';
 import { getActiveAIProvider } from '@/lib/ai-config';
 
 // Flag to use mock service during development/testing
 const USE_MOCK_SERVICE = process.env.USE_MOCK_AI === 'true';
+
+// YouTube API setup
+const youtube = google.youtube({
+  version: 'v3',
+  auth: process.env.YOUTUBE_API_KEY,
+});
+
+// Define interface for transcript segments
+interface TranscriptSegment {
+  snippet?: {
+    text?: string;
+  };
+}
 
 // Get active AI provider from configuration
 function getActiveAIProviderConfig() {
@@ -320,21 +334,132 @@ function extractJSONFromResponse(text: string): { keyTopics: string[]; knowledge
 async function getYouTubeTranscript(videoId: string): Promise<string> {
   try {
     console.log(`Attempting to fetch transcript for video: ${videoId}`);
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    const fullText = transcript.map(item => item.text).join(' ');
     
-    console.log(`Raw transcript length: ${fullText.length}`);
-    
-    if (!fullText || fullText.length < 50) {
-      throw new Error('Transcript too short or empty');
+    // Method 1: Try YouTube API captions (for videos you have access to)
+    try {
+      const apiTranscript = await getTranscriptFromAPI(videoId);
+      if (apiTranscript) {
+        console.log(`Successfully fetched via YouTube API (${apiTranscript.length} chars)`);
+        if (apiTranscript.length >= 50) {
+          return apiTranscript;
+        }
+      }
+    } catch (error) {
+      console.log(`YouTube API method failed:`, error instanceof Error ? error.message : 'Unknown error');
     }
     
-    return fullText;
+    // Method 2: Try youtubei.js (for public videos)
+    try {
+      const scrapedTranscript = await getTranscriptFromScraping(videoId);
+      if (scrapedTranscript && scrapedTranscript.length >= 50) {
+        console.log(`Successfully fetched via scraping (${scrapedTranscript.length} chars)`);
+        return scrapedTranscript;
+      }
+    } catch (error) {
+      console.log(`Scraping method failed:`, error instanceof Error ? error.message : 'Unknown error');
+    }
+    
+    throw new Error('No transcript available for this video');
   } catch (error) {
     console.error('YouTube transcript error:', error);
-    // Instead of fallback, throw the error so we can handle it properly
     throw new Error(`Could not fetch YouTube transcript: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+}
+
+// Method 1: Use official YouTube API for captions (requires permission)
+async function getTranscriptFromAPI(videoId: string): Promise<string | null> {
+  try {
+    // First, list available captions
+    const captionResponse = await youtube.captions.list({
+      part: ['snippet'],
+      videoId: videoId,
+    });
+
+    if (!captionResponse.data.items || captionResponse.data.items.length === 0) {
+      return null; // No captions available via API
+    }
+
+    // Find the best caption track (prefer English, then any language)
+    const captions = captionResponse.data.items;
+    const bestCaption = captions.find(caption => 
+      caption.snippet?.language === 'en' || caption.snippet?.language === 'en-US'
+    ) || captions[0];
+
+    if (!bestCaption?.id) {
+      return null;
+    }
+
+    // Download the caption content
+    const captionContent = await youtube.captions.download({
+      id: bestCaption.id,
+      tfmt: 'srt', // Get in SRT format
+    });
+
+    if (captionContent.data && typeof captionContent.data === 'string') {
+      // Parse SRT format to extract just the text
+      const transcript = parseSRTToText(captionContent.data);
+      return transcript;
+    }
+
+    return null;
+  } catch (error) {
+    // This will typically fail for videos you don't own
+    console.log(`YouTube API caption access denied or unavailable:`, error instanceof Error ? error.message : 'Unknown error');
+    return null;
+  }
+}
+
+// Method 2: Use youtubei.js for scraping
+async function getTranscriptFromScraping(videoId: string): Promise<string | null> {
+  try {
+    // Create Innertube instance
+    const youtube = await Innertube.create({
+      lang: 'en',
+      location: 'US',
+      retrieve_player: false,
+    });
+    
+    // Get video info and transcript
+    const info = await youtube.getInfo(videoId);
+    const transcriptData = await info.getTranscript();
+    
+    if (!transcriptData || !transcriptData.transcript?.content?.body?.initial_segments) {
+      return null;
+    }
+    
+    // Extract transcript text from segments
+    const fullText = transcriptData.transcript.content.body.initial_segments
+      .map((segment: TranscriptSegment) => segment.snippet?.text || '')
+      .filter((text: string) => text.length > 0)
+      .join(' ');
+    
+    return fullText.length > 0 ? fullText : null;
+  } catch (error) {
+    console.log(`Scraping error:`, error instanceof Error ? error.message : 'Unknown error');
+    return null;
+  }
+}
+
+// Helper function to parse SRT format and extract text
+function parseSRTToText(srtContent: string): string {
+  const lines = srtContent.split('\n');
+  const textLines: string[] = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Skip empty lines, sequence numbers, and timestamp lines
+    if (line === '' || /^\d+$/.test(line) || /^\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}$/.test(line)) {
+      continue;
+    }
+    
+    // This should be subtitle text
+    if (line.length > 0) {
+      textLines.push(line);
+    }
+  }
+  
+  return textLines.join(' ').trim();
 }
 
 async function extractTextFromPDF(file: File): Promise<string> {

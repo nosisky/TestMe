@@ -33,8 +33,7 @@
     "react-range-slider-input": "^3.2.1",
     "react-share": "^5.2.2",
     "sass": "^1.88.0",
-    "youtube-transcript": "^1.2.1",
-    "youtube-transcript-api": "^2.0.4"
+    "youtubei.js": "^13.4.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

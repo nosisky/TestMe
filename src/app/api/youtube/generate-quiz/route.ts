@@ -5,7 +5,14 @@ import dbConnect from '@/lib/mongodb';
 import Quiz from '@/models/Quiz';
 import { generateQuizQuestions } from '@/lib/ai-service';
 import mongoose from 'mongoose';
-import TranscriptAPI from 'youtube-transcript-api';
+import { Innertube } from 'youtubei.js/web';
+
+// Define interface for transcript segments
+interface TranscriptSegment {
+  snippet?: {
+    text?: string;
+  };
+}
 
 // YouTube API setup with API key for basic operations (video details only)
 const youtube = google.youtube({
@@ -13,36 +20,132 @@ const youtube = google.youtube({
   auth: process.env.YOUTUBE_API_KEY,
 });
 
-// Function to fetch transcript using youtube-transcript-api library
+// Function to fetch transcript using multiple methods
 async function getTranscript(videoId: string): Promise<string | null> {
+  console.debug(`[Transcript] Fetching transcript for video ID: ${videoId}`);
+  
+  // Method 1: Try YouTube API captions (for videos you have access to)
   try {
-    console.debug(`[Transcript] Fetching transcript for video ID: ${videoId}`);
-    const transcriptItems = await TranscriptAPI.getTranscript(videoId);
-    
-    if (!transcriptItems || transcriptItems.length === 0) {
-      console.debug(`[Transcript] No transcript found for video: ${videoId}`);
-      return null;
+    const apiTranscript = await getTranscriptFromAPI(videoId);
+    if (apiTranscript) {
+      console.debug(`[Transcript] Successfully fetched via YouTube API (${apiTranscript.length} chars)`);
+      return apiTranscript;
     }
-    
-    // Join all transcript segments into one text string
-    const fullTranscript = transcriptItems.map((item) => item.text).join(' ').trim();
+  } catch (error) {
+    console.debug(`[Transcript] YouTube API method failed:`, error instanceof Error ? error.message : 'Unknown error');
+  }
+  
+  // Method 2: Try youtubei.js (for public videos)
+  try {
+    const scrapedTranscript = await getTranscriptFromScraping(videoId);
+    if (scrapedTranscript) {
+      console.debug(`[Transcript] Successfully fetched via scraping (${scrapedTranscript.length} chars)`);
+      return scrapedTranscript;
+    }
+  } catch (error) {
+    console.debug(`[Transcript] Scraping method failed:`, error instanceof Error ? error.message : 'Unknown error');
+  }
+  
+  console.debug(`[Transcript] All transcript methods failed for video: ${videoId}`);
+  return null;
+}
 
-    if (fullTranscript.length === 0) {
-      console.debug(`[Transcript] Empty transcript for video: ${videoId}`);
+// Method 1: Use official YouTube API for captions (requires permission)
+async function getTranscriptFromAPI(videoId: string): Promise<string | null> {
+  try {
+    // First, list available captions
+    const captionResponse = await youtube.captions.list({
+      part: ['snippet'],
+      videoId: videoId,
+    });
+
+    if (!captionResponse.data.items || captionResponse.data.items.length === 0) {
+      return null; // No captions available via API
+    }
+
+    // Find the best caption track (prefer English, then any language)
+    const captions = captionResponse.data.items;
+    const bestCaption = captions.find(caption => 
+      caption.snippet?.language === 'en' || caption.snippet?.language === 'en-US'
+    ) || captions[0];
+
+    if (!bestCaption?.id) {
       return null;
     }
-    
-    console.debug(`[Transcript] Successfully fetched transcript (${fullTranscript.length} chars)`);
-    return fullTranscript;
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`[Transcript API] Error fetching transcript for videoId ${videoId}:`, errorMessage);
-    // Log more details about the error if available
-    if (error instanceof Error && error.stack) {
-      console.error(`[Transcript API] Error stack:`, error.stack);
+
+    // Download the caption content
+    const captionContent = await youtube.captions.download({
+      id: bestCaption.id,
+      tfmt: 'srt', // Get in SRT format
+    });
+
+
+    if (captionContent.data && typeof captionContent.data === 'string') {
+      // Parse SRT format to extract just the text
+      const transcript = parseSRTToText(captionContent.data);
+      return transcript;
     }
+
+    return null;
+  } catch (error) {
+    // This will typically fail for videos you don't own
+    console.debug(`[YouTube API] Caption access denied or unavailable:`, error instanceof Error ? error.message : 'Unknown error');
     return null;
   }
+}
+
+// Method 2: Use youtubei.js for scraping (existing method)
+async function getTranscriptFromScraping(videoId: string): Promise<string | null> {
+  try {
+    // Create Innertube instance
+    const innertube = await Innertube.create({
+      lang: 'en',
+      location: 'US',
+      retrieve_player: false,
+    });
+    
+    // Get video info and transcript
+    const info = await innertube.getInfo(videoId);
+    const transcriptData = await info.getTranscript();
+    
+    if (!transcriptData || !transcriptData.transcript?.content?.body?.initial_segments) {
+      return null;
+    }
+    
+    // Extract transcript text from segments
+    const fullTranscript = transcriptData.transcript.content.body.initial_segments
+      .map((segment: TranscriptSegment) => segment.snippet?.text || '')
+      .filter((text: string) => text.length > 0)
+      .join(' ')
+      .trim();
+
+    return fullTranscript.length > 0 ? fullTranscript : null;
+  } catch (error) {
+    console.debug(`[Scraping] Error:`, error instanceof Error ? error.message : 'Unknown error');
+    return null;
+  }
+}
+
+// Helper function to parse SRT format and extract text
+function parseSRTToText(srtContent: string): string {
+  const lines = srtContent.split('\n');
+  const textLines: string[] = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // Skip empty lines, sequence numbers, and timestamp lines
+    if (line === '' || /^\d+$/.test(line) || /^\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}$/.test(line)) {
+      continue;
+    }
+    
+    // This should be subtitle text
+    if (line.length > 0) {
+      textLines.push(line);
+    }
+  }
+  
+  return textLines.join(' ').trim();
 }
 
 // Function to fetch video details (title, description, etc.)
