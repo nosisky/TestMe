@@ -14,6 +14,12 @@ async function parseFormData(request: Request) {
   const formData = await request.formData();
   const file = formData.get('file') as File | null;
   const preExtractedContent = formData.get('extractedContent') as string | null;
+  const numQuestions = parseInt(formData.get('numQuestions') as string || '5', 10);
+  const difficulty = formData.get('difficulty') as string || 'medium';
+  const createdBy = formData.get('createdBy') as string || '';
+  const includeMultipleChoice = formData.get('includeMultipleChoice') === 'true';
+  const includeTrueFalse = formData.get('includeTrueFalse') === 'true';
+  const includeMath = formData.get('includeMath') === 'true';
 
   if (!file) {
     throw new Error('No image file provided');
@@ -33,7 +39,17 @@ async function parseFormData(request: Request) {
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
-  return { buffer, originalName: file.name, preExtractedContent };
+  return { 
+    buffer, 
+    originalName: file.name, 
+    preExtractedContent,
+    numQuestions,
+    difficulty,
+    createdBy,
+    includeMultipleChoice,
+    includeTrueFalse,
+    includeMath
+  };
 }
 
 // Generate title from extracted text
@@ -50,24 +66,38 @@ export async function POST(request: Request) {
     // Get user session if available
     const session = await getServerSession();
 
-    // Parse URL params
-    const url = new URL(request.url);
-    const numQuestions = parseInt(url.searchParams.get('numQuestions') || '5', 10);
-    const difficulty = url.searchParams.get('difficulty') || 'medium';
-    const createdByParam = url.searchParams.get('createdBy');
-    const includeMultipleChoice = url.searchParams.get('includeMultipleChoice') === 'true';
-    const includeTrueFalse = url.searchParams.get('includeTrueFalse') === 'true';
+    // Parse form data to get all parameters including question types
+    const { 
+      buffer, 
+      originalName, 
+      preExtractedContent, 
+      numQuestions, 
+      difficulty, 
+      createdBy: formCreatedBy, 
+      includeMultipleChoice, 
+      includeTrueFalse, 
+      includeMath 
+    } = await parseFormData(request);
 
-    // Use createdBy from request if provided, otherwise from session
-    const userId = createdByParam || session?.user?.email || 'anonymous';
+    // Use createdBy from form data if provided, otherwise from session
+    const userId = formCreatedBy || session?.user?.email || 'anonymous';
+
+    console.debug('Image Quiz - Form data received:', {
+      numQuestions,
+      difficulty,
+      userId,
+      includeMultipleChoice,
+      includeTrueFalse,
+      includeMath,
+      hasFile: !!buffer,
+      hasPreExtractedContent: !!preExtractedContent
+    });
 
     // Validate include types
     if (!includeMultipleChoice && !includeTrueFalse) {
+      console.debug('Image Quiz - Validation failed: No question types selected');
       return NextResponse.json({ error: 'At least one question type must be selected.' }, { status: 400 });
     }
-
-    // Parse form data
-    const { buffer, originalName, preExtractedContent } = await parseFormData(request);
 
     // Extract text from image - use pre-extracted content if available
     let extractedText: string;
@@ -98,7 +128,7 @@ export async function POST(request: Request) {
       includeTypes: {
         multipleChoice: includeMultipleChoice,
         trueFalse: includeTrueFalse,
-        math: false // Auto-detected by AI service
+        math: includeMath
       }
     });
 

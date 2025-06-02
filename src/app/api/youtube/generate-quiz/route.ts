@@ -81,11 +81,9 @@ export async function POST(request: Request) {
       createdBy: createdByParam
     } = body;
 
-    console.debug(`[YouTube Quiz] Received request: videoId=${videoId}, questionCount=${questionCount}, difficulty=${difficulty}, createdBy=${createdByParam || 'not provided'}, hasExtractedContent=${!!extractedContent}`);
 
     // Ensure at least one question type is selected
     if (!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math) {
-      console.debug('[YouTube Quiz] Error: No question types selected');
       return NextResponse.json(
         { error: 'At least one question type must be selected' },
         { status: 400 }

@@ -13,7 +13,7 @@ TestMe is a production-ready, full-stack web application that generates intellig
 
 **🎯 Perfect for**: Educators, content creators, training organizations, and anyone looking to create interactive learning experiences.
 
-**🚀 Live Demo**: [https://testme-quiz.vercel.app](https://testme-quiz.vercel.app)
+**🚀 Live Demo**: [https://test-me-beta.vercel.app](https://test-me-beta.vercel.app)
 
 ## 📑 Table of Contents
 
@@ -94,7 +94,7 @@ npm run dev
 
 ## 🚀 Demo
 
-Visit our live demo: [https://testme-quiz.vercel.app](https://testme-quiz.vercel.app)
+Visit our live demo: [https://test-me-beta.vercel.app](https://test-me-beta.vercel.app)
 
 **Test Account**: Use Google OAuth to create your account or try the demo content.
 
@@ -541,7 +541,7 @@ TestMe is a production-ready, full-stack web application that generates intellig
 
 **🎯 Perfect for**: Educators, content creators, training organizations, and anyone looking to create interactive learning experiences.
 
-**🚀 Live Demo**: [https://testme-quiz.vercel.app](https://testme-quiz.vercel.app)
+**🚀 Live Demo**: [https://test-me-beta.vercel.app](https://test-me-beta.vercel.app)
 
 ## 📑 Table of Contents
 
@@ -622,7 +622,7 @@ npm run dev
 
 ## 🚀 Demo
 
-Visit our live demo: [https://testme-quiz.vercel.app](https://testme-quiz.vercel.app)
+Visit our live demo: [https://test-me-beta.vercel.app](https://test-me-beta.vercel.app)
 
 **Test Account**: Use Google OAuth to create your account or try the demo content.
 

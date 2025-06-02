@@ -146,12 +146,11 @@ const ConversationalQuizCreator = () => {
   const handleSizeSelect = (size: QuizSize) => {
     // Validate that at least one question type is selected
     if (!includeTypes.multipleChoice && !includeTypes.trueFalse) {
+      console.error('Validation failed: No question types selected', includeTypes);
       setError("Please select at least one question type.");
       return;
     }
     
-    // Log the selection to help with debugging
-    console.debug(`Size selected: ${size}, Difficulty: ${getDifficulty(size)}, Question count: ${getQuestionCount(size)}`);
     
     // For YouTube, validate that we have a URL
     if (quizType === "youtube" && !youtubeUrl) {
@@ -560,7 +559,7 @@ const ConversationalQuizCreator = () => {
     } catch (err) {
       console.error('Error creating quiz:', err);
       setError(err instanceof Error ? err.message : 'Failed to create quiz');
-      setStep("config");
+      setStep("analysis");
       setIsCreating(false);
     }
   };
@@ -1335,6 +1334,8 @@ const ConversationalQuizCreator = () => {
             </div>
           ) : (
             <div className={styles.analysisResults}>
+              {error && <div className={styles.errorMessage}>{error}</div>}
+              
               <div className={styles.analysisHeader}>
                 <h2>🎯 AI Analysis Complete!</h2>
                 <p>Based on your {quizType === "youtube" ? "video content" : 
