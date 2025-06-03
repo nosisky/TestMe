@@ -16,9 +16,9 @@ import { deepseek } from '@ai-sdk/deepseek';
 import { bedrock } from '@ai-sdk/amazon-bedrock';
 import { getActiveAIProvider, AIProviderConfig } from './ai-config';
 import { generateMockQuizQuestions } from './mock-ai-service';
+import dbConnect from './mongodb';
 
 // Flag to use mock service during development/testing
-// Only use mock service if explicitly set to 'true' in environment variables
 const USE_MOCK_SERVICE = process.env.USE_MOCK_AI === 'true';
 
 // Get active AI provider from configuration
@@ -49,7 +49,6 @@ interface QuizQuestion {
 
 // Helper function to ensure LaTeX formatting in question content
 function ensureLaTeXFormatting(question: QuizQuestion): QuizQuestion {
-  // Basic post-processing to catch common LaTeX formatting issues
   const fixLaTeXInText = (text: string): string => {
     if (!text) return text;
     
@@ -85,6 +84,8 @@ function ensureLaTeXFormatting(question: QuizQuestion): QuizQuestion {
  */
 function extractJSONWithDelimiters(text: string): { questions: QuizQuestion[] } {
   console.log('Extracting JSON using delimiters...');
+  console.log('Response length:', text.length);
+  console.log('First 200 chars:', text.substring(0, 200));
   
   // Look for content between <JSON_START> and <JSON_END> delimiters
   const delimiterMatch = text.match(/<JSON_START>\s*([\s\S]*?)\s*<JSON_END>/);
@@ -92,17 +93,39 @@ function extractJSONWithDelimiters(text: string): { questions: QuizQuestion[] } 
   if (delimiterMatch) {
     try {
       const jsonText = delimiterMatch[1].trim();
-      console.log('Found JSON between delimiters:', jsonText.substring(0, 200) + '...');
-      return JSON.parse(jsonText);
+      console.log('Found JSON between delimiters. Length:', jsonText.length);
+      console.log('JSON text preview:', jsonText.substring(0, 300));
+      
+      const parsed = JSON.parse(jsonText);
+      console.log('Successfully parsed JSON with delimiters');
+      return parsed;
     } catch (error) {
       console.warn('Failed to parse delimited JSON:', error);
       console.log('Raw delimited content:', delimiterMatch[1]);
     }
   } else {
-    console.log('No delimiters found in response');
+    console.log('No delimiters found in response. Looking for alternative patterns...');
+    
+    // Try to find JSON-like content even without proper delimiters
+    const jsonStartIndex = text.indexOf('{');
+    const jsonEndIndex = text.lastIndexOf('}');
+    
+    if (jsonStartIndex !== -1 && jsonEndIndex !== -1 && jsonEndIndex > jsonStartIndex) {
+      const potentialJson = text.substring(jsonStartIndex, jsonEndIndex + 1);
+      console.log('Found potential JSON structure:', potentialJson.substring(0, 200));
+      
+      try {
+        const parsed = JSON.parse(potentialJson);
+        console.log('Successfully parsed JSON without delimiters');
+        return parsed;
+      } catch (error) {
+        console.warn('Failed to parse potential JSON:', error);
+      }
+    }
   }
   
   // Fallback to robust extraction if delimiters weren't used properly
+  console.log('Falling back to robust extraction method');
   return extractJSONFromResponse(text);
 }
 
@@ -183,8 +206,7 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
   const numQuestions = typeof params.numQuestions === 'string' 
     ? parseInt(params.numQuestions) 
     : params.numQuestions;
-  
-  
+
   // Use mock service when explicitly set to true in environment variables
   if (USE_MOCK_SERVICE) {
     console.debug("Using mock AI service for quiz generation");
@@ -193,9 +215,11 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
       numQuestions
     });
   }
-  
-  const activeProvider = getActiveAIProviderConfig();
-  console.log('Active AI provider:', activeProvider.provider, 'Model:', activeProvider.defaultModel);
+
+  console.log(`Generating ${numQuestions} questions...`);
+
+  const activeProvider = getActiveAIProvider();
+  console.log('Using AI provider:', activeProvider.provider, 'Model:', activeProvider.defaultModel, 'MaxTokens:', activeProvider.maxTokens);
   
   // Special handling for Bedrock Claude models to ensure JSON output
   const isBedrockClaude = activeProvider.provider === 'bedrock' && 
@@ -205,7 +229,7 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
   
   // Detect if content is likely mathematical/technical
   const isContentLikelyMathematical = 
-    params.content.match(/\d+\s*[+\-*/^=<>≤≥]\s*\d+/) !== null || // Contains math operations
+    params.content.match(/\d+\s*[+\-*/^=<>≤≥]\s*\d+/) !== null ||
     params.content.toLowerCase().includes("equation") ||
     params.content.toLowerCase().includes("formula") ||
     params.content.toLowerCase().includes("math") ||
@@ -215,12 +239,11 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
     params.content.toLowerCase().includes("algebra") ||
     params.content.toLowerCase().includes("geometry");
   
-  
   // Base includeTypes on user selection but override math based on content analysis
   const includeTypes = {
     multipleChoice: params.includeTypes?.multipleChoice ?? true,
     trueFalse: params.includeTypes?.trueFalse ?? true,
-    math: isContentLikelyMathematical // Override math type based on content analysis
+    math: isContentLikelyMathematical
   };
 
   // Count how many types are selected
@@ -228,23 +251,18 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
                            (includeTypes.trueFalse ? 1 : 0) + 
                            (includeTypes.math ? 1 : 0);
   
-  // Log selected question types
-  
   // Distribute questions more intelligently based on content and selected types
   let multipleChoiceCount = 0;
   let trueFalseCount = 0;
   let mathCount = 0;
   
   if (enabledTypesCount === 0) {
-    // Fallback to multiple choice if nothing is selected
     multipleChoiceCount = numQuestions;
   } else if (enabledTypesCount === 1) {
-    // If only one type is selected, use all questions for that type
     if (includeTypes.multipleChoice) multipleChoiceCount = numQuestions;
     else if (includeTypes.trueFalse) trueFalseCount = numQuestions;
     else if (includeTypes.math) mathCount = numQuestions;
   } else if (enabledTypesCount === 2) {
-    // If two types are selected, distribute evenly with a bias toward multiple choice
     if (includeTypes.multipleChoice && includeTypes.trueFalse) {
       multipleChoiceCount = Math.ceil(numQuestions * 0.6);
       trueFalseCount = numQuestions - multipleChoiceCount;
@@ -256,8 +274,6 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
       mathCount = numQuestions - trueFalseCount;
     }
   } else {
-    // If all three types are selected, distribute with priority to multiple choice, then true/false, then math
-    // For mathematical content, allocate more questions to math type
     if (isContentLikelyMathematical) {
       multipleChoiceCount = Math.ceil(numQuestions * 0.4);
       trueFalseCount = Math.ceil(numQuestions * 0.2);
@@ -271,237 +287,79 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
   
   console.log('Question distribution:', { multipleChoiceCount, trueFalseCount, mathCount });
   
-  // Ensure we're asking for the right number of questions
-  
   let prompt: string;
   let system: string;
   
   if (isBedrockClaude) {
-    // For Bedrock Claude, use clear delimiters for easy JSON extraction
-    system = 'You are an expert quiz creator. You must follow the exact format specified, including all delimiters.';
+    // For Bedrock Claude, use simplified prompt with clear delimiters
+    system = 'You are a quiz creator. You MUST respond ONLY in JSON format using the specified delimiters. NO conversational text allowed.';
     
-    prompt = `
-    You are an expert quiz creator. Based on the following content,
-    create a quiz with ${numQuestions} questions at ${params.difficulty} difficulty level.
+    prompt = `🚨 CRITICAL: YOU MUST RESPOND ONLY IN THE EXACT JSON FORMAT BELOW. NO OTHER TEXT. 🚨
 
-    Content:
-    ${params.content.substring(0, 4000)} // Limit content to first 4000 chars to fit in context window
-    
-    Create a total of ${numQuestions} questions distributed as follows:
-    - ${multipleChoiceCount} multiple choice questions
-    - ${trueFalseCount} true/false questions
-    - ${mathCount} mathematical questions
-    
-    Content analysis: This appears to be ${isContentLikelyMathematical ? 'technical/mathematical content' : 'non-technical content'}.
-    ${!isContentLikelyMathematical && mathCount > 0 ? 'Although this seems like non-technical content, please try to create mathematical questions if possible by forming questions about numerical aspects of the content.' : ''}
-    ${isContentLikelyMathematical && mathCount === 0 ? 'Although this seems like technical content, please focus only on the requested question types and avoid creating math-heavy questions.' : ''}
-    
-    !!!MANDATORY LATEX FORMATTING RULE!!!
-    
-    EVERY SINGLE MATHEMATICAL EXPRESSION MUST BE IN LATEX FORMAT:
-    - ALL numbers: Write $5$ not 5, write $3.14$ not 3.14, write $100$ not 100
-    - ALL variables: Write $x$ not x, write $y$ not y, write $n$ not n
-    - ALL equations: Write $x = 5$ not x = 5, write $y + 2$ not y + 2
-    - ALL formulas: Use $$...$$ for display equations, $...$ for inline math
-    - ALL percentages: Write $25\\%$ not 25%, write $50\\%$ not 50%
-    - ALL fractions: Write $\\frac{1}{2}$ not 1/2, write $\\frac{a}{b}$ not a/b
-    
-    You must respond with the exact format below, including the delimiters:
+You must create exactly ${numQuestions} quiz questions from this content:
 
-    <JSON_START>
+${params.content.substring(0, 4000)}
+
+Question distribution:
+- ${multipleChoiceCount} multiple choice questions  
+- ${trueFalseCount} true/false questions
+- ${mathCount} mathematical questions
+
+🚨 MANDATORY RESPONSE FORMAT - NO EXCEPTIONS 🚨
+
+You MUST respond with EXACTLY this structure:
+
+<JSON_START>
+{
+  "questions": [
     {
-      "questions": [
-        {
-          "type": "multiple_choice",
-          "question": "Question text (use LaTeX for ANY math: $x^2$ or $5$)",
-          "options": ["Option A (use LaTeX for math: $2x$)", "Option B", "Option C", "Option D"],
-          "correctAnswer": 0,
-          "explanation": "Explanation (use LaTeX for ANY math: $x = 5$)"
-        }
-      ]
+      "type": "multiple_choice",
+      "question": "Your question here",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctAnswer": 0,
+      "explanation": "Detailed explanation here"
     }
-    <JSON_END>
+  ]
+}
+<JSON_END>
 
-    Follow this format exactly, including all delimiters.`;
+🚨 RULES:
+1. START with <JSON_START>
+2. END with <JSON_END>
+3. NO text before or after the delimiters
+4. Valid JSON only between delimiters
+5. Use LaTeX for math: $x^2$, $5$, $$\\frac{1}{2}$$
+
+DO NOT write "I'll create" or any conversational text. 
+RESPOND ONLY WITH THE JSON FORMAT ABOVE.`;
     
   } else {
     // For other providers, use standard prompting
-    system = 'You are a helpful assistant that creates quiz questions.';
+    system = 'You are a helpful assistant that creates quiz questions in JSON format.';
     
-    prompt = `
-    You are an expert quiz creator. Based on the following content,
-    create a quiz with ${numQuestions} questions at ${params.difficulty} difficulty level.
+    prompt = `Create ${numQuestions} quiz questions at ${params.difficulty} difficulty level from this content:
 
-    Content:
-    ${params.content.substring(0, 4000)} // Limit content to first 4000 chars to fit in context window
-    
-    Create a total of ${numQuestions} questions distributed as follows:
-    - ${multipleChoiceCount} multiple choice questions
-    - ${trueFalseCount} true/false questions
-    - ${mathCount} mathematical questions
-    
-    Content analysis: This appears to be ${isContentLikelyMathematical ? 'technical/mathematical content' : 'non-technical content'}.
-    ${!isContentLikelyMathematical && mathCount > 0 ? 'Although this seems like non-technical content, please try to create mathematical questions if possible by forming questions about numerical aspects of the content.' : ''}
-    ${isContentLikelyMathematical && mathCount === 0 ? 'Although this seems like technical content, please focus only on the requested question types and avoid creating math-heavy questions.' : ''}
-    
-    !!!MANDATORY LATEX FORMATTING RULE!!!
-    
-    EVERY SINGLE MATHEMATICAL EXPRESSION MUST BE IN LATEX FORMAT:
-    - ALL numbers: Write $5$ not 5, write $3.14$ not 3.14, write $100$ not 100
-    - ALL variables: Write $x$ not x, write $y$ not y, write $n$ not n
-    - ALL equations: Write $x = 5$ not x = 5, write $y + 2$ not y + 2
-    - ALL formulas: Use $$...$$ for display equations, $...$ for inline math
-    - ALL percentages: Write $25\\%$ not 25%, write $50\\%$ not 50%
-    - ALL fractions: Write $\\frac{1}{2}$ not 1/2, write $\\frac{a}{b}$ not a/b
-    
-    This is ABSOLUTELY CRITICAL for MathJax rendering. Questions without proper LaTeX will display incorrectly.
-    
-    EXAMPLES OF CORRECT FORMAT:
-    ❌ WRONG: "If x equals 5 and y equals 3..."
-    ✅ CORRECT: "If $x$ equals $5$ and $y$ equals $3$..."
-    
-    ❌ WRONG: "The answer is 42"
-    ✅ CORRECT: "The answer is $42$"
-    
-    ❌ WRONG: "Calculate 2 + 3"
-    ✅ CORRECT: "Calculate $2 + 3$"
-    
-    For multiple choice questions:
-    1. Create a clear, concise question
-    2. If the question contains ANY mathematical content (numbers, variables, equations), wrap it in LaTeX
-    3. Provide 4 possible answers with only 1 correct option
-    4. If any answer option contains mathematical content, wrap it in LaTeX delimiters
-    5. Mark which answer is correct (0-3 index)
-    6. Include a DETAILED explanation for why the answer is correct AND why other options are wrong
-    7. If the explanation contains ANY mathematical content, format it with LaTeX
-    
-    For true/false questions:
-    1. Create a clear statement that is either true or false
-    2. If the statement contains ANY mathematical content, wrap it in LaTeX
-    3. Indicate whether the statement is true or false
-    4. Provide a COMPREHENSIVE explanation for the correct answer, including reasoning
-    5. If the explanation contains ANY mathematical content, format it with LaTeX
-    
-    For mathematical questions:
-    1. Create a math problem relevant to the content
-    2. Include a LaTeX formula using proper syntax
-    3. IMPORTANT: Wrap ALL mathematical expressions in the appropriate LaTeX delimiters:
-       - For inline math, use $...$ (e.g., $x^2 + 5x + 6$)
-       - For display math (equations on their own line), use $$...$$ (e.g., $$\\frac{x^2}{2} + 5x$$)
-    4. Use proper LaTeX commands for mathematical notation:
-       - Fractions: \\frac{numerator}{denominator}
-       - Square roots: \\sqrt{expression}
-       - Powers: x^{exponent}
-       - Greek letters: \\alpha, \\beta, \\gamma, etc.
-       - Special symbols: \\rightarrow, \\Rightarrow, \\infty, etc.
-    5. CRITICAL: Format EVERY single mathematical term in the explanation with LaTeX, even simple variables:
-       - Use $x$ instead of x
-       - Use $5$ instead of 5
-       - Use $x = 5$ instead of x = 5
-       - Every step should be properly formatted with $$...$$ when on separate lines
-    6. Provide 4 possible answers with only 1 correct option
-    7. Mark which answer is correct (0-3 index)
-    8. Include a STEP-BY-STEP detailed breakdown of the solution where EVERY step uses proper LaTeX formatting
-    
-    ⚠️ EXPLANATION REQUIREMENTS ⚠️
-    
-    Every explanation must be:
-    - DETAILED and EDUCATIONAL: Don't just state the answer, explain the reasoning process
-    - STEP-BY-STEP: Break down complex solutions into clear steps
-    - COMPREHENSIVE: Address why the correct answer is right AND why other options are wrong (for multiple choice)
-    - CONTEXTUAL: Connect the answer back to the source material when possible
-    - PROPERLY FORMATTED: Use LaTeX for all mathematical content
-    
-    Examples of GOOD explanations:
-    ✅ "The correct answer is $x = 5$ because when we substitute this value into the original equation $2x + 3 = 13$, we get $2(5) + 3 = 10 + 3 = 13$, which is true. The other options would not satisfy the equation."
-    
-    ✅ "This statement is true. According to the fundamental theorem of calculus, the derivative of $f(x) = x^3$ is found using the power rule: $\\frac{d}{dx}[x^n] = nx^{n-1}$. Therefore, $\\frac{d}{dx}[x^3] = 3x^{3-1} = 3x^2$."
-    
-    Examples of BAD explanations:
-    ❌ "The answer is A."
-    ❌ "This is correct."
-    ❌ "Use the formula."
-    
-    Format your response as a JSON object with this structure:
-    {
-      "questions": [
-        {
-          "type": "multiple_choice",
-          "question": "Question text (use LaTeX for ANY math: $x^2$ or $5$)",
-          "options": ["Option A (use LaTeX for math: $2x$)", "Option B", "Option C", "Option D"],
-          "correctAnswer": 0,
-          "explanation": "Explanation (use LaTeX for ANY math: $x = 5$)"
-        },
-        {
-          "type": "true_false",
-          "question": "Statement with math: The value of $x$ is $5$ (always LaTeX for numbers/variables)",
-          "options": ["True", "False"],
-          "correctAnswer": 0,
-          "isTrue": true,
-          "explanation": "Explanation with math: $x = 5$ because... (always LaTeX)"
-        },
-        {
-          "type": "math",
-          "question": "Math problem question with LaTeX: Solve $x^2 + 5x = 0$",
-          "formula": "$$x^2 + 5x = 0$$",
-          "options": ["$x = 0, -5$", "$x = 0, 5$", "$x = 1, -5$", "$x = -1, 5$"],
-          "correctAnswer": 0,
-          "explanation": "Full solution: $$x^2 + 5x = 0$$ $$x(x + 5) = 0$$ So $x = 0$ or $x = -5$"
-        }
-      ]
-    }
+${params.content.substring(0, 4000)}
 
-    Example of a good math question with proper LaTeX:
-    {
-      "type": "math",
-      "question": "Solve the quadratic equation $x^2 + 12x + 35 = 0$",
-      "formula": "$$x^2 + 12x + 35 = 0$$",
-      "options": ["$x = -5, -7$", "$x = 5, 7$", "$x = -3, -12$", "$x = 3, 12$"],
-      "correctAnswer": 0,
-      "explanation": "Using the quadratic formula: $$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$$ With $a=1$, $b=12$, and $c=35$: $$x = \\frac{-12 \\pm \\sqrt{12^2-4 \\cdot 1 \\cdot 35}}{2 \\cdot 1} = \\frac{-12 \\pm \\sqrt{144-140}}{2} = \\frac{-12 \\pm \\sqrt{4}}{2}$$ This gives us $x = \\frac{-12+2}{2} = -5$ or $x = \\frac{-12-2}{2} = -7$"
-    }
-    
-    Another example with completing the square method:
-    {
-      "type": "math",
-      "question": "Solve the equation $x^2 + 12x + 35 = 0$ using the completing the square method.",
-      "formula": "$$x^2 + 12x + 35 = 0$$",
-      "options": ["$x = -5, -7$", "$x = 5, 7$", "$x = -3, -12$", "$x = 3, 12$"],
-      "correctAnswer": 0,
-      "explanation": "Following the completing the square method: $$x^2 + 12x + 35 = 0$$ $$x^2 + 12x = -35$$ Adding $(\\frac{b}{2})^2 = (\\frac{12}{2})^2 = 6^2 = 36$ to both sides: $$x^2 + 12x + 36 = -35 + 36$$ $$x^2 + 12x + 36 = 1$$ $$(x + 6)^2 = 1$$ $$x + 6 = \\pm 1$$ $$x = -6 \\pm 1$$ $$x = -5 \\text{ or } x = -7$$"
-    }
-    
-    Example of a multiple choice question with math content (NON-math type but contains mathematical expressions):
+Question distribution:
+- ${multipleChoiceCount} multiple choice questions
+- ${trueFalseCount} true/false questions  
+- ${mathCount} mathematical questions
+
+Use LaTeX formatting for all mathematical content: $x^2$, $5$, $$\\frac{1}{2}$$
+
+Respond in JSON format:
+{
+  "questions": [
     {
       "type": "multiple_choice",
-      "question": "If a function has a slope of $m = 2$ and passes through point $(1, 3)$, what is its equation?",
-      "options": ["$y = 2x + 1$", "$y = 2x + 3$", "$y = x + 2$", "$y = 3x + 1$"],
+      "question": "Question text",
+      "options": ["A", "B", "C", "D"],
       "correctAnswer": 0,
-      "explanation": "Using point-slope form: $y - y_1 = m(x - x_1)$. With $m = 2$ and point $(1, 3)$: $y - 3 = 2(x - 1)$, which simplifies to $y = 2x + 1$."
+      "explanation": "Detailed explanation"
     }
-    
-    Example of a true/false question with math content:
-    {
-      "type": "true_false",
-      "question": "The derivative of $f(x) = x^3$ is $f'(x) = 3x^2$.",
-      "options": ["True", "False"],
-      "correctAnswer": 0,
-      "isTrue": true,
-      "explanation": "This is true. Using the power rule: $\\frac{d}{dx}[x^n] = nx^{n-1}$, so $\\frac{d}{dx}[x^3] = 3x^{3-1} = 3x^2$."
-    }
-    
-    ⚠️ FINAL CRITICAL REMINDER ⚠️
-    
-    Before submitting your response, VERIFY that:
-    1. ALL numbers are in LaTeX: $5$, $3.14$, $100$, etc.
-    2. ALL variables are in LaTeX: $x$, $y$, $n$, etc.
-    3. ALL equations are in LaTeX: $x = 5$, $y + 2$, etc.
-    4. ALL percentages are in LaTeX: $25\\%$, $50\\%$, etc.
-    5. ALL mathematical expressions use proper LaTeX syntax
-    
-    Questions that fail to follow this formatting will be UNUSABLE by the application.
-    Every mathematical element MUST be wrapped in $ or $$ delimiters for MathJax rendering.
-  `;
+  ]
+}`;
   }
   
   try {
@@ -519,10 +377,11 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
         model = deepseek(activeProvider.defaultModel);
         break;
       case 'bedrock':
+        // Use Bedrock Claude 3.7 Sonnet with 128K output tokens
+        console.log(`Using Bedrock Claude 3.7 Sonnet with ${activeProvider.maxTokens} max tokens`);
         model = bedrock(activeProvider.defaultModel);
         break;
       default:
-        // Fallback to OpenAI
         model = openai('gpt-3.5-turbo');
     }
     
@@ -556,8 +415,12 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
         parsedResponse = extractJSONFromResponse(text);
       }
     } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', text.substring(0, 300), parseError);
-      throw new Error('AI returned invalid JSON response: ' + (parseError instanceof Error ? parseError.message : 'Unknown error'));
+      console.error('Failed to parse AI response as JSON:', parseError);
+      console.error('Full AI response text:', text);
+      console.error('Response length:', text.length);
+      console.error('First 1000 chars:', text.substring(0, 1000));
+      console.error('Last 500 chars:', text.substring(Math.max(0, text.length - 500)));
+      throw new Error(`AI returned invalid JSON response: ${parseError instanceof Error ? parseError.message : 'Unknown error'}. First 500 chars of response: ${text.substring(0, 500)}`);
     }
     
     // Validate the parsed response structure
@@ -611,7 +474,7 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
       return ensureLaTeXFormatting(question);
     });
     
-    // After parsing questions from the AI, map any 'mathematical' type to 'math'
+    // Map any 'mathematical' type to 'math'
     const questionsData = {
       questions: processedQuestions.map(q => ({
         ...q,
@@ -629,6 +492,136 @@ export async function generateQuizQuestions(params: GenerateQuestionsParams) {
       return await generateMockQuizQuestions(params);
     } else {
       throw new Error('AI service failed to generate questions: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  }
+}
+
+// Generate a smart quiz title using AI
+export async function generateQuizTitle(content: string, sourceType: 'youtube' | 'pdf' | 'text' | 'image', existingTitle?: string): Promise<string> {
+  try {
+    const activeProvider = getActiveAIProviderConfig();
+    
+    let prompt = '';
+    if (sourceType === 'youtube' && existingTitle) {
+      prompt = `Create a compelling quiz title for a quiz based on the YouTube video "${existingTitle}". Make it engaging and specific to the video content. Keep it under 60 characters. 
+
+Video content preview:
+${content.substring(0, 500)}...
+
+Requirements:
+- Engaging and specific
+- Under 60 characters  
+- Include "Quiz" in the title
+- Make it clear what the quiz is about
+
+Respond with ONLY the title, no quotes or extra text.`;
+    } else {
+      prompt = `Create a compelling quiz title based on this content. Make it engaging and specific to the subject matter. Keep it under 60 characters.
+
+Content preview:
+${content.substring(0, 500)}...
+
+Requirements:
+- Engaging and specific
+- Under 60 characters
+- Include "Quiz" in the title  
+- Make it clear what the quiz is about
+
+Respond with ONLY the title, no quotes or extra text.`;
+    }
+
+    let model;
+    switch (activeProvider.provider) {
+      case 'openai':
+        model = openai(activeProvider.defaultModel);
+        break;
+      case 'claude':
+        model = anthropic(activeProvider.defaultModel);
+        break;
+      case 'deepseek':
+        model = deepseek(activeProvider.defaultModel);
+        break;
+      case 'bedrock':
+        model = bedrock(activeProvider.defaultModel);
+        break;
+      default:
+        model = openai('gpt-3.5-turbo');
+    }
+
+    const { text } = await generateText({
+      model,
+      prompt,
+      temperature: 0.7,
+      maxTokens: 100
+    });
+
+    const generatedTitle = text.trim().replace(/['"]/g, '');
+    
+    // Validate and clean up the title
+    if (generatedTitle && generatedTitle.length > 0 && generatedTitle.length <= 100) {
+      return generatedTitle;
+    } else {
+      throw new Error('Generated title is invalid');
+    }
+  } catch (error) {
+    console.error('Error generating quiz title:', error);
+    
+    // Fallback title generation
+    if (sourceType === 'youtube' && existingTitle) {
+      return `${existingTitle} - Quiz`;
+    } else {
+      return generateFallbackTitle(content, sourceType);
+    }
+  }
+}
+
+// Generate fallback title when AI fails
+function generateFallbackTitle(content: string, sourceType: string): string {
+  const words = content.trim().split(/\s+/).slice(0, 8).join(' ');
+  const cleanWords = words.replace(/[^\w\s]/g, '').substring(0, 40);
+  return `${cleanWords} - Quiz` || `${sourceType.charAt(0).toUpperCase() + sourceType.slice(1)} Quiz`;
+}
+
+// Generate URL-friendly slug from title
+export function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')  // Remove special chars except spaces and hyphens
+    .trim()
+    .replace(/\s+/g, '-')     // Replace spaces with hyphens
+    .replace(/-+/g, '-')      // Replace multiple hyphens with single
+    .replace(/^-|-$/g, '');   // Remove leading/trailing hyphens
+}
+
+// Generate unique slug by checking database
+export async function generateUniqueSlug(baseTitle: string, quizId?: string): Promise<string> {
+  await dbConnect();
+  const Quiz = (await import('@/models/Quiz')).default;
+  
+  let baseSlug = generateSlug(baseTitle);
+  if (!baseSlug) {
+    baseSlug = 'quiz';
+  }
+  
+  let slug = baseSlug;
+  let counter = 1;
+  
+  while (true) {
+    const existingQuiz = await Quiz.findOne({ 
+      slug: slug,
+      ...(quizId && { _id: { $ne: quizId } }) // Exclude current quiz if updating
+    });
+    
+    if (!existingQuiz) {
+      return slug;
+    }
+    
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+    
+    // Prevent infinite loops
+    if (counter > 1000) {
+      return `${baseSlug}-${Date.now()}`;
     }
   }
 } 

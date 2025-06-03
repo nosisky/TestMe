@@ -279,7 +279,7 @@ const DashboardQuizCreator = ({ initialType }: DashboardQuizCreatorProps) => {
         
         const data = await response.json();
         setCreatedQuizId(data._id);
-        setQuizShareUrl(`${window.location.origin}/quiz/${data._id}`);
+        setQuizShareUrl(`${window.location.origin}/quiz/${data.slug}`);
         setIsCreating(false);
         setStep("success");
         
@@ -314,7 +314,7 @@ const DashboardQuizCreator = ({ initialType }: DashboardQuizCreatorProps) => {
         }
         
         setCreatedQuizId(data.quiz.id);
-        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}`);
+        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.slug}`);
         setIsCreating(false);
         setStep("success");
         
@@ -333,7 +333,7 @@ const DashboardQuizCreator = ({ initialType }: DashboardQuizCreatorProps) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             textContent: extractedContent || textContent,
-            numQuestions: questionCount,
+            numQuestions: 30,
             difficulty,
             createdBy: userId,
             includeTypes
@@ -342,11 +342,11 @@ const DashboardQuizCreator = ({ initialType }: DashboardQuizCreatorProps) => {
         
         const data = await response.json();
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to create quiz');
+          throw new Error(data.error || 'Failed to create quiz from text');
         }
         
         setCreatedQuizId(data.quiz.id);
-        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}`);
+        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.slug}`);
         setIsCreating(false);
         setStep("success");
         
@@ -381,7 +381,7 @@ const DashboardQuizCreator = ({ initialType }: DashboardQuizCreatorProps) => {
           throw new Error(data.error || 'Failed to create quiz from image');
         }
         setCreatedQuizId(data.quiz.id);
-        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}`);
+        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.slug}`);
         setIsCreating(false);
         setStep("success");
         setTimeout(() => {

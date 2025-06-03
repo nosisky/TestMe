@@ -283,4 +283,110 @@
       color: var(--text-color-secondary, #aaa);
     }
   }
+}
+
+// Modal styles
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.modalContent {
+  background-color: var(--card-bg, #fff);
+  border-radius: var(--border-radius-lg, 12px);
+  box-shadow: var(--shadow-xl, 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04));
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--border-color, #eee);
+  
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color-primary, #333);
+    margin: 0;
+    text-align: center;
+  }
+}
+
+.modalBody {
+  padding: 1.5rem;
+  flex: 1;
+  
+  p {
+    font-size: 1rem;
+    color: var(--text-color-secondary, #555);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    line-height: 1.6;
+  }
+}
+
+.inputGroup {
+  margin-bottom: 1.5rem;
+  
+  .nameInput {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 2px solid var(--border-color, #e0e0e0);
+    border-radius: var(--border-radius-md, 8px);
+    transition: border-color 0.2s ease;
+    
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color, #7e57ff);
+    }
+    
+    &::placeholder {
+      color: var(--text-color-tertiary, #999);
+    }
+  }
+  
+  .errorMessage {
+    color: var(--error-color, #d9534f);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    text-align: left;
+  }
+}
+
+.modalActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  
+  .button {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: var(--border-radius-md, 8px);
+    text-decoration: none;
+    text-align: center;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    min-width: 120px;
+    border: none;
+    cursor: pointer;
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
 } 

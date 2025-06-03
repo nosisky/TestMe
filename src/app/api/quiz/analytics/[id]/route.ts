@@ -44,14 +44,38 @@ export async function GET(
     // Fetch all results for this quiz
     const results = await QuizResult.find({ quizId: id }).lean();
     
-    // Get unique user emails to fetch user data
-    const userEmails = [...new Set(results.map(result => result.userId))];
+    // Get unique user emails to fetch user data (exclude anonymous users)
+    const userEmails = [...new Set(results
+      .map(result => result.userId)
+      .filter(userId => !userId.startsWith('anonymous-'))
+    )];
     const users = await User.find({ email: { $in: userEmails } }).lean();
     
     // Create a map of email to user name
     const userMap = new Map();
     users.forEach(user => {
       userMap.set(user.email, user.name);
+    });
+    
+    // Handle anonymous users - use their provided names or generate labels
+    const anonymousUsers = new Set();
+    results.forEach(result => {
+      if (result.userId.startsWith('anonymous-')) {
+        anonymousUsers.add(result.userId);
+      }
+    });
+    
+    // Generate unique labels for anonymous users without provided names
+    let anonymousCounter = 1;
+    anonymousUsers.forEach(userId => {
+      // Find the result to get the provided userName
+      const userResult = results.find(r => r.userId === userId);
+      
+      if (userResult && userResult.userName && userResult.userName.trim()) {
+        userMap.set(userId, userResult.userName.trim());
+      } else {
+        userMap.set(userId, `Anonymous User #${anonymousCounter++}`);
+      }
     });
     
     // Calculate some aggregate statistics
@@ -119,13 +143,14 @@ export async function GET(
         id: result._id ? result._id.toString() : '',
         userId: result.userId,
         userName: userMap.get(result.userId) || 'Unknown User',
-        userEmail: result.userId, // Keep email to use as a fallback
+        userEmail: result.userId.startsWith('anonymous-') ? 'Anonymous' : result.userId, // Don't show anonymous IDs as emails
         score: result.score,
         totalQuestions: result.totalQuestions,
         percentage: (result.score / result.totalQuestions) * 100,
         completedAt: result.completedAt,
         timeTaken: result.timeTaken,
-        answers: result.answers || [] // Include answers for detailed view
+        answers: result.answers || [], // Include answers for detailed view
+        isAnonymous: result.userId.startsWith('anonymous-')
       }))
     });
   } catch (error) {

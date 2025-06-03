@@ -11,10 +11,16 @@ export interface IUser extends Document {
     theme?: 'light' | 'dark' | 'system';
     quizDefaults?: {
       questionsCount: number;
-      difficulty: 'easy' | 'medium' | 'hard';
+      difficulty: 'easy' | 'medium' | 'hard' | 'expert';
       allowSkipping: boolean;
     };
   };
+}
+
+export interface IUserPreferences {
+  difficulty: 'easy' | 'medium' | 'hard' | 'expert';
+  preferredQuestionTypes: string[];
+  emailNotifications: boolean;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -28,7 +34,7 @@ const UserSchema = new Schema<IUser>({
     theme: { type: String, enum: ['light', 'dark', 'system'], default: 'system' },
     quizDefaults: {
       questionsCount: { type: Number, default: 5 },
-      difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' },
+      difficulty: { type: String, enum: ['easy', 'medium', 'hard', 'expert'], default: 'medium' },
       allowSkipping: { type: Boolean, default: true }
     }
   }

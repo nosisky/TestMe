@@ -4,29 +4,32 @@ import dbConnect from '@/lib/mongodb';
 import QuizResult from '@/models/QuizResult';
 import Quiz from '@/models/Quiz';
 import mongoose from 'mongoose';
+import { randomUUID } from 'crypto';
+
+// Generate a simple anonymous user ID
+function generateAnonymousUserId(): string {
+  return `anonymous-${randomUUID()}`;
+}
 
 // This is the API endpoint to save quiz results
 export async function POST(request: Request) {
-  const session = await getServerSession();
-  
-  if (!session || !session.user) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-  
-  const userId = session.user.email;
-  if (!userId) {
-    return NextResponse.json(
-      { error: 'User email not found' },
-      { status: 400 }
-    );
-  }
-  
   try {
+    const session = await getServerSession();
+    
+    let userId: string;
+    let isAnonymous = false;
+    
+    if (session && session.user && session.user.email) {
+      // Authenticated user
+      userId = session.user.email;
+    } else {
+      // Anonymous user - generate a simple unique ID
+      isAnonymous = true;
+      userId = generateAnonymousUserId();
+    }
+    
     const body = await request.json();
-    const { quizId, score, totalQuestions, timeTaken, answers } = body;
+    const { quizId, score, totalQuestions, timeTaken, answers, userName: providedUserName } = body;
     
     if (!quizId || score === undefined || !totalQuestions) {
       return NextResponse.json(
@@ -48,6 +51,7 @@ export async function POST(request: Request) {
     const result = new QuizResult({
       quizId,
       userId,
+      userName: isAnonymous ? providedUserName : undefined, // Store provided name for anonymous users
       score,
       totalQuestions,
       completedAt: new Date(),
@@ -70,6 +74,7 @@ export async function POST(request: Request) {
       // Update stats
       quiz.stats.avgScore = parseFloat(newAverage.toFixed(1)); // Round to 1 decimal
       quiz.stats.lastPlayed = new Date();
+      quiz.stats.timesPlayed = (quiz.stats.timesPlayed || 0) + 1;
       
       await quiz.save();
     }
@@ -80,7 +85,8 @@ export async function POST(request: Request) {
         id: result._id.toString(),
         score,
         totalQuestions,
-        percentage: Math.round((score / totalQuestions) * 100)
+        percentage: Math.round((score / totalQuestions) * 100),
+        isAnonymous
       }
     });
   } catch (error) {
@@ -92,7 +98,7 @@ export async function POST(request: Request) {
   }
 }
 
-// Endpoint to get user's quiz history
+// Endpoint to get user's quiz history (requires authentication)
 export async function GET(request: Request) {
   const session = await getServerSession();
   

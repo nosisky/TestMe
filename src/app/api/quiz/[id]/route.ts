@@ -4,7 +4,7 @@ import Quiz, { IQuiz, IQuizSource } from '@/models/Quiz';
 import mongoose from 'mongoose';
 
 // Define a type for the lean quiz object we expect for the instructions page
-interface IQuizInstructionData extends Omit<IQuiz, 'questions' | 'source' | '_id' | 'createdBy' | 'stats'> {
+interface IQuizInstructionData extends Omit<IQuiz, 'questions' | 'source' | '_id' | 'stats'> {
   _id: mongoose.Types.ObjectId; // Keep _id as ObjectId for internal use before converting to string
   questions: { length: number }; // We only need the length of questions array
   source?: Partial<IQuizSource>; // Source is partial as we only select youtube.thumbnail
@@ -18,16 +18,31 @@ export async function GET(
     const params = await context.params;
     const { id } = params;
 
-    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid quiz ID' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: 'Quiz ID or slug is required' }, { status: 400 });
     }
 
     await dbConnect();
 
-    // Explicitly type the lean object
-    const quiz = await Quiz.findById(id)
-      .select('title description sourceType difficulty questions source.youtube.thumbnail createdAt isPublic tags') 
-      .lean<IQuizInstructionData | null>(); // Specify the expected lean type
+    let quiz: IQuizInstructionData | null = null;
+
+    // First try to find by slug, then by ObjectId
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      // If it's a valid ObjectId, try both slug and ObjectId
+      quiz = await Quiz.findOne({
+        $or: [
+          { slug: id },
+          { _id: id }
+        ]
+      })
+      .select('title description sourceType difficulty questions source.youtube.thumbnail createdAt isPublic tags createdBy slug') 
+      .lean<IQuizInstructionData | null>();
+    } else {
+      // If it's not a valid ObjectId, only search by slug
+      quiz = await Quiz.findOne({ slug: id })
+        .select('title description sourceType difficulty questions source.youtube.thumbnail createdAt isPublic tags createdBy slug') 
+        .lean<IQuizInstructionData | null>();
+    }
 
     if (!quiz) {
       return NextResponse.json({ error: 'Quiz not found' }, { status: 404 });
@@ -45,6 +60,7 @@ export async function GET(
     return NextResponse.json({
       quiz: {
         id: quiz._id.toString(),
+        slug: quiz.slug,
         title: quiz.title,
         description: displayDescription,
         sourceType: quiz.sourceType,
@@ -54,6 +70,7 @@ export async function GET(
         createdAt: quiz.createdAt,
         isPublic: quiz.isPublic,
         tags: quiz.tags || [],
+        createdBy: quiz.createdBy,
       },
     });
   } catch (error) {

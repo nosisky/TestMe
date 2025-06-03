@@ -31,6 +31,10 @@ export default function QuizInstructionsPage() {
   const [quizDetails, setQuizDetails] = useState<QuizInstructionDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [nameError, setNameError] = useState('');
 
   const fetchQuizDetails = useCallback(async () => {
     setLoading(true);
@@ -51,12 +55,63 @@ export default function QuizInstructionsPage() {
   }, [quizId]);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push(`/login?callbackUrl=/quiz/${quizId}/instructions`);
-    } else if (status === 'authenticated' && quizId) {
+    if (quizId) {
       fetchQuizDetails();
     }
-  }, [status, quizId, router, fetchQuizDetails]);
+  }, [quizId, fetchQuizDetails]);
+
+  // Show login prompt for unauthenticated users after quiz loads
+  useEffect(() => {
+    // Remove automatic modal popup - let users read instructions first
+    // Modal will show when they click "Start Quiz"
+  }, [status, quizDetails, showLoginPrompt]);
+
+  const handleStartQuiz = () => {
+    if (status === 'authenticated') {
+      // Authenticated user can start immediately
+      router.push(`/quiz/${quizId}`);
+    } else {
+      // Show login prompt for unauthenticated users
+      setShowLoginPrompt(true);
+    }
+  };
+
+  const handleProceedWithoutLogin = () => {
+    setShowLoginPrompt(false);
+    setShowNameModal(true);
+  };
+
+  const handleLogin = () => {
+    router.push(`/login?callbackUrl=/quiz/${quizId}/instructions`);
+  };
+
+  const handleNameSubmit = () => {
+    const trimmedName = userName.trim();
+    if (!trimmedName) {
+      setNameError('Please enter your name');
+      return;
+    }
+    if (trimmedName.length < 2) {
+      setNameError('Name must be at least 2 characters long');
+      return;
+    }
+    if (trimmedName.length > 50) {
+      setNameError('Name must be less than 50 characters');
+      return;
+    }
+    
+    // Store the name in localStorage for the quiz taking session
+    localStorage.setItem(`quizUserName_${quizId}`, trimmedName);
+    
+    // Start the quiz
+    router.push(`/quiz/${quizId}`);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleNameSubmit();
+    }
+  };
 
   if (status === 'loading' || loading) {
     return (
@@ -166,9 +221,9 @@ export default function QuizInstructionsPage() {
           </div>
           
           <div className={styles.actions}>
-            <Link href={`/quiz/${quizId}`} className={`${styles.button} ${styles.buttonPrimary}`}>
+            <button onClick={handleStartQuiz} className={`${styles.button} ${styles.buttonPrimary}`}>
               Start Quiz
-            </Link>
+            </button>
             <Link href="/dashboard" className={`${styles.button} ${styles.buttonSecondary}`}>
               Back to Dashboard
             </Link>
@@ -184,6 +239,63 @@ export default function QuizInstructionsPage() {
             Ensure you are ready before you begin.
           </p>
         </div>
+
+        {/* Login Prompt Modal */}
+        {showLoginPrompt && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modalContent}>
+              <div className={styles.modalHeader}>
+                <h3>Ready to take the quiz?</h3>
+              </div>
+              <div className={styles.modalBody}>
+                <p>You can either login to track your progress and compare with others, or take the quiz anonymously.</p>
+                <div className={styles.modalActions}>
+                  <button onClick={handleLogin} className={`${styles.button} ${styles.buttonPrimary}`}>
+                    Login & Take Quiz
+                  </button>
+                  <button onClick={handleProceedWithoutLogin} className={`${styles.button} ${styles.buttonSecondary}`}>
+                    Take Quiz Anonymously
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Name Input Modal */}
+        {showNameModal && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modalContent}>
+              <div className={styles.modalHeader}>
+                <h3>What should we call you?</h3>
+              </div>
+              <div className={styles.modalBody}>
+                <p>Enter your name so the quiz creator can see who took their quiz:</p>
+                <div className={styles.inputGroup}>
+                  <input
+                    type="text"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Enter your name..."
+                    className={styles.nameInput}
+                    maxLength={50}
+                    autoFocus
+                  />
+                  {nameError && <p className={styles.errorMessage}>{nameError}</p>}
+                </div>
+                <div className={styles.modalActions}>
+                  <button onClick={handleNameSubmit} className={`${styles.button} ${styles.buttonPrimary}`}>
+                    Start Quiz
+                  </button>
+                  <button onClick={() => setShowNameModal(false)} className={`${styles.button} ${styles.buttonSecondary}`}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

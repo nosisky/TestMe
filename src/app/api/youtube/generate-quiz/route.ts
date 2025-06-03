@@ -3,7 +3,7 @@ import { google } from 'googleapis';
 import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/mongodb';
 import Quiz from '@/models/Quiz';
-import { generateQuizQuestions } from '@/lib/ai-service';
+import { generateQuizQuestions, generateQuizTitle, generateUniqueSlug } from '@/lib/ai-service';
 import mongoose from 'mongoose';
 import { Innertube } from 'youtubei.js/web';
 
@@ -258,13 +258,16 @@ export async function POST(request: Request) {
 
     console.debug(`[YouTube Quiz] Content acquired (${content.length} chars), proceeding to question generation`);
 
-    // 6. Generate quiz questions using AI
-    const quizTitle = videoDetails.title || `Quiz on YouTube video ${videoId}`;
-    const quizDescription = `Quiz generated from YouTube video: ${videoDetails.title}`;
+    // 6. Generate AI-powered quiz title and questions
+    const originalTitle = videoDetails.title || `Quiz on YouTube video ${videoId}`;
     
-    console.debug(`[YouTube Quiz] Generating questions: count=${questionCount}, difficulty=${difficulty}`);
+    console.debug(`[YouTube Quiz] Generating AI title and questions: count=${questionCount}, difficulty=${difficulty}`);
     
     try {
+      // Generate AI-powered title first 
+      const aiQuizTitle = await generateQuizTitle(content, 'youtube', originalTitle);
+      console.debug(`[YouTube Quiz] AI generated title: ${aiQuizTitle}`);
+      
       const questionsResponse = await generateQuizQuestions({
         content,
         numQuestions: questionCount,
@@ -285,17 +288,21 @@ export async function POST(request: Request) {
 
       console.debug(`[YouTube Quiz] Successfully generated ${questions.length} questions`);
 
-      // 7. Save the quiz to the database
+      // 7. Generate unique slug and save the quiz to the database
       try {
+        const quizSlug = await generateUniqueSlug(aiQuizTitle);
+        console.debug(`[YouTube Quiz] Generated unique slug: ${quizSlug}`);
+        
         const quiz = new Quiz({
-          title: quizTitle,
-          description: quizDescription,
+          title: aiQuizTitle,
+          slug: quizSlug,
+          description: `Quiz generated from YouTube video: ${originalTitle}`,
           sourceType: 'youtube',
           source: {
             type: 'youtube',
             youtube: {
               videoId,
-              title: videoDetails.title,
+              title: originalTitle,
               thumbnail: videoDetails.thumbnails?.high?.url || videoDetails.thumbnails?.default?.url,
             }
           },
@@ -306,11 +313,12 @@ export async function POST(request: Request) {
         });
 
         await quiz.save();
-        console.debug(`[YouTube Quiz] Quiz saved to database with ID: ${quiz._id}`);
+        console.debug(`[YouTube Quiz] Quiz saved to database with ID: ${quiz._id} and slug: ${quizSlug}`);
 
-        // 8. Return the quiz data
+        // 8. Return the quiz data with slug for clean URLs
         return NextResponse.json({
           _id: quiz._id,
+          slug: quizSlug,
           title: quiz.title,
           description: quiz.description,
           questionCount: questions.length,

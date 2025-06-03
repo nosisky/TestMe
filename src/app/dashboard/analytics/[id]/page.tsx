@@ -16,10 +16,22 @@ interface QuizData {
   totalQuestions: number;
 }
 
+interface RecentAttempt {
+  userId: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  completedAt: string;
+  timeTaken?: number;
+}
+
 interface QuizStats {
   totalAttempts: number;
   averageScore: number;
-  resultsByDate: Record<string, { count: number, avgScore: number }>;
+  averagePercentage: number;
+  averageTime: number;
+  scoreDistribution: Array<{ range: string; count: number }>;
+  recentAttempts: RecentAttempt[];
 }
 
 interface Answer {
@@ -39,11 +51,12 @@ interface QuizTakerResult {
   completedAt: string;
   timeTaken?: number;
   answers?: Answer[];
+  isAnonymous?: boolean;
 }
 
 interface AnalyticsData {
   quiz: QuizData;
-  stats: QuizStats;
+  analytics: QuizStats;
   results: QuizTakerResult[];
 }
 
@@ -112,12 +125,6 @@ export default function QuizAnalyticsPage() {
     return styles.needsImprovement;
   };
 
-  // Navigate to the results page for a specific result
-  const viewResultDetails = () => {
-    // Navigate to the quiz results page
-    router.push(`/quiz/${quizId}/results`);
-  };
-
   if (status === 'loading' || loading) {
     return (
       <div className={styles.pageContainer}>
@@ -167,7 +174,7 @@ export default function QuizAnalyticsPage() {
     );
   }
 
-  const { quiz, stats, results } = analytics;
+  const { quiz, analytics: stats, results } = analytics;
 
   const breadcrumbItems = [
     { label: "Dashboard", href: "/dashboard", icon: "🏠" },
@@ -195,8 +202,8 @@ export default function QuizAnalyticsPage() {
           </div>
           <div className={styles.statBox}>
             <h3>Average Score</h3>
-            <p className={`${styles.statValue} ${getPerformanceClass(stats.averageScore)}`}>
-              {stats.averageScore}%
+            <p className={`${styles.statValue} ${getPerformanceClass(stats.averagePercentage)}`}>
+              {stats.averagePercentage}%
             </p>
           </div>
           <div className={styles.statBox}>
@@ -236,7 +243,10 @@ export default function QuizAnalyticsPage() {
                 {results.map((result) => (
                   <tr key={result.id} className={styles.resultRow}>
                     <td>
-                      <div className={styles.userName}>{result.userName}</div>
+                      <div className={styles.userName}>
+                        {result.userName}
+                        {result.isAnonymous && <span className={styles.anonymousIndicator} title="Anonymous User">👤</span>}
+                      </div>
                       <div className={styles.userEmail}>{result.userEmail}</div>
                     </td>
                     <td>
@@ -248,12 +258,12 @@ export default function QuizAnalyticsPage() {
                     <td>{formatTimeTaken(result.timeTaken)}</td>
                     <td>{formatDate(result.completedAt)}</td>
                     <td>
-                      <button 
-                        onClick={() => viewResultDetails()}
+                      <Link 
+                        href={`/quiz/${quizId}/results?userId=${result.userId}&view=creator`}
                         className={styles.viewButton}
                       >
                         View Details
-                      </button>
+                      </Link>
                     </td>
                   </tr>
                 ))}

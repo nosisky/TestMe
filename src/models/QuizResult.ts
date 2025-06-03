@@ -4,6 +4,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IQuizResult extends Document {
   quizId: mongoose.Types.ObjectId;
   userId: string; // User email or ID
+  userName?: string; // Optional provided name for anonymous users
   score: number;
   totalQuestions: number;
   completedAt: Date;
@@ -18,6 +19,7 @@ export interface IQuizResult extends Document {
 const QuizResultSchema = new Schema<IQuizResult>({
   quizId: { type: Schema.Types.ObjectId, ref: 'Quiz', required: true },
   userId: { type: String, required: true },
+  userName: { type: String }, // Optional provided name for anonymous users
   score: { type: Number, required: true },
   totalQuestions: { type: Number, required: true },
   completedAt: { type: Date, default: Date.now },

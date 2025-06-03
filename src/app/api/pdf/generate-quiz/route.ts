@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/mongodb';
 import Quiz, { IQuizQuestion } from '@/models/Quiz';
-import { generateQuizQuestions } from '@/lib/ai-service';
+import { generateQuizQuestions, generateQuizTitle, generateUniqueSlug } from '@/lib/ai-service';
 import { validatePdfContent } from '@/lib/pdf-service';
 import mongoose from 'mongoose';
 import pdfParse from 'pdf-parse';
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
     }
     
     // Use file name as title or fallback
-    const title = file.name.replace('.pdf', '') || 'PDF Quiz';
+    // const title = file.name.replace('.pdf', '') || 'PDF Quiz';
     
     if (!pdfText) {
       return NextResponse.json(
@@ -151,6 +151,14 @@ export async function POST(request: Request) {
 
       const questions: IQuizQuestion[] = questionsData.questions;
 
+      // Generate AI-powered title and unique slug
+      // const originalFileName = file.name.replace('.pdf', '') || 'PDF Quiz';
+      const aiQuizTitle = await generateQuizTitle(pdfText, 'pdf');
+      console.debug(`AI generated title: ${aiQuizTitle}`);
+      
+      const quizSlug = await generateUniqueSlug(aiQuizTitle);
+      console.debug(`Generated unique slug: ${quizSlug}`);
+
       // Connect to MongoDB with enhanced error handling
       try {
         // Attempt to connect to MongoDB
@@ -158,7 +166,8 @@ export async function POST(request: Request) {
         
         // Create and save the quiz
         const quiz = new Quiz({
-          title,
+          title: aiQuizTitle,
+          slug: quizSlug,
           description: pdfText.substring(0, 200) + '...',
           sourceType: 'pdf',
           source: {
@@ -183,6 +192,7 @@ export async function POST(request: Request) {
         return NextResponse.json({
           quiz: {
             id: quiz._id,
+            slug: quizSlug,
             title: quiz.title,
             sourceType: quiz.sourceType,
             difficulty: quiz.difficulty,

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/mongodb';
 import Quiz, { IQuizQuestion } from '@/models/Quiz';
-import { generateQuizQuestions } from '@/lib/ai-service';
+import { generateQuizQuestions, generateQuizTitle, generateUniqueSlug } from '@/lib/ai-service';
 import { extractTextFromImage } from '@/lib/aws-textract';
 import mongoose from 'mongoose';
 
@@ -50,15 +50,6 @@ async function parseFormData(request: Request) {
     includeTrueFalse,
     includeMath
   };
-}
-
-// Generate title from extracted text
-function generateTitleFromText(text: string, maxLength = 50): string {
-  if (!text) return 'Image Quiz';
-  const firstSentence = text.split(/[.!?]/)[0];
-  let title = firstSentence.length > maxLength ? firstSentence.substring(0, maxLength) + '...' : firstSentence;
-  if (title.trim() === '...' || title.trim() === '') title = text.substring(0, Math.min(text.length, maxLength)) + (text.length > maxLength ? '...' : '');
-  return title || 'Image Quiz';
 }
 
 export async function POST(request: Request) {
@@ -117,8 +108,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate quiz title
-    const quizTitle = generateTitleFromText(extractedText);
+    // Generate AI-powered title and unique slug
+    const aiQuizTitle = await generateQuizTitle(extractedText, 'image');
+    console.debug(`AI generated title: ${aiQuizTitle}`);
+    
+    const quizSlug = await generateUniqueSlug(aiQuizTitle);
+    console.debug(`Generated unique slug: ${quizSlug}`);
 
     // Generate quiz questions
     const questionsData = await generateQuizQuestions({
@@ -147,14 +142,15 @@ export async function POST(request: Request) {
 
     // Create new quiz
     const newQuiz = new Quiz({
-      title: quizTitle,
+      title: aiQuizTitle,
+      slug: quizSlug,
       description: extractedText.substring(0, 200) + (extractedText.length > 200 ? '...' : ''),
       sourceType: 'image',
       source: {
         type: 'image',
         image: {
           contentPreview: extractedText.substring(0, 500) + (extractedText.length > 500 ? '...' : ''),
-          title: quizTitle,
+          title: aiQuizTitle,
           originalName: originalName,
         },
       },
@@ -171,6 +167,7 @@ export async function POST(request: Request) {
       message: 'Quiz generated successfully from image!',
       quiz: {
         id: newQuiz._id.toString(),
+        slug: quizSlug,
         title: newQuiz.title,
       },
     });

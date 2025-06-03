@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/app/components/Header';
 import MetaTags from '@/app/components/MetaTags';
@@ -21,9 +22,23 @@ interface QuizQuestion {
 }
 
 interface Quiz {
-  _id: string; // Use _id from fetched data
+  id: string; // Changed from _id to id to match API response
   title: string;
   questions: QuizQuestion[];
+  createdBy?: string; // Add createdBy field
+}
+
+interface UserResult {
+  userId: string;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  timeTaken?: number;
+  answers?: Array<{
+    questionIndex: number;
+    selectedOption: number;
+    isCorrect: boolean;
+  }>;
 }
 
 type UserAnswers = Record<number, number | null>;
@@ -36,8 +51,13 @@ interface Score {
 
 export default function QuizResultsPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const quizId = params.id as string;
-  const { status } = useSession();
+  const userId = searchParams.get('userId');
+  const view = searchParams.get('view');
+  const isCreatorView = view === 'creator' && userId;
+  const { status, data: session } = useSession();
+  const router = useRouter();
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [userAnswers, setUserAnswers] = useState<UserAnswers | null>(null);
@@ -46,6 +66,7 @@ export default function QuizResultsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showReview, setShowReview] = useState(false);
   const [timeTaken, setTimeTaken] = useState<number | undefined>(undefined);
+  const [hasSaved, setHasSaved] = useState(false);
   
   // Utility function to format time in minutes and seconds
   const formatTime = (seconds: number): string => {
@@ -55,17 +76,25 @@ export default function QuizResultsPage() {
   };
   
   const saveQuizResultToDb = useCallback(async (quizIdToSave: string, currentScore: Score, totalQuestions: number, quizQuestions: QuizQuestion[]) => {
+    // Prevent duplicate saves
+    if (hasSaved) {
+      return;
+    }
+    
     try {
-      // Get the start time from localStorage
-      const startTime = localStorage.getItem(`quizStartTime_${quizIdToSave}`);
+      // Set the flag immediately to prevent race conditions
+      setHasSaved(true);
+      
+      // Get the start time from localStorage - USE THE ORIGINAL QUIZ ID FROM URL PARAMS
+      const startTime = localStorage.getItem(`quizStartTime_${quizId}`);
       
       // Check if we already have a stored end time for this quiz
       let quizTimeTaken;
-      const storedEndTime = localStorage.getItem(`quizEndTime_${quizIdToSave}`);
+      const storedEndTime = localStorage.getItem(`quizEndTime_${quizId}`);
       
       if (storedEndTime) {
         // If we have an end time, use the pre-calculated time
-        quizTimeTaken = parseInt(localStorage.getItem(`quizTimeTaken_${quizIdToSave}`) || '0');
+        quizTimeTaken = parseInt(localStorage.getItem(`quizTimeTaken_${quizId}`) || '0');
       } else if (startTime) {
         // If no end time but we have start time, this is the first load of results
         // Calculate and store the time taken and end time
@@ -73,8 +102,8 @@ export default function QuizResultsPage() {
         quizTimeTaken = Math.floor((endTime - parseInt(startTime)) / 1000);
         
         // Store the end time and time taken to prevent recalculation on page refresh
-        localStorage.setItem(`quizEndTime_${quizIdToSave}`, endTime.toString());
-        localStorage.setItem(`quizTimeTaken_${quizIdToSave}`, quizTimeTaken.toString());
+        localStorage.setItem(`quizEndTime_${quizId}`, endTime.toString());
+        localStorage.setItem(`quizTimeTaken_${quizId}`, quizTimeTaken.toString());
       } else {
         quizTimeTaken = undefined;
       }
@@ -82,8 +111,8 @@ export default function QuizResultsPage() {
       // Set the timeTaken state for display
       setTimeTaken(quizTimeTaken);
       
-      // Prepare detailed answers data from localStorage
-      const storedAnswers = localStorage.getItem(`quizAnswers_${quizIdToSave}`);
+      // Prepare detailed answers data from localStorage - USE THE ORIGINAL QUIZ ID FROM URL PARAMS
+      const storedAnswers = localStorage.getItem(`quizAnswers_${quizId}`);
       const userAnswers = storedAnswers ? JSON.parse(storedAnswers) : {};
       
       // Create an array of answer details
@@ -97,7 +126,10 @@ export default function QuizResultsPage() {
         };
       }).filter(answer => answer.selectedOption >= 0);
       
-      await fetch('/api/quiz/result', {
+      // Get the user's provided name for anonymous users - USE THE ORIGINAL QUIZ ID FROM URL PARAMS
+      const providedUserName = localStorage.getItem(`quizUserName_${quizId}`);
+      
+      const response = await fetch('/api/quiz/result', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -105,15 +137,29 @@ export default function QuizResultsPage() {
           score: currentScore.correct,
           totalQuestions: totalQuestions,
           timeTaken: quizTimeTaken,
-          answers: detailedAnswers
+          answers: detailedAnswers,
+          userName: providedUserName // Include the provided name
         }),
       });
+      
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Failed to save quiz result');
+      }
+      
+      // Clean up localStorage after successful save (keep the name for potential retakes)
+      // Note: We don't remove the user name in case they want to retake the quiz
+      // localStorage.removeItem(`quizUserName_${quizIdToSave}`);
+      
       // console.debug('Quiz result saved');
     } catch (err) {
       console.error('Failed to save quiz result:', err);
+      // Reset the flag on error so they can try again
+      setHasSaved(false);
       // Non-critical error, so don't necessarily show to user
     }
-  }, [setTimeTaken]);
+  }, [hasSaved, setHasSaved, quizId]);
   
   const calculateAndSaveScore = useCallback((currentQuiz: Quiz, currentAnswers: UserAnswers) => {
     let correctCount = 0;
@@ -131,14 +177,91 @@ export default function QuizResultsPage() {
     setScore(calculatedScore);
 
     // Optionally, save the score to the backend
-    saveQuizResultToDb(currentQuiz._id, calculatedScore, totalQuestions, currentQuiz.questions);
+    saveQuizResultToDb(currentQuiz.id, calculatedScore, totalQuestions, currentQuiz.questions);
   }, [saveQuizResultToDb]);
   
   const loadQuizData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      // Fetch full quiz data
+      // First get quiz details to check if user is creator
+      const detailsResponse = await fetch(`/api/quiz/${quizId}`);
+      if (!detailsResponse.ok) {
+        const errorData = await detailsResponse.json();
+        throw new Error(errorData.error || 'Failed to load quiz details');
+      }
+      const detailsData = await detailsResponse.json();
+      const quizDetails = detailsData.quiz;
+
+      // Handle creator view - show specific user's results from database
+      if (isCreatorView) {
+        // Verify the current user is the quiz creator
+        if (status !== 'authenticated' || session?.user?.email !== quizDetails.createdBy) {
+          throw new Error('Access denied. Only the quiz creator can view user results.');
+        }
+
+        // Fetch analytics data to get the specific user's result
+        const analyticsResponse = await fetch(`/api/quiz/analytics/${quizId}`);
+        if (!analyticsResponse.ok) {
+          throw new Error('Failed to load user results');
+        }
+        const analyticsData = await analyticsResponse.json();
+        const userResult = analyticsData.results.find((result: UserResult) => result.userId === userId);
+        
+        if (!userResult) {
+          throw new Error('User result not found');
+        }
+
+        // Get full quiz data for display
+        const quizResponse = await fetch(`/api/quiz/take/${quizId}`);
+        if (!quizResponse.ok) {
+          throw new Error('Failed to load quiz data');
+        }
+        const quizData = await quizResponse.json();
+        const fetchedQuiz = quizData.quiz as Quiz;
+        fetchedQuiz.createdBy = quizDetails.createdBy;
+        setQuiz(fetchedQuiz);
+
+        // Convert user result to UserAnswers format for display
+        const userAnswers: UserAnswers = {};
+        if (userResult.answers && userResult.answers.length > 0) {
+          userResult.answers.forEach((answer: { questionIndex: number; selectedOption: number; isCorrect: boolean }) => {
+            userAnswers[answer.questionIndex] = answer.selectedOption;
+          });
+        }
+        setUserAnswers(userAnswers);
+
+        // Set score from the database result
+        const calculatedScore: Score = {
+          correct: userResult.score,
+          total: userResult.totalQuestions,
+          percentage: Math.round(userResult.percentage)
+        };
+        setScore(calculatedScore);
+
+        // Set time taken if available
+        if (userResult.timeTaken) {
+          setTimeTaken(userResult.timeTaken);
+        }
+
+        return; // Exit early for creator view
+      }
+
+      // Original logic for quiz takers
+      const storedAnswers = localStorage.getItem(`quizAnswers_${quizId}`);
+      if (!storedAnswers) {
+        // No localStorage data - check if user is the quiz creator
+        if (status === 'authenticated' && session?.user?.email === quizDetails.createdBy) {
+          // Quiz creator trying to view results - redirect to analytics page
+          router.push(`/dashboard/analytics/${quizId}`);
+          return;
+        } else {
+          // Regular user without quiz data - show error
+          throw new Error('Quiz results not found. Please take the quiz first.');
+        }
+      }
+
+      // If we have localStorage data, fetch full quiz data for results display
       const quizResponse = await fetch(`/api/quiz/take/${quizId}`);
       if (!quizResponse.ok) {
         const errorData = await quizResponse.json();
@@ -146,32 +269,22 @@ export default function QuizResultsPage() {
       }
       const quizData = await quizResponse.json();
       const fetchedQuiz = quizData.quiz as Quiz;
+      
+      // Add the createdBy field from details
+      fetchedQuiz.createdBy = quizDetails.createdBy;
       setQuiz(fetchedQuiz);
 
-      // Try to get answers from localStorage first (for quiz takers who just completed the quiz)
-      const storedAnswers = localStorage.getItem(`quizAnswers_${quizId}`);
-      if (storedAnswers) {
-        const parsedAnswers = JSON.parse(storedAnswers) as UserAnswers;
-        setUserAnswers(parsedAnswers);
-      } else {
-        // For quiz creators viewing analytics, fetch the correct answers directly
-        // We'll show them the correct answers for each question
-        const demoAnswers: UserAnswers = {};
-        
-        // Set all answers to the correct answers
-        fetchedQuiz.questions.forEach((q: QuizQuestion, index: number) => {
-          demoAnswers[index] = q.correctAnswer;
-        });
-        
-        setUserAnswers(demoAnswers);
-      }
+      // Parse and set the stored answers
+      const parsedAnswers = JSON.parse(storedAnswers) as UserAnswers;
+      setUserAnswers(parsedAnswers);
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred while loading results.');
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [quizId]);
+  }, [quizId, status, session, router, isCreatorView, userId]);
 
   // Effect to load quiz data
   useEffect(() => {
@@ -182,25 +295,11 @@ export default function QuizResultsPage() {
 
   // Effect to calculate score when both quiz and userAnswers are available
   useEffect(() => {
-    if (quiz && userAnswers) {
-      const storedAnswers = localStorage.getItem(`quizAnswers_${quizId}`);
-      if (storedAnswers) {
-        // Calculate score with local answers for quiz takers
-        calculateAndSaveScore(quiz, userAnswers);
-      } else {
-        // Create a perfect score for display for quiz creators
-        const calculatedScore: Score = {
-          correct: quiz.questions.length,
-          total: quiz.questions.length,
-          percentage: 100
-        };
-        setScore(calculatedScore);
-      }
+    if (quiz && userAnswers && !hasSaved) {
+      // Always calculate score with actual user answers - no fake perfect scores
+      calculateAndSaveScore(quiz, userAnswers);
     }
-  }, [quiz, userAnswers, quizId, calculateAndSaveScore]);
-
-  // Check if this is a quiz creator viewing analytics (no localStorage data)
-  const isCreatorView = !localStorage.getItem(`quizAnswers_${quizId}`);
+  }, [quiz, userAnswers, quizId, hasSaved, calculateAndSaveScore]);
 
   // Render different question types in the results view
   const renderQuestionResult = (q: QuizQuestion, index: number, userAnswerIndex: number | null) => {
@@ -229,8 +328,8 @@ export default function QuizResultsPage() {
             }>
               <span className={styles.tfValue}>True</span>
               {0 === q.correctAnswer && <span className={styles.badgeCorrect}> Correct Answer</span>}
-              {!isCreatorView && 0 === userAnswerIndex && !isCorrect && <span className={styles.badgeUserChoice}> Your Answer</span>}
-              {!isCreatorView && 0 === userAnswerIndex && isCorrect && <span className={styles.badgeUserChoiceCorrect}> Your Answer (Correct)</span>}
+              {0 === userAnswerIndex && !isCorrect && <span className={styles.badgeUserChoice}> Your Answer</span>}
+              {0 === userAnswerIndex && isCorrect && <span className={styles.badgeUserChoiceCorrect}> Your Answer (Correct)</span>}
             </div>
             <div className={
               `${styles.tfOption} 
@@ -240,8 +339,8 @@ export default function QuizResultsPage() {
             }>
               <span className={styles.tfValue}>False</span>
               {1 === q.correctAnswer && <span className={styles.badgeCorrect}> Correct Answer</span>}
-              {!isCreatorView && 1 === userAnswerIndex && !isCorrect && <span className={styles.badgeUserChoice}> Your Answer</span>}
-              {!isCreatorView && 1 === userAnswerIndex && isCorrect && <span className={styles.badgeUserChoiceCorrect}> Your Answer (Correct)</span>}
+              {1 === userAnswerIndex && !isCorrect && <span className={styles.badgeUserChoice}> Your Answer</span>}
+              {1 === userAnswerIndex && isCorrect && <span className={styles.badgeUserChoiceCorrect}> Your Answer (Correct)</span>}
             </div>
           </div>
         ) : (
@@ -256,8 +355,8 @@ export default function QuizResultsPage() {
                 <span className={styles.optionLetter}>{String.fromCharCode(65 + optIndex)}</span> 
                 {q.type === 'math' ? <MathJax>{option}</MathJax> : option}
                 {optIndex === q.correctAnswer && <span className={styles.badgeCorrect}> Correct Answer</span>}
-                {!isCreatorView && optIndex === userAnswerIndex && !isCorrect && <span className={styles.badgeUserChoice}> Your Answer</span>}
-                {!isCreatorView && optIndex === userAnswerIndex && isCorrect && <span className={styles.badgeUserChoiceCorrect}> Your Answer (Correct)</span>}
+                {optIndex === userAnswerIndex && !isCorrect && <span className={styles.badgeUserChoice}> Your Answer</span>}
+                {optIndex === userAnswerIndex && isCorrect && <span className={styles.badgeUserChoiceCorrect}> Your Answer (Correct)</span>}
               </li>
             ))}
           </ul>
@@ -340,14 +439,14 @@ export default function QuizResultsPage() {
   return (
     <div className={styles.resultsContainer}>
       <MetaTags 
-        title={`${isCreatorView ? 'Quiz Review' : 'Quiz Completed!'} | ${quiz.title}`}
-        description={`${isCreatorView ? 'Review' : 'You scored'} ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz. ${isCreatorView ? 'View detailed answers.' : 'Check out your results!'}`}
+        title={`${isCreatorView ? 'User Results Review' : 'Quiz Completed!'} | ${quiz.title}`}
+        description={`${isCreatorView ? 'Reviewing user performance' : 'You scored'} ${score.correct}/${score.total} (${score.percentage}%) on "${quiz.title}" quiz.`}
         url={typeof window !== 'undefined' ? window.location.href : `${process.env.NEXT_PUBLIC_SITE_URL || ''}/quiz/${quizId}/results`}
       />
       <Header />
       <main className={styles.resultsMain}>
         <div className={styles.resultsHeader}>
-          <h1>Quiz Results</h1>
+          <h1>{isCreatorView ? 'User Quiz Results' : 'Quiz Results'}</h1>
           <h2>{quiz.title}</h2>
           
           <div className={styles.scoreSection}>
@@ -377,7 +476,11 @@ export default function QuizResultsPage() {
             <button className={styles.reviewButton} onClick={() => setShowReview(!showReview)}>
               {showReview ? 'Hide Review' : 'Show Review'}
             </button>
-            {status === 'authenticated' ? (
+            {isCreatorView ? (
+              <Link className={styles.dashboardButton} href={`/dashboard/analytics/${quizId}`}>
+                Back to Analytics
+              </Link>
+            ) : status === 'authenticated' ? (
               <Link className={styles.dashboardButton} href="/dashboard">
                 Back to Dashboard
               </Link>

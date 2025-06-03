@@ -39,6 +39,7 @@ TestMe is a production-ready, full-stack web application that generates intellig
 - [Contributing](#-contributing)
 - [License](#-license)
 - [Developer](#-developer)
+- [Enhanced Large Quiz Generation](#-enhanced-large-quiz-generation)
 
 ## ⚡ Quick Start
 
@@ -46,7 +47,7 @@ Want to get TestMe running quickly? Follow these essential steps:
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/dealwap/testme.git
+git clone https://github.com/nosisky/testme.git
 cd testme
 npm install
 
@@ -500,16 +501,22 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Dealwap**
 - 📧 Email: [nosisky@gmail.com](mailto:nosisky@gmail.com)
-- 💼 GitHub: [@dealwap](https://github.com/dealwap)
+- 💼 GitHub: [@nosisky](https://github.com/nosisky)
 - 🐦 Twitter: [@dealwap](https://twitter.com/dealwap)
 
+### Project Information
 
+- **Version**: 1.0.0
+- **Last Updated**: December 2024
+- **Status**: Production Ready ✅
+- **Maintenance**: Actively maintained
+- **License**: MIT License
 
 ### Support & Contact
 
 For support, feature requests, or bug reports:
 
-1. **GitHub Issues**: [Create an issue](https://github.com/dealwap/testme/issues) - Best for bug reports and feature requests
+1. **GitHub Issues**: [Create an issue](https://github.com/nosisky/testme/issues) - Best for bug reports and feature requests
 2. **Email**: [nosisky@gmail.com](mailto:nosisky@gmail.com) - For direct communication and business inquiries
 3. **Documentation**: Check this README and inline code comments
 4. **Community**: Star the repo and follow for updates
@@ -567,6 +574,7 @@ TestMe is a production-ready, full-stack web application that generates intellig
 - [Contributing](#-contributing)
 - [License](#-license)
 - [Developer](#-developer)
+- [Enhanced Large Quiz Generation](#-enhanced-large-quiz-generation)
 
 ## ⚡ Quick Start
 
@@ -574,7 +582,7 @@ Want to get TestMe running quickly? Follow these essential steps:
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/dealwap/testme.git
+git clone https://github.com/nosisky/testme.git
 cd testme
 npm install
 
@@ -686,14 +694,14 @@ Create a `.env.local` file in the root directory with the following configuratio
 # =================================================================
 # APPLICATION CONFIGURATION
 # =================================================================
-   NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your_nextauth_secret_here
 
 # =================================================================
 # AUTHENTICATION (Required)
 # =================================================================
-   GOOGLE_CLIENT_ID=your_google_client_id
-   GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 
 # =================================================================
 # DATABASE (Required)
@@ -705,7 +713,7 @@ MONGODB_URI=mongodb://localhost:27017/testme
 # =================================================================
 # EXTERNAL APIs (Required)
 # =================================================================
-   YOUTUBE_API_KEY=your_youtube_api_key
+YOUTUBE_API_KEY=your_youtube_api_key
 
 # =================================================================
 # AI PROVIDER CONFIGURATION
@@ -715,19 +723,19 @@ DEFAULT_AI_PROVIDER=openai
 
 # Configure API keys for your chosen provider(s)
 # OpenAI (Recommended - reliable, fast, good quality)
-   OPENAI_API_KEY=your_openai_api_key
-   
+OPENAI_API_KEY=your_openai_api_key
+
 # Anthropic Claude (Best for detailed explanations)
 CLAUDE_API_KEY=your_claude_api_key
-   
+
 # DeepSeek (Most cost-effective option)
-   DEEPSEEK_API_KEY=your_deepseek_api_key
-   
+DEEPSEEK_API_KEY=your_deepseek_api_key
+
 # AWS Bedrock (Enterprise-grade, requires AWS setup)
-   AWS_ACCESS_KEY_ID=your_aws_access_key_id
-   AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
-   AWS_REGION=us-east-1
-   
+AWS_ACCESS_KEY_ID=your_aws_access_key_id
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+AWS_REGION=us-east-1
+
 # =================================================================
 # DEVELOPMENT & TESTING
 # =================================================================
@@ -749,7 +757,7 @@ NODE_ENV=development
 - **Setup**: [Get API key](https://platform.openai.com/api-keys)
 
 ```bash
-   DEFAULT_AI_PROVIDER=openai
+DEFAULT_AI_PROVIDER=openai
 OPENAI_API_KEY=sk-your-openai-key-here
 ```
 
@@ -1028,9 +1036,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Dealwap**
 - 📧 Email: [nosisky@gmail.com](mailto:nosisky@gmail.com)
-- 💼 GitHub: [@dealwap](https://github.com/dealwap)
+- 💼 GitHub: [@nosisky](https://github.com/nosisky)
 - 🌐 Portfolio: [dealwap.dev](https://dealwap.dev)
-- 🐦 Twitter: [@dealwap_dev](https://twitter.com/dealwap_dev)
+- 🐦 Twitter: [@nosisky](https://twitter.com/nosisky)
 
 ### Project Information
 
@@ -1044,7 +1052,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For support, feature requests, or bug reports:
 
-1. **GitHub Issues**: [Create an issue](https://github.com/dealwap/testme/issues) - Best for bug reports and feature requests
+1. **GitHub Issues**: [Create an issue](https://github.com/nosisky/testme/issues) - Best for bug reports and feature requests
 2. **Email**: [nosisky@gmail.com](mailto:nosisky@gmail.com) - For direct communication and business inquiries
 3. **Documentation**: Check this README and inline code comments
 4. **Community**: Star the repo and follow for updates
@@ -1065,8 +1073,44 @@ Special thanks to:
 
 *"Making education more engaging through AI-powered quiz generation"*
 
-[![GitHub stars](https://img.shields.io/github/stars/dealwap/testme?style=social)](https://github.com/dealwap/testme)
-[![GitHub forks](https://img.shields.io/github/forks/dealwap/testme?style=social)](https://github.com/dealwap/testme)
+[![GitHub stars](https://img.shields.io/github/stars/nosisky/testme?style=social)](https://github.com/nosisky/testme)
+[![GitHub forks](https://img.shields.io/github/forks/nosisky/testme?style=social)](https://github.com/nosisky/testme)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 
 </div>
+
+## 🚀 Enhanced Large Quiz Generation
+
+This application now supports **Dynamic Token Management + Chunked Generation** for generating 15+ questions reliably:
+
+### Key Features
+
+- **Automatic Chunking**: Large quiz requests (15+ questions) are automatically split into smaller chunks
+- **Dynamic Token Limits**: Token limits are automatically adjusted based on request size:
+  - 10-14 questions: 32,000 tokens
+  - 15-19 questions: 64,000 tokens  
+  - 20+ questions: 128,000 tokens (with beta headers)
+- **Enhanced Bedrock Support**: Optimized for AWS Bedrock Claude 3.7 Sonnet
+- **Intelligent Fallback**: If a chunk fails, returns successfully generated questions
+- **Rate Limiting Protection**: Built-in delays between chunks to avoid throttling
+
+### Configuration
+
+Set your AI provider in `.env`:
+```bash
+DEFAULT_AI_PROVIDER=bedrock
+AWS_REGION=us-east-1
+```
+
+### How It Works
+
+1. **Small Requests (< 15 questions)**: Standard generation
+2. **Large Requests (≥ 15 questions)**: 
+   - Split into chunks of 7 questions each
+   - Each chunk generated with 1-second delay
+   - Results combined automatically
+   - Enhanced token limits applied
+
+This ensures reliable generation of large quizzes without hitting token limits or rate restrictions.
+
+## �� AI Configuration

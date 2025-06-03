@@ -450,7 +450,7 @@ const ConversationalQuizCreator = () => {
         
         const data = await response.json();
         setCreatedQuizId(data._id);
-        setQuizShareUrl(`${window.location.origin}/quiz/${data._id}/instructions`);
+        setQuizShareUrl(`${window.location.origin}/quiz/${data.slug}/instructions`);
         
         // Track quiz creation for anonymous users
         if (!session) {
@@ -478,7 +478,7 @@ const ConversationalQuizCreator = () => {
         }
         
         setCreatedQuizId(data.quiz.id);
-        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}/instructions`);
+        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.slug}/instructions`);
         
         // Track quiz creation for anonymous users
         if (!session) {
@@ -512,7 +512,7 @@ const ConversationalQuizCreator = () => {
         
         const data = await response.json();
         setCreatedQuizId(data.quiz.id);
-        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}/instructions`);
+        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.slug}/instructions`);
         
         // Track quiz creation for anonymous users
         if (!session) {
@@ -546,7 +546,7 @@ const ConversationalQuizCreator = () => {
         
         const data = await response.json();
         setCreatedQuizId(data.quiz.id);
-        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.id}/instructions`);
+        setQuizShareUrl(`${window.location.origin}/quiz/${data.quiz.slug}/instructions`);
         
         // Track quiz creation for anonymous users
         if (!session) {

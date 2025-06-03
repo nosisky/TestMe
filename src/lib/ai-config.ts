@@ -20,25 +20,25 @@ const AI_CONFIGS: Record<AIProvider, Omit<AIProviderConfig, 'isActive'>> = {
     provider: 'openai',
     defaultModel: 'gpt-4o-mini',
     temperature: 0.7,
-    maxTokens: 2048,
+    maxTokens: 16000,
   },
   claude: {
     provider: 'claude',
     defaultModel: 'claude-3-haiku-20240307',
     temperature: 0.7,
-    maxTokens: 2048,
+    maxTokens: 16000,
   },
   deepseek: {
     provider: 'deepseek',
     defaultModel: 'deepseek-chat',
     temperature: 0.7,
-    maxTokens: 2048,
+    maxTokens: 16000,
   },
   bedrock: {
     provider: 'bedrock',
     defaultModel: 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
     temperature: 0.7,
-    maxTokens: 2048,
+    maxTokens: 128000, // Use 128K tokens with beta header
   }
 };
 
@@ -112,4 +112,60 @@ export function getProviderStatus() {
     ),
     allProviders: getAllAIProviders()
   };
+}
+
+/**
+ * Get enhanced configuration for large quiz generation
+ */
+export function getEnhancedAIConfig(numQuestions: number): AIProviderConfig {
+  const baseConfig = getActiveAIProvider();
+  
+  // For Bedrock Claude 3.7 Sonnet, dynamically adjust token limits
+  if (baseConfig.provider === 'bedrock' && 
+      baseConfig.defaultModel.includes('claude-3-7-sonnet')) {
+    
+    // Use higher token limits based on question count
+    let maxTokens = 32000; // Default
+    
+    if (numQuestions >= 20) {
+      maxTokens = 128000; // Use 128K for very large requests
+    } else if (numQuestions >= 15) {
+      maxTokens = 64000; // Use 64K for large requests
+    } else if (numQuestions >= 10) {
+      maxTokens = 32000; // Use 32K for medium requests
+    }
+    
+    return {
+      ...baseConfig,
+      maxTokens
+    };
+  }
+  
+  return baseConfig;
+}
+
+/**
+ * Check if a model supports beta headers for enhanced output
+ */
+export function supportsBetaHeaders(config: AIProviderConfig): boolean {
+  return config.provider === 'bedrock' && 
+         config.defaultModel.includes('claude-3-7-sonnet');
+}
+
+/**
+ * Get the appropriate beta headers for enhanced output
+ */
+export function getBetaHeaders(config: AIProviderConfig, numQuestions: number): string[] {
+  if (!supportsBetaHeaders(config)) {
+    return [];
+  }
+  
+  const headers: string[] = [];
+  
+  // Add 128K output beta header for large requests
+  if (numQuestions >= 15) {
+    headers.push('output-128k-2025-02-19');
+  }
+  
+  return headers;
 } 

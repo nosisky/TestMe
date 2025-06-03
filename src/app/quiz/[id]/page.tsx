@@ -80,6 +80,18 @@ export default function QuizPage() {
     }
   }, [quizId, fetchQuiz]);
   
+  // Check if anonymous user has provided a name
+  useEffect(() => {
+    if (status === 'unauthenticated' && quizId && quiz) {
+      const providedName = localStorage.getItem(`quizUserName_${quizId}`);
+      if (!providedName || !providedName.trim()) {
+        // Redirect to instructions to collect name
+        router.push(`/quiz/${quizId}/instructions`);
+        return;
+      }
+    }
+  }, [status, quizId, quiz, router]);
+  
   useEffect(() => {
     if (quizId && quiz && quiz.questions.length > 0) {
       // Save start time for calculating time taken
@@ -88,10 +100,14 @@ export default function QuizPage() {
   }, [quizId, quiz]);
   
   const handleOptionSelect = (questionIndex: number, optionIndex: number) => {
-    setUserAnswers(prevAnswers => ({
-      ...prevAnswers,
+    const updatedAnswers = {
+      ...userAnswers,
       [questionIndex]: optionIndex,
-    }));
+    };
+    setUserAnswers(updatedAnswers);
+    
+    // Save answers immediately to localStorage to prevent data loss
+    localStorage.setItem(`quizAnswers_${quizId}`, JSON.stringify(updatedAnswers));
     
     // Auto proceed to next question after a short delay
     if (currentQuestionIndex < quiz!.questions.length - 1) {
@@ -101,10 +117,6 @@ export default function QuizPage() {
     } else {
       // If it's the last question, finish the quiz after a delay
       setTimeout(() => {
-        localStorage.setItem(`quizAnswers_${quizId}`, JSON.stringify({
-          ...userAnswers,
-          [questionIndex]: optionIndex
-        }));
         router.push(`/quiz/${quizId}/results`);
       }, 800); // Slightly longer delay for the last question
     }
@@ -116,7 +128,7 @@ export default function QuizPage() {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
       // All questions answered, navigate to results page
-      localStorage.setItem(`quizAnswers_${quizId}`, JSON.stringify(userAnswers));
+      // Answers are already saved in localStorage via handleOptionSelect
       router.push(`/quiz/${quizId}/results`);
     }
   };

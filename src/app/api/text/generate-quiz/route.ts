@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import dbConnect from '@/lib/mongodb';
 import Quiz, { IQuizQuestion } from '@/models/Quiz';
-import { generateQuizQuestions } from '@/lib/ai-service';
+import { generateQuizQuestions, generateQuizTitle, generateUniqueSlug } from '@/lib/ai-service';
 import mongoose from 'mongoose';
 
 /**
@@ -32,15 +32,6 @@ function containsMeaningfulText(text: string): boolean {
   return true;
 }
 
-// Helper function to generate a title from text content if not provided
-function generateTitleFromText(text: string, maxLength = 50): string {
-  if (!text) return 'Untitled Text Quiz';
-  const firstSentence = text.split(/[.!?]/)[0];
-  let title = firstSentence.length > maxLength ? firstSentence.substring(0, maxLength) + '...' : firstSentence;
-  if (title.trim() === '...' || title.trim() === '') title = text.substring(0, Math.min(text.length, maxLength)) + (text.length > maxLength ? '...' : '');
-  return title || 'Untitled Text Quiz';
-}
-
 export async function POST(request: Request) {
   try {
     // Get user session if available, but don't require it
@@ -49,14 +40,12 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       textContent,
-      title: userProvidedTitle,
+      tags,
       numQuestions = 5,
       difficulty = 'medium',
-      tags = [],
-      createdBy: createdByParam,
-      includeTypes = { multipleChoice: true, trueFalse: true, math: false }
+      includeTypes = { multipleChoice: true, trueFalse: true, math: true },
+      createdBy: createdByParam
     } = body;
-
 
     // Ensure at least one question type is selected
     if (!includeTypes.multipleChoice && !includeTypes.trueFalse && !includeTypes.math) {
@@ -77,16 +66,16 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
     
-    if (numQuestions < 3 || numQuestions > 15) {
+    if (numQuestions < 3 || numQuestions > 30) {
       return NextResponse.json({ error: 'Number of questions must be between 3 and 15.' }, { status: 400 });
     }
 
-    const quizTitle = userProvidedTitle?.trim() || generateTitleFromText(textContent);
+    console.debug(`Generating quiz: ${numQuestions} questions, difficulty: ${difficulty}, types: ${JSON.stringify(includeTypes)}`);
 
-
+    // 4. Generate quiz questions using AI service
     const questionsData = await generateQuizQuestions({
       content: textContent,
-      numQuestions: Number(numQuestions),
+      numQuestions: numQuestions,
       difficulty: difficulty,
       includeTypes: includeTypes
     });
@@ -101,15 +90,23 @@ export async function POST(request: Request) {
 
     await dbConnect();
 
+    // 5. Generate AI-powered title and unique slug
+    const aiQuizTitle = await generateQuizTitle(textContent, 'text');
+    console.debug(`AI generated title: ${aiQuizTitle}`);
+    
+    const quizSlug = await generateUniqueSlug(aiQuizTitle);
+    console.debug(`Generated unique slug: ${quizSlug}`);
+
     const newQuiz = new Quiz({
-      title: quizTitle,
+      title: aiQuizTitle,
+      slug: quizSlug,
       description: textContent.substring(0, 200) + (textContent.length > 200 ? '...' : ''), // Short description
       sourceType: 'text',
       source: {
         type: 'text',
         text: {
           contentPreview: textContent.substring(0, 500) + (textContent.length > 500 ? '...' : ''), // Store a preview
-          title: quizTitle, // Store the determined title
+          title: aiQuizTitle, // Store the AI-generated title
         },
       },
       difficulty: difficulty,
@@ -125,6 +122,7 @@ export async function POST(request: Request) {
       message: 'Quiz generated successfully from text!',
       quiz: {
         id: newQuiz._id.toString(),
+        slug: quizSlug,
         title: newQuiz.title,
       },
     });

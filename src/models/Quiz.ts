@@ -48,10 +48,11 @@ export interface IQuizSource {
 // Interface representing a quiz document
 export interface IQuiz extends Document {
   title: string;
+  slug: string; // URL-friendly unique identifier
   description?: string;
   sourceType: QuizSourceType;
   source: IQuizSource;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: 'easy' | 'medium' | 'hard' | 'expert';
   createdAt: Date;
   createdBy: string; // User ID or email
   isPublic: boolean;
@@ -83,6 +84,7 @@ const QuizQuestionSchema = new Schema<IQuizQuestion>({
 
 const QuizSchema = new Schema<IQuiz>({
   title: { type: String, required: true },
+  slug: { type: String, required: true, unique: true },
   description: { type: String },
   sourceType: { 
     type: String, 
@@ -119,7 +121,7 @@ const QuizSchema = new Schema<IQuiz>({
   },
   difficulty: { 
     type: String, 
-    enum: ['easy', 'medium', 'hard'], 
+    enum: ['easy', 'medium', 'hard', 'expert'], 
     default: 'medium' 
   },
   createdAt: { type: Date, default: Date.now },
@@ -140,6 +142,8 @@ QuizSchema.index({ sourceType: 1 });
 QuizSchema.index({ 'source.youtube.videoId': 1 });
 QuizSchema.index({ isPublic: 1 });
 QuizSchema.index({ tags: 1 });
+QuizSchema.index({ isPublic: 1, createdAt: -1 });
+// Note: slug index is automatically created due to unique: true in schema
 
 // Create or retrieve the model
 const Quiz = mongoose.models.Quiz || mongoose.model<IQuiz>('Quiz', QuizSchema);

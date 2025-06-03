@@ -4,10 +4,10 @@ import dbConnect from '@/lib/mongodb';
 import Quiz, { QuizSourceType } from '@/models/Quiz';
 import { FilterQuery } from 'mongoose';
 
-interface QuizQueryFilters {
+interface QuizFilter {
   createdBy?: string;
   sourceType?: QuizSourceType;
-  difficulty?: 'easy' | 'medium' | 'hard';
+  difficulty?: 'easy' | 'medium' | 'hard' | 'expert';
   tags?: string;
   isPublic?: boolean;
 }
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     await dbConnect();
     
     // Build query
-    const query: FilterQuery<QuizQueryFilters> = {};
+    const query: FilterQuery<QuizFilter> = {};
     
     // Filter by creator
     if (userOnly) {
@@ -48,8 +48,8 @@ export async function GET(request: Request) {
     }
     
     // Filter by difficulty
-    if (difficulty && ['easy', 'medium', 'hard'].includes(difficulty)) {
-      query.difficulty = difficulty as 'easy' | 'medium' | 'hard';
+    if (difficulty && ['easy', 'medium', 'hard', 'expert'].includes(difficulty)) {
+      query.difficulty = difficulty as 'easy' | 'medium' | 'hard' | 'expert';
     }
     
     // Filter by tag

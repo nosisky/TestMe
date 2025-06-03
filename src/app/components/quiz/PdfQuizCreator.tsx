@@ -14,7 +14,7 @@ import Header from '../Header';
 
 interface QuizOptions {
   numQuestions: number;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: 'easy' | 'medium' | 'hard' | 'expert';
   isPublic: boolean;
   tags: string;
 }
@@ -235,6 +235,7 @@ export default function PdfQuizCreator() {
                 <option value="easy">Easy</option>
                 <option value="medium">Medium</option>
                 <option value="hard">Hard</option>
+                <option value="expert">Expert</option>
               </select>
             </div>
 
