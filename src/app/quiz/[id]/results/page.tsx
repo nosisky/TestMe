@@ -295,11 +295,12 @@ export default function QuizResultsPage() {
 
   // Effect to calculate score when both quiz and userAnswers are available
   useEffect(() => {
-    if (quiz && userAnswers && !hasSaved) {
+    // Only calculate and save score for actual quiz takers, not for creators viewing results
+    if (quiz && userAnswers && !hasSaved && !isCreatorView) {
       // Always calculate score with actual user answers - no fake perfect scores
       calculateAndSaveScore(quiz, userAnswers);
     }
-  }, [quiz, userAnswers, quizId, hasSaved, calculateAndSaveScore]);
+  }, [quiz, userAnswers, quizId, hasSaved, calculateAndSaveScore, isCreatorView]);
 
   // Render different question types in the results view
   const renderQuestionResult = (q: QuizQuestion, index: number, userAnswerIndex: number | null) => {
