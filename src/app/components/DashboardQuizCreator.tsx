@@ -333,7 +333,7 @@ const DashboardQuizCreator = ({ initialType }: DashboardQuizCreatorProps) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             textContent: extractedContent || textContent,
-            numQuestions: 30,
+            numQuestions: questionCount,
             difficulty,
             createdBy: userId,
             includeTypes
